@@ -98,7 +98,7 @@ Game.prototype.timeout = function() {
 	
 	//console.log(this.player.sendUpdate);
 	if (this.player.sendUpdate) {
-		this.sendPlayerPosition();
+		//this.sendPlayerPosition();
 	}
 
 	// Horrible passing of game object due to event closure
@@ -151,6 +151,9 @@ Game.prototype.update = function() {
  */
 Game.prototype.draw = function() {
 	this.ctx.clearRect(0, 0, this.canvas.width(), this.canvas.height());
+	
+	this.viewport.draw(this.ctx);
+	
 	this.player.rocket.draw(this.ctx);
 	
 	var playersLength = this.players.length;
@@ -166,6 +169,78 @@ Game.prototype.draw = function() {
 		// Player is outside of the viewport
 		} else {
 			// Draw an arrow at the edge of the viewport indicating where the player is
+			var localScreenPos = this.viewport.globalToScreen(this.player.pos.x, this.player.pos.y);
+			var screenPos = this.viewport.globalToScreen(player.pos.x, player.pos.y);
+			
+			var x1 = localScreenPos.x;
+			var y1 = localScreenPos.y;
+			var x2 = screenPos.x;
+			var y2 = screenPos.y;
+	
+			var x3;
+			var y3;
+			var x4;
+			var y4;
+			
+			var px;
+			var py;
+			
+			// Check bottom edge
+			if (screenPos.y > this.canvas.height()) {
+				x3 = 0;
+				y3 = this.canvas.height();
+				x4 = this.canvas.width();
+				y4 = this.canvas.height();
+				
+				// Can this formula be simplified?
+				px = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+				py = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+			
+				this.ctx.fillStyle = "rgb(255, 0, 0)";
+				this.ctx.fillRect(px-2, py-4, 4, 4);
+			}
+			
+			// Check top edge
+			if (screenPos.y < 0) {
+				x3 = 0;
+				y3 = 0;
+				x4 = this.canvas.width();
+				y4 = 0;
+				
+				px = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+				py = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+			
+				this.ctx.fillStyle = "rgb(255, 0, 0)";
+				this.ctx.fillRect(px-2, py, 4, 4);
+			}
+			
+			// Check left edge
+			if (screenPos.x < 0) {
+				x3 = 0;
+				y3 = 0;
+				x4 = 0;
+				y4 = this.canvas.height();
+				
+				px = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+				py = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+			
+				this.ctx.fillStyle = "rgb(255, 0, 0)";
+				this.ctx.fillRect(px, py-2, 4, 4);
+			}
+			
+			// Check right edge
+			if (screenPos.x > this.canvas.width()) {
+				x3 = this.canvas.width();
+				y3 = 0;
+				x4 = this.canvas.width();
+				y4 = this.canvas.height();
+				
+				px = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+				py = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+			
+				this.ctx.fillStyle = "rgb(255, 0, 0)";
+				this.ctx.fillRect(px-4, py-2, 4, 4);
+			}
 		}
 	};
 };
