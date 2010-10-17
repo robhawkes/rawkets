@@ -14,7 +14,7 @@ $(function() {
 	 * Initialises environmental event listeners
 	 */	
 	function initListeners() {
-		$(window).bind("resize", game.resizeCanvas)
+		$(window).bind("resize", {self: game}, game.resizeCanvas)
 				 // Horrible passing of game object due to event closure
 				 .bind("keydown", {self: game}, game.movePlayer)
 				 .bind("keyup", {self: game}, game.haltPlayer);

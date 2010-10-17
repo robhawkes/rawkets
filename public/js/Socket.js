@@ -10,7 +10,7 @@
  */
 var Socket = function() {
 	// Initialise Socket.IO object
-	this.io = new io.Socket(null, {port: 8080});
+	this.io = new io.Socket(null, {port: 8080, transports: ["websocket"]});
 
 	// Connect to socket server
 	this.io.connect();

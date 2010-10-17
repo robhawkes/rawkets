@@ -27,7 +27,7 @@ function init() {
 			if (json.type) {
 				switch (json.type) {
 					default:
-						sys.log("Incoming message: ");
+						sys.log("Incoming message ["+client.sessionId+"]: ");
 						console.log(json);
 				};
 			// Invalid message protocol
