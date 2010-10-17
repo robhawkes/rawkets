@@ -42,6 +42,7 @@ Rocket.prototype.draw = function(ctx) {
 	ctx.moveTo(0, -5);
 	ctx.lineTo(4, 5);
 	ctx.lineTo(-4, 5);
+	ctx.closePath();
 	ctx.fill();
 	
 	ctx.restore();
