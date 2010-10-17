@@ -15,5 +15,6 @@ var Socket = function() {
 	// Connect to socket server
 	this.io.connect();
 	
+	// Return socket object
 	return this.io;
 };

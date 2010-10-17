@@ -17,7 +17,7 @@ function init() {
 	socket.on("connection", function(client) { 
 		//client.broadcast("New user connected");
 		//client.send("Session ID: "+client.sessionId);
-		client.send(formatMessage("newSession", {id: client.sessionId}));
+		//client.send(formatMessage("playerSession", {id: client.sessionId})); // Why does the session need to be sent?
 		
 		// On incoming message from client
 		client.on("message", function(data) {
