@@ -34,7 +34,7 @@ Rocket.prototype.draw = function(ctx) {
 	ctx.translate(this.pos.x, this.pos.y);
 	ctx.rotate(this.angle);
 	
-	ctx.fillStyle = "rgb(0, 0, 0)";
+	ctx.fillStyle = "rgb(0, 255, 0)";
 	ctx.beginPath();
 	/*ctx.moveTo(this.pos.x, this.pos.y);
 	ctx.lineTo(this.pos.x+5, this.pos.y+10);
