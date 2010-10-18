@@ -1,31 +1,57 @@
 var sys = require("sys");
 var	io = require("socket.io");
 var http = require("http");
+var player = require("./Player");
+
+var server;
+var socket;
+var players;
 
 /**
  * Initialises server-side functionality
  */
 function init() {
 	// Initialise HTTP server
-	var server = http.createServer(function(req, res) {});		
+	server = http.createServer(function(req, res) {});		
 	server.listen(8080);
 	
 	// Initialise socket connection
-	var socket = io.listen(server);
+	socket = io.listen(server);
+	
+	players = [];
 	
 	// On incoming connection from client
-	socket.on("connection", function(client) { 
-		//client.broadcast("New user connected");
-		//client.send("Session ID: "+client.sessionId);
-		//client.send(formatMessage("playerSession", {id: client.sessionId})); // Why does the session need to be sent?
+	socket.on("connection", function(client) {
+		var p = player;
 		
 		// On incoming message from client
-		client.on("message", function(data) {
+		client.on("message", function(data) {	
 			var json = JSON.parse(data);
 			
 			// Only deal with messages using the correct protocol
 			if (json.type) {
 				switch (json.type) {
+					case "newPlayer":
+						client.broadcast(formatMessage("newPlayer", {id: client.sessionId, x: json.x, y: json.y, angle: json.angle}));
+						
+						// Send data for existing players
+						if (players.length > 0) {
+							for (var player in players) {
+								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle}));
+							}
+						}
+						
+						// Add new player to the stack
+						players.push(p.init(client.sessionId, json.x, json.y, json.angle));
+						break;
+					case "updatePlayer":
+						client.broadcast(formatMessage("updatePlayer", {id: client.sessionId, x: json.x, y: json.y, angle: json.angle}));
+						
+						var player = players[indexOfByPlayerId(client.sessionId)];
+						player.x = json.x;
+						player.y = json.y;
+						player.angle = json.angle;
+						break;
 					default:
 						sys.log("Incoming message ["+client.sessionId+"]: ");
 						console.log(json);
@@ -38,10 +64,40 @@ function init() {
 		
 		// On client disconnect
 		client.on('disconnect', function(){
-			//client.broadcast("User disconnected "+client.sessionId);
+			players.splice(indexOfByPlayerId(client.sessionId), 1);
+			client.broadcast(formatMessage("removePlayer", {id: client.sessionId}));
 		});	
 	});
 };
+
+/**
+ * Find player by the player id
+ *
+ * @param {Number} id Type of message
+ * @returns Player object
+ * @type Player
+ */
+function playerById(id) {
+	for (var i = 0; i < players.length; i++) {
+		if (players[i].id = id)
+			return players[i];
+	}	
+}
+
+/**
+ * Find index of player by the player id
+ *
+ * @param {Number} id Type of message
+ * @returns Index of player
+ * @type Number
+ */
+function indexOfByPlayerId(id) {
+	for (var i = 0; i < players.length; i++) {
+		if (players[i].id == id) {
+			return i;
+		}
+	}	
+}
 
 /**
  * Format message using game protocols

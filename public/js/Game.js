@@ -18,7 +18,11 @@ var Game = function() {
 	this.players = [];
 	
 	this.viewport = new Viewport(this.canvas.width(), this.canvas.height());
-	
+	this.stars = [];
+	for (var i = 0; i < 20; i++) {
+		this.stars.push(new Star(Math.random()*this.canvas.width(), Math.random()*this.canvas.height()));
+	};
+ 	
 	this.initSocketListeners();
 };
 
@@ -49,11 +53,12 @@ Game.prototype.onSocketConnect = function() {
 	// Initialise player object if one doesn't exist yet
 	if (this.player == null) {
 		this.player = new Player(1000.0, 1000.0);
+		this.socket.send(Game.formatMessage("newPlayer", {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle}));
 		
 		// Add a temporary extra player
-		var debugPlayer = new Player(1100.0, 1100.0);
-		this.players.push(debugPlayer);
-		debugPlayer.rocket.pos = this.viewport.globalToScreen(debugPlayer.pos.x, debugPlayer.pos.y);
+		//var debugPlayer = new Player(1100.0, 1100.0);
+		//this.players.push(debugPlayer);
+		//debugPlayer.rocket.pos = this.viewport.globalToScreen(debugPlayer.pos.x, debugPlayer.pos.y);
 		
 		this.timeout();
 	};
@@ -69,6 +74,22 @@ Game.prototype.onSocketMessage = function(data) {
 		// Only deal with messages using the correct protocol
 		if (json.type) {
 			switch (json.type) {
+				case "newPlayer":
+					var player = new Player(json.x, json.y);
+					player.id = json.id;
+					this.players.push(player);
+					player.rocket.pos = this.viewport.globalToScreen(player.pos.x, player.pos.y);
+					player.rocket.angle = json.angle;
+					break;
+				case "updatePlayer":
+					var player = this.getPlayerById(json.id);
+					player.pos.x = json.x;
+					player.pos.y = json.y;
+					player.rocket.angle = json.angle;
+					break
+				case "removePlayer":
+					this.players.splice(this.players.indexOf(this.getPlayerById(json.id)), 1);
+					break;
 				default:
 					console.log("Incoming message:", json);
 			};
@@ -98,8 +119,8 @@ Game.prototype.timeout = function() {
 	
 	//console.log(this.player.sendUpdate);
 	if (this.player.sendUpdate) {
-		//this.sendPlayerPosition();
-	}
+		this.sendPlayerPosition();
+	};
 
 	// Horrible passing of game object due to event closure
 	var self = this;
@@ -142,8 +163,31 @@ Game.prototype.update = function() {
 		// Player is outside of the viewport
 		} else {
 			
-		}
+		};
 	};
+	
+	var playerMoveDelta = Vector.sub(this.player.pos, this.viewport.pos);
+	
+	var starsLength = this.stars.length;
+	// This is a resource hog
+	for (var i = 0; i < starsLength; i++) {
+		var star = this.stars[i];
+		
+		if (star == null)
+			continue;
+			
+		star.update(playerMoveDelta);
+		
+		// Wrap stars around screen
+		star.pos.x = (star.pos.x < 0) ? this.canvas.width() : star.pos.x;
+		star.pos.x = (star.pos.x > this.canvas.width()) ? 0 : star.pos.x;
+		star.pos.y = (star.pos.y < 0) ? this.canvas.height() : star.pos.y;
+		star.pos.y = (star.pos.y > this.canvas.height()) ? 0 : star.pos.y;
+	};
+	
+	this.viewport.pos.x = this.player.pos.x;
+	this.viewport.pos.y = this.player.pos.y;
+	//this.viewport.pos = this.player.pos;
 };
 
 /**
@@ -153,6 +197,16 @@ Game.prototype.draw = function() {
 	this.ctx.clearRect(0, 0, this.canvas.width(), this.canvas.height());
 	
 	this.viewport.draw(this.ctx);
+	
+	var starsLength = this.stars.length;
+	for (var i = 0; i < starsLength; i++) {
+		var star = this.stars[i];
+		
+		if (star == null)
+			continue;
+			
+		star.draw(this.ctx);
+	};
 	
 	this.player.rocket.draw(this.ctx);
 	
@@ -198,7 +252,7 @@ Game.prototype.draw = function() {
 			
 				this.ctx.fillStyle = "rgb(255, 0, 0)";
 				this.ctx.fillRect(px-2, py-4, 4, 4);
-			}
+			};
 			
 			// Check top edge
 			if (screenPos.y < 0) {
@@ -212,7 +266,7 @@ Game.prototype.draw = function() {
 			
 				this.ctx.fillStyle = "rgb(255, 0, 0)";
 				this.ctx.fillRect(px-2, py, 4, 4);
-			}
+			};
 			
 			// Check left edge
 			if (screenPos.x < 0) {
@@ -226,7 +280,7 @@ Game.prototype.draw = function() {
 			
 				this.ctx.fillStyle = "rgb(255, 0, 0)";
 				this.ctx.fillRect(px, py-2, 4, 4);
-			}
+			};
 			
 			// Check right edge
 			if (screenPos.x > this.canvas.width()) {
@@ -240,8 +294,8 @@ Game.prototype.draw = function() {
 			
 				this.ctx.fillStyle = "rgb(255, 0, 0)";
 				this.ctx.fillRect(px-4, py-2, 4, 4);
-			}
-		}
+			};
+		};
 	};
 };
 
@@ -250,7 +304,7 @@ Game.prototype.draw = function() {
  */
 Game.prototype.sendPlayerPosition = function() {
 	//console.log("Send update");
-	this.socket.send(Game.formatMessage("updatePlayer", {pos: this.player.pos, angle: this.player.rocket.angle}));
+	this.socket.send(Game.formatMessage("updatePlayer", {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle}));
 };
 
 /**
@@ -276,7 +330,6 @@ Game.prototype.movePlayer = function(e) {
 		case arrow.up:
 			if (!self.player.move)
 				self.player.moveForward();
-			self.viewport.pos = self.player.pos;
 			break;
 		case arrow.down:
 			break;
@@ -306,6 +359,24 @@ Game.prototype.haltPlayer = function(e) {
 			break;
 		case arrow.down:
 			break;
+	};
+};
+
+/**
+ * Get player by id
+ *
+ * @param {Number} id Id of player
+ * @returns Player object with specified id
+ * @type Player
+ */
+Game.prototype.getPlayerById = function(id) {
+	var playersLength = this.players.length;
+	
+	for (var i = 0; i < playersLength; i++) {
+		var player = this.players[i];
+		
+		if (player.id == id)
+			return player;
 	};
 };
 

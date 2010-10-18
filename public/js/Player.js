@@ -10,6 +10,7 @@
  * @param {Number} y Vertical position of player in global space
  */
 var Player = function(x, y) {
+	this.id;
 	this.move = false;
 	this.pos = new Vector(x, y);
 	this.rocket = new Rocket();
@@ -29,7 +30,7 @@ Player.prototype.update = function() {
 		this.pos.y -= 5*Math.cos(this.rocket.angle);
 	};
 	
-	if (this.rocket.rotateRight || this.rocket.rotateLeft)
+	if (this.rocket.rotateRight || this.rocket.rotateLeft || this.move)
 		this.sendUpdate = true;
 };
 

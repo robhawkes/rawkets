@@ -27,10 +27,10 @@ var Viewport = function(width, height) {
  * @type Boolean
  */
 Viewport.prototype.withinBounds = function(x, y) {
-	if (x > this.pos.x - this.width/2 && 
-		x < this.pos.x + this.width/2 &&
-		y > this.pos.y - this.height/2 &&
-		y < this.pos.y + this.height/2) {
+	if (x > (this.pos.x - this.width/2)-10 && 
+		x < (this.pos.x + this.width/2)+10 &&
+		y > (this.pos.y - this.height/2)-10 &&
+		y < (this.pos.y + this.height/2)+10) {
 		return true;	
 	}
 	
@@ -110,7 +110,8 @@ Viewport.prototype.globalYToScreenY = function(y) {
  * @param {Object} ctx Cavnas 2d drawing context
  */
 Viewport.prototype.draw = function(ctx) {
-	ctx.fillStyle = "rgb(200, 200, 200)";
+	ctx.strokeStyle = "rgb(200, 200, 200)";
+	ctx.lineWidth = 3;
 	
 	var pos = new Vector(0.0, 0.0);
 	var width = 100;
@@ -140,5 +141,5 @@ Viewport.prototype.draw = function(ctx) {
 		height = this.height;
 	};
 	
-	ctx.fillRect(pos.x, pos.y, width, height);
+	ctx.strokeRect(pos.x-ctx.lineWidth, pos.y-ctx.lineWidth, width+(ctx.lineWidth*2), height+(ctx.lineWidth*2));
 };
