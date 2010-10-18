@@ -1,4 +1,9 @@
 $(function() {
+	// Firefox support
+	//window.WEB_SOCKET_DEBUG = true;
+	//window.WEB_SOCKET_SWF_LOCATION = "/experiments/rawkets/js/socket.io/lib/vendor/web-socket-js/WebSocketMain.swf";
+	//io.setPath("/experiments/rawkets/js/socket.io/");
+
 	var game;
 	
 	/**

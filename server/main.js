@@ -45,12 +45,21 @@ function init() {
 						players.push(p.init(client.sessionId, json.x, json.y, json.angle));
 						break;
 					case "updatePlayer":
-						client.broadcast(formatMessage("updatePlayer", {id: client.sessionId, x: json.x, y: json.y, angle: json.angle}));
-						
-						var player = players[indexOfByPlayerId(client.sessionId)];
-						player.x = json.x;
-						player.y = json.y;
-						player.angle = json.angle;
+						var player;
+						try {
+							player = playerById(client.sessionId);
+							if (player) {
+								player.x = json.x;
+								player.y = json.y;
+								player.angle = json.angle;
+								client.broadcast(formatMessage("updatePlayer", {id: client.sessionId, x: json.x, y: json.y, angle: json.angle}));
+							} else {
+								console.log("Player doesn't exist: ", client.sessionId);
+							}
+						} catch (e) {
+							console.log("Caught error during player update: ", e);
+							console.log("Player: ", player);
+						};
 						break;
 					default:
 						sys.log("Incoming message ["+client.sessionId+"]: ");
@@ -79,7 +88,7 @@ function init() {
  */
 function playerById(id) {
 	for (var i = 0; i < players.length; i++) {
-		if (players[i].id = id)
+		if (players[i].id == id)
 			return players[i];
 	}	
 }
