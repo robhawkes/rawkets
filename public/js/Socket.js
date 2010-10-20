@@ -10,11 +10,13 @@
  */
 var Socket = function() {
 	// Initialise Socket.IO object
-	this.io = new io.Socket(null, {port: 8080, transports: ["websocket"]});
+	//this.io = new io.Socket(null, {port: 8080, transports: ["websocket"]});
+	this.socket = new WebSocket("ws://localhost:8080");
 
 	// Connect to socket server
-	this.io.connect();
+	//this.io.connect();
 	
 	// Return socket object
-	return this.io;
+	//return this.io;
+	return this.socket;
 };
