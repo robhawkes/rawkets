@@ -33,15 +33,15 @@ Game.prototype.initSocketListeners = function() {
 	// Horrible passing of game object due to event closure
 	var self = this;
 	
-	this.socket.on("connect", function() {
+	this.socket.onopen = function() {
 		self.onSocketConnect();
-	});
-	this.socket.on("message", function(data) {
-		self.onSocketMessage(data);
-	});
-	this.socket.on("disconnect", function() {
+	};
+	this.socket.onmessage = function(msg) {
+		self.onSocketMessage(msg.data);
+	};
+	this.socket.onclose = function() {
 		self.onSocketDisconnect();
-	});
+	};
 };
 
 /**
@@ -67,13 +67,22 @@ Game.prototype.onSocketConnect = function() {
 /**
  * Event handler for socket messages
  */
-Game.prototype.onSocketMessage = function(data) {
+Game.prototype.onSocketMessage = function(msg) {
 	try {
-		var json = jQuery.parseJSON(data);
+		var json = jQuery.parseJSON(msg);
 		
 		// Only deal with messages using the correct protocol
 		if (json.type) {
 			switch (json.type) {
+				case "ping":
+					if (json.ts) {
+						this.socket.send(msg);
+					}
+					
+					if (json.ping) {
+						console.log("Ping: ", json.ping+"ms");
+					}
+					break;
 				case "newPlayer":
 					var player = new Player(json.x, json.y);
 					player.id = json.id;
