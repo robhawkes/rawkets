@@ -35,6 +35,19 @@ Player.prototype.update = function() {
 };
 
 /**
+ * Draw player
+ */
+Player.prototype.draw = function(ctx) {
+	this.rocket.draw(ctx);
+	
+	if (this.id) {
+		ctx.fillStyle = "rgb(255, 255, 255)";
+		ctx.font = "10px Courier";
+		ctx.fillText(this.id, this.rocket.pos.x+15, this.rocket.pos.y+2);
+	};
+};
+
+/**
  * Rotate player left
  */
 Player.prototype.rotateLeft = function() {
