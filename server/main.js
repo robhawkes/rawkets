@@ -33,6 +33,7 @@ function init() {
 						//util.log("Round trip: "+(newTimestamp-json.ts)+"ms");
 						var ping = newTimestamp-json.ts;
 						client.send(formatMessage("ping", {id: client.id, ping: ping}));
+						client.broadcast(formatMessage("updatePing", {id: client.id, ping: ping}));
 						util.log("PING ["+client.id+"]: "+ping);
 						sendPing(client);
 						break;
@@ -42,7 +43,7 @@ function init() {
 						// Send data for existing players
 						if (players.length > 0) {
 							for (var player in players) {
-								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle}));
+								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping}));
 							}
 						}
 						
@@ -57,7 +58,7 @@ function init() {
 								player.x = json.x;
 								player.y = json.y;
 								player.angle = json.angle;
-								client.broadcast(formatMessage("updatePlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle}));
+								client.broadcast(formatMessage("updatePlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, ping: json.ping}));
 							} else {
 								console.log("Player doesn't exist: ", client.id);
 							}

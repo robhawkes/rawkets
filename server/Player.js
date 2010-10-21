@@ -12,6 +12,7 @@ var Player = function(id, x, y, angle) {
 	this.x = x;
 	this.y = y;
 	this.angle = angle;
+	this.ping = 0;
 }
 
 /**
