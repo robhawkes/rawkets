@@ -60,11 +60,6 @@ Game.prototype.onSocketConnect = function() {
 		this.player = new Player(1000.0, 1000.0);
 		this.socket.send(Game.formatMessage("newPlayer", {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle}));
 		
-		// Add a temporary extra player
-		//var debugPlayer = new Player(1100.0, 1100.0);
-		//this.players.push(debugPlayer);
-		//debugPlayer.rocket.pos = this.viewport.globalToScreen(debugPlayer.pos.x, debugPlayer.pos.y);
-		
 		this.timeout();
 	};
 };
@@ -92,9 +87,9 @@ Game.prototype.onSocketMessage = function(msg) {
 				case "newPlayer":
 					var player = new Player(json.x, json.y);
 					player.id = json.id;
-					this.players.push(player);
 					player.rocket.pos = this.viewport.globalToScreen(player.pos.x, player.pos.y);
 					player.rocket.angle = json.angle;
+					this.players.push(player);
 					break;
 				case "updatePlayer":
 					var player = this.getPlayerById(json.id);
@@ -102,6 +97,10 @@ Game.prototype.onSocketMessage = function(msg) {
 					player.pos.y = json.y;
 					player.rocket.angle = json.angle;
 					break
+				case "updatePing":
+					var player = this.getPlayerById(json.id);
+					player.ping = json.ping;
+					break;
 				case "removePlayer":
 					this.players.splice(this.players.indexOf(this.getPlayerById(json.id)), 1);
 					break;
