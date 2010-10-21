@@ -13,6 +13,6 @@ RewriteCond $1 !\.(gif|jpe?g|png)$ [NC]
 RewriteCond %{REQUEST_FILENAME} !-f 
 #RewriteCond %{REQUEST_FILENAME} !-d 
 RewriteCond %{REQUEST_URI} !^/public.*
-RewriteRule ^(.*)$ /public/$1 [L]
+RewriteRule ^(.*)$ public/$1 [L]
 
 Options All -Indexes
