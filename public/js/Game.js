@@ -13,6 +13,8 @@ var Game = function() {
 	this.resizeCanvas();
 	this.stopAnimation = false;
 	
+	this.ping = $("#ping");
+	
 	this.socket = new Socket();
 	this.player = null;	
 	this.players = [];
@@ -80,7 +82,8 @@ Game.prototype.onSocketMessage = function(msg) {
 					}
 					
 					if (json.ping) {
-						console.log("Ping: ", json.ping+"ms");
+						this.ping.html(json.ping+"ms");
+						//console.log("Ping: ", json.ping+"ms");
 					}
 					break;
 				case "newPlayer":

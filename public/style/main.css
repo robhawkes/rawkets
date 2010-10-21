@@ -13,3 +13,10 @@ html, body {
 	display: block;
 	position: absolute;
 }
+
+#ping {
+	bottom: 20px;
+	color: #fff;
+	position: absolute;
+	right: 20px;
+}
