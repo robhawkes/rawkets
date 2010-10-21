@@ -1,4 +1,4 @@
-var util = require("util");
+var util = require("sys");
 var	ws = require("websocket-server");
 var player = require("./Player");
 var socket;
@@ -16,8 +16,9 @@ function init() {
 	
 	// On incoming connection from client
 	socket.addListener("connection", function(client) {
-		var p = player;
+		util.log("CONNECT: "+client.id);
 		
+		var p = player;
 		sendPing(client);
 		
 		// On incoming message from client
@@ -30,7 +31,9 @@ function init() {
 					case "ping":
 						var newTimestamp = new Date().getTime();
 						//util.log("Round trip: "+(newTimestamp-json.ts)+"ms");
-						client.send(formatMessage("ping", {ping: newTimestamp-json.ts}))
+						var ping = newTimestamp-json.ts;
+						client.send(formatMessage("ping", {id: client.id, ping: ping}));
+						util.log("PING ["+client.id+"]: "+ping);
 						sendPing(client);
 						break;
 					case "newPlayer":
@@ -49,7 +52,7 @@ function init() {
 					case "updatePlayer":
 						var player;
 						try {
-							player = playerById(client.id);
+							player = players[indexOfByPlayerId(client.id)];
 							if (player) {
 								player.x = json.x;
 								player.y = json.y;
@@ -74,8 +77,9 @@ function init() {
 		
 		// On client disconnect
 		client.addListener("close", function(){
-			players.splice(indexOfByPlayerId(client.sessionId), 1);
-			client.broadcast(formatMessage("removePlayer", {id: client.sessionId}));
+			util.log("CLOSE: "+client.id);
+			players.splice(indexOfByPlayerId(client.id), 1);
+			client.broadcast(formatMessage("removePlayer", {id: client.id}));
 		});	
 	});
 	
@@ -88,7 +92,7 @@ function sendPing(client) {
 	setTimeout(function() {
 		var timestamp = new Date().getTime();
 		client.send(formatMessage("ping", {ts: timestamp.toString()}));
-	}, 1000);
+	}, 3000);
 }
 
 /**

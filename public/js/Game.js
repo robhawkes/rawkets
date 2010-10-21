@@ -14,6 +14,7 @@ var Game = function() {
 	this.stopAnimation = false;
 	
 	this.ping = $("#ping");
+	this.offline = $("#offline");
 	
 	this.socket = new Socket();
 	this.player = null;	
@@ -52,6 +53,8 @@ Game.prototype.initSocketListeners = function() {
 Game.prototype.onSocketConnect = function() {
 	console.log("Socket connected");
 	
+	this.offline.fadeOut();
+	
 	// Initialise player object if one doesn't exist yet
 	if (this.player == null) {
 		this.player = new Player(1000.0, 1000.0);
@@ -82,7 +85,7 @@ Game.prototype.onSocketMessage = function(msg) {
 					}
 					
 					if (json.ping) {
-						this.ping.html(json.ping+"ms");
+						this.ping.html("ID: "+json.id+" - "+json.ping+"ms");
 						//console.log("Ping: ", json.ping+"ms");
 					}
 					break;
@@ -120,6 +123,7 @@ Game.prototype.onSocketMessage = function(msg) {
  */
 Game.prototype.onSocketDisconnect = function() {
 	console.log("Socket disconnected");
+	this.offline.fadeIn();
 };
 
 /**
@@ -220,7 +224,7 @@ Game.prototype.draw = function() {
 		star.draw(this.ctx);
 	};
 	
-	this.player.rocket.draw(this.ctx);
+	this.player.draw(this.ctx);
 	
 	var playersLength = this.players.length;
 	for (var i = 0; i < playersLength; i++) {
@@ -231,7 +235,7 @@ Game.prototype.draw = function() {
 		
 		// Player is within viewport bounds
 		if (this.viewport.withinBounds(player.pos.x, player.pos.y)) {
-			player.rocket.draw(this.ctx);
+			player.draw(this.ctx);
 		// Player is outside of the viewport
 		} else {
 			// Draw an arrow at the edge of the viewport indicating where the player is

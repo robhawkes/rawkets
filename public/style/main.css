@@ -14,6 +14,17 @@ html, body {
 	position: absolute;
 }
 
+#offline {
+	color: #fff;
+	font-family: Georgia, serif;
+	font-size: 40px;
+	margin-top: -20px;
+	position: absolute;
+	top: 50%;
+	text-align: center;
+	width: 100%;
+}
+
 #ping {
 	bottom: 20px;
 	color: #fff;
