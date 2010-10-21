@@ -60,11 +60,11 @@ function init() {
 								player.angle = json.angle;
 								client.broadcast(formatMessage("updatePlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, ping: json.ping}));
 							} else {
-								console.log("Player doesn't exist: ", client.id);
+								//console.log("Player doesn't exist: ", client.id);
 							}
 						} catch (e) {
-							console.log("Caught error during player update: ", e);
-							console.log("Player: ", player);
+							//console.log("Caught error during player update: ", e);
+							//console.log("Player: ", player);
 						};
 						break;
 					default:
