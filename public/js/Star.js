@@ -28,7 +28,7 @@ Star.prototype.update = function(movementDelta) {
 Star.prototype.draw = function(ctx) {
 	ctx.fillStyle = "rgb(255, 255, 255)";
 	ctx.beginPath();
-	ctx.arc(this.pos.x, this.pos.y, (this.z*10), 0, Math.PI*2);
+	ctx.arc(this.pos.x, this.pos.y, (this.z*10), 0, Math.PI*2, false);
 	ctx.closePath();
 	ctx.fill();
 };
