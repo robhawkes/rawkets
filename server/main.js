@@ -16,7 +16,7 @@ function init() {
 	
 	// On incoming connection from client
 	socket.addListener("connection", function(client) {
-		util.log("CONNECT: "+client.id);
+		//util.log("CONNECT: "+client.id);
 		
 		var p = player;
 		sendPing(client);
@@ -30,11 +30,11 @@ function init() {
 				switch (json.type) {
 					case "ping":
 						var newTimestamp = new Date().getTime();
-						//util.log("Round trip: "+(newTimestamp-json.ts)+"ms");
+						////util.log("Round trip: "+(newTimestamp-json.ts)+"ms");
 						var ping = newTimestamp-json.ts;
 						client.send(formatMessage("ping", {id: client.id, ping: ping}));
 						client.broadcast(formatMessage("updatePing", {id: client.id, ping: ping}));
-						util.log("PING ["+client.id+"]: "+ping);
+						//util.log("PING ["+client.id+"]: "+ping);
 						sendPing(client);
 						break;
 					case "newPlayer":
@@ -68,7 +68,7 @@ function init() {
 						};
 						break;
 					default:
-						util.log("Incoming message ["+client.id+"]:", json);
+						//util.log("Incoming message ["+client.id+"]:", json);
 				};
 			// Invalid message protocol
 			} else {
@@ -78,7 +78,7 @@ function init() {
 		
 		// On client disconnect
 		client.addListener("close", function(){
-			util.log("CLOSE: "+client.id);
+			//util.log("CLOSE: "+client.id);
 			players.splice(indexOfByPlayerId(client.id), 1);
 			client.broadcast(formatMessage("removePlayer", {id: client.id}));
 		});	
@@ -86,7 +86,7 @@ function init() {
 	
 	// Start listening for WebSocket connections
 	socket.listen(8080);
-	util.log("Server listening on port 8080");
+	//util.log("Server listening on port 8080");
 };
 
 function sendPing(client) {
