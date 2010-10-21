@@ -51,7 +51,7 @@ Game.prototype.initSocketListeners = function() {
  * Event handler for socket connection
  */
 Game.prototype.onSocketConnect = function() {
-	console.log("Socket connected");
+	//console.log("Socket connected");
 	
 	this.offline.fadeOut();
 	
@@ -105,7 +105,7 @@ Game.prototype.onSocketMessage = function(msg) {
 					this.players.splice(this.players.indexOf(this.getPlayerById(json.id)), 1);
 					break;
 				default:
-					console.log("Incoming message:", json);
+					//console.log("Incoming message:", json);
 			};
 		// Invalid message protocol
 		} else {
@@ -121,7 +121,7 @@ Game.prototype.onSocketMessage = function(msg) {
  * Event handler for socket disconnection
  */
 Game.prototype.onSocketDisconnect = function() {
-	console.log("Socket disconnected");
+	//console.log("Socket disconnected");
 	this.offline.fadeIn();
 };
 
