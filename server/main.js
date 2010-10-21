@@ -15,14 +15,14 @@ function init() {
 	players = [];
 	
 	// On incoming connection from client
-	socket.addListener("connection", function(client) {
+	socket.on("connection", function(client) {
 		//util.log("CONNECT: "+client.id);
 		
 		var p = player;
 		sendPing(client);
 		
 		// On incoming message from client
-		client.addListener("message", function(msg) {
+		client.on("message", function(msg) {
 			var json = JSON.parse(msg);
 			
 			// Only deal with messages using the correct protocol
@@ -77,11 +77,16 @@ function init() {
 		});
 		
 		// On client disconnect
-		client.addListener("close", function(){
+		client.on("close", function(){
 			//util.log("CLOSE: "+client.id);
 			players.splice(indexOfByPlayerId(client.id), 1);
 			client.broadcast(formatMessage("removePlayer", {id: client.id}));
 		});	
+	});
+	
+	// Catch socket error
+	socket.on("error", function(err) {
+		// Do error mitigation
 	});
 	
 	// Start listening for WebSocket connections
