@@ -2,8 +2,6 @@
 #Options +FollowSymlinks
 #RewriteEngine on
 #RewriteCond %{REQUEST_URI} !/offline/index.html$
-#RewriteCond %{REQUEST_URI} !/offline/splash_bg_stars.jpg$
-#RewriteCond %{REQUEST_URI} !/offline/rawkes_logo.gif$
 #RewriteCond %{REMOTE_HOST} !^87\.194\.135\.193
 #RewriteRule $ /offline/index.html [R=302,L]
 
@@ -11,13 +9,10 @@ RewriteEngine On
 
 RewriteRule ^.git - [F,L]
 
-#RewriteRule ^/*$ public/index.html [L]
-
 RewriteCond $1 !\.(gif|jpe?g|png)$ [NC]
 RewriteCond %{REQUEST_FILENAME} !-f 
 #RewriteCond %{REQUEST_FILENAME} !-d 
 RewriteCond %{REQUEST_URI} !^/public.*
 RewriteRule ^(.*)$ /public/$1 [L]
-#RewriteRule ^/*$ /public/ [L]
 
 Options All -Indexes
