@@ -9,7 +9,8 @@ var players;
  */
 function init() {
 	// Initialise WebSocket server
-	socket = ws.createServer({debug: true});
+	//socket = ws.createServer({debug: true});
+	socket = ws.createServer();
 	
 	players = [];
 	
@@ -32,7 +33,7 @@ function init() {
 						client.send(formatMessage("ping", {ping: newTimestamp-json.ts}))
 						sendPing(client);
 						break;
-					/*case "newPlayer":
+					case "newPlayer":
 						client.broadcast(formatMessage("newPlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle}));
 						
 						// Send data for existing players
@@ -61,7 +62,7 @@ function init() {
 							console.log("Caught error during player update: ", e);
 							console.log("Player: ", player);
 						};
-						break;*/
+						break;
 					default:
 						util.log("Incoming message ["+client.id+"]:", json);
 				};
@@ -73,8 +74,8 @@ function init() {
 		
 		// On client disconnect
 		client.addListener("close", function(){
-			//players.splice(indexOfByPlayerId(client.sessionId), 1);
-			//client.broadcast(formatMessage("removePlayer", {id: client.sessionId}));
+			players.splice(indexOfByPlayerId(client.sessionId), 1);
+			client.broadcast(formatMessage("removePlayer", {id: client.sessionId}));
 		});	
 	});
 	
