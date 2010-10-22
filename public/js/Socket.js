@@ -10,7 +10,7 @@
  */
 var Socket = function() {
 	// Initialise WebSocket
-	this.socket = new WebSocket("ws://"+document.location.host+":8080");
+	this.socket = new WebSocket("ws://"+document.location.host+":8000");
 	
 	// Return socket object
 	return this.socket;
