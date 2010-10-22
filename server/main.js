@@ -20,6 +20,16 @@ function init() {
 	socket.on("connection", function(client) {
 		util.log("CONNECT: "+client.id);
 		
+		util.log(client._req.socket.remoteAddress);
+		
+		/*var ip_address = "";
+		try {
+			//ip_address = socket.headers['x-forwarded-for'];
+		} catch (e) {
+			//ip_address = client.remoteAddress;
+		};
+		util.log(ip_address);*/
+		
 		var p = player;
 		sendPing(client);
 		
