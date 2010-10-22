@@ -63,12 +63,12 @@ function init() {
 						
 						client.send(formatMessage("setColour", {colour: colour}));
 						
-						client.broadcast(formatMessage("newPlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, color: colour}));
+						client.broadcast(formatMessage("newPlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, colour: colour}));
 						
 						// Send data for existing players
 						if (players.length > 0) {
 							for (var player in players) {
-								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, color: players[player].colour}));
+								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour}));
 							};
 						};
 						
