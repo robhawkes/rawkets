@@ -53,6 +53,10 @@ function init() {
 						var colour = "rgb(0, 255, 0)";
 						var name = client.id;
 						switch (client._req.socket.remoteAddress) {
+							case "213.104.213.216" // John
+								colour = "rgb(255, 255, 0)";
+								name = "John";
+								break;
 							case "93.97.234.238": // Hannah
 								colour = "rgb(199, 68, 145)";
 								name = "ErisDS";
