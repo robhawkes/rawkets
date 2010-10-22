@@ -12,6 +12,7 @@
 var Player = function(x, y) {
 	this.id;
 	this.move = false;
+	this.name;
 	this.ping = 0;
 	this.pos = new Vector(x, y);
 	this.rocket = new Rocket();
@@ -44,7 +45,7 @@ Player.prototype.draw = function(ctx) {
 	if (this.id) {
 		ctx.fillStyle = "rgb(255, 255, 255)";
 		ctx.font = "10px Courier";
-		ctx.fillText(this.id+" | "+this.ping+"ms", this.rocket.pos.x+15, this.rocket.pos.y+2);
+		ctx.fillText(this.name+" | "+this.ping+"ms", this.rocket.pos.x+15, this.rocket.pos.y+2);
 	};
 };
 

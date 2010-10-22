@@ -92,6 +92,7 @@ Game.prototype.onSocketMessage = function(msg) {
 				case "newPlayer":
 					var player = new Player(json.x, json.y);
 					player.id = json.id;
+					player.name = json.name;
 					player.rocket.pos = this.viewport.globalToScreen(player.pos.x, player.pos.y);
 					player.rocket.angle = json.angle;
 					player.rocket.colour = json.colour;
