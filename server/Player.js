@@ -6,13 +6,15 @@
  * @param {Number} x Horizontal position of the player
  * @param {Number} y Vertical position of the player
  * @param {Number} angle Angle of the player
+ * @param {String} colour Colour of the player
  */
-var Player = function(id, x, y, angle) {
+var Player = function(id, x, y, angle, colour) {
 	this.id = id;
 	this.x = x;
 	this.y = y;
 	this.angle = angle;
 	this.ping = 0;
+	this.colour = colour;
 }
 
 /**
@@ -22,9 +24,10 @@ var Player = function(id, x, y, angle) {
  * @param {Number} x Horizontal position of the player
  * @param {Number} y Vertical position of the player
  * @param {Number} angle Angle of the player
+ * @param {String} colour Colour of the player
  * @type Player
  * @returns An instance of Player.
  */
-exports.init = function(id, x, y, angle) {
-	return new Player(id, x, y, angle);
+exports.init = function(id, x, y, angle, colour) {
+	return new Player(id, x, y, angle, colour);
 }

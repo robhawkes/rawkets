@@ -76,6 +76,9 @@ Game.prototype.onSocketMessage = function(msg) {
 		// Only deal with messages using the correct protocol
 		if (json.type) {
 			switch (json.type) {
+				case "setColour":
+					this.player.rocket.colour = json.colour;
+					break;
 				case "ping":
 					if (json.ts) {
 						this.socket.send(msg);
@@ -91,6 +94,7 @@ Game.prototype.onSocketMessage = function(msg) {
 					player.id = json.id;
 					player.rocket.pos = this.viewport.globalToScreen(player.pos.x, player.pos.y);
 					player.rocket.angle = json.angle;
+					player.rocket.colour = json.colour;
 					this.players.push(player);
 					break;
 				case "updatePlayer":
