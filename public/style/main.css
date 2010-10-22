@@ -16,6 +16,19 @@ html, body {
 
 #offline {
 	color: #fff;
+	display: none;
+	font-family: Georgia, serif;
+	font-size: 40px;
+	margin-top: -20px;
+	position: absolute;
+	top: 50%;
+	text-align: center;
+	width: 100%;
+}
+
+#support {
+	color: #fff;
+	display: none;
 	font-family: Georgia, serif;
 	font-size: 40px;
 	margin-top: -20px;
