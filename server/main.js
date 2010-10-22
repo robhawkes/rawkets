@@ -20,16 +20,6 @@ function init() {
 	socket.on("connection", function(client) {
 		util.log("CONNECT: "+client.id);
 		
-		util.log(client._req.socket.remoteAddress);
-		
-		/*var ip_address = "";
-		try {
-			//ip_address = socket.headers['x-forwarded-for'];
-		} catch (e) {
-			//ip_address = client.remoteAddress;
-		};
-		util.log(ip_address);*/
-		
 		var p = player;
 		sendPing(client);
 		
@@ -60,17 +50,30 @@ function init() {
 						sendPing(client);
 						break;
 					case "newPlayer":
-						client.broadcast(formatMessage("newPlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle}));
+						var colour = "rgb(0, 255, 0)";
+						switch (client._req.socket.remoteAddress) {
+							case "93.97.234.238": // Hannah
+								colour = "rgb(199, 68, 145)";
+								break;
+							case "87.194.135.193": // Me
+							case "127.0.0.1": // Me
+								colour = "rgb(217, 65, 30)";
+								break;
+						};
+						
+						client.send(formatMessage("setColour", {colour: colour}));
+						
+						client.broadcast(formatMessage("newPlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, color: colour}));
 						
 						// Send data for existing players
 						if (players.length > 0) {
 							for (var player in players) {
-								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping}));
-							}
-						}
+								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, color: players[player].colour}));
+							};
+						};
 						
 						// Add new player to the stack
-						players.push(p.init(client.id, json.x, json.y, json.angle));
+						players.push(p.init(client.id, json.x, json.y, json.angle, colour));
 						break;
 					case "updatePlayer":
 						var player;
@@ -83,7 +86,7 @@ function init() {
 								client.broadcast(formatMessage("updatePlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, ping: json.ping}));
 							} else {
 								console.log("Player doesn't exist: ", client.id);
-							}
+							};
 						} catch (e) {
 							console.log("Caught error during player update: ", e);
 							console.log("Player: ", player);

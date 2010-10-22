@@ -9,6 +9,7 @@
  */
 var Rocket = function() {
 	this.angle = 0;
+	this.colour = "rgb(0, 255, 0)";
 	this.pos = new Vector($(window).width()/2, $(window).height()/2);
 	this.rotateLeft = false;
 	this.rotateRight = false;
@@ -34,7 +35,7 @@ Rocket.prototype.draw = function(ctx) {
 	ctx.translate(this.pos.x, this.pos.y);
 	ctx.rotate(this.angle);
 	
-	ctx.fillStyle = "rgb(0, 255, 0)";
+	ctx.fillStyle = this.colour;
 	ctx.beginPath();
 	/*ctx.moveTo(this.pos.x, this.pos.y);
 	ctx.lineTo(this.pos.x+5, this.pos.y+10);
