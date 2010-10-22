@@ -51,13 +51,16 @@ function init() {
 						break;
 					case "newPlayer":
 						var colour = "rgb(0, 255, 0)";
+						var name = client.id;
 						switch (client._req.socket.remoteAddress) {
 							case "93.97.234.238": // Hannah
 								colour = "rgb(199, 68, 145)";
+								name = "ErisDS";
 								break;
 							case "87.194.135.193": // Me
 							case "127.0.0.1": // Me
 								colour = "rgb(217, 65, 30)";
+								name = "Rob";
 								break;
 						};
 						
@@ -68,12 +71,12 @@ function init() {
 						// Send data for existing players
 						if (players.length > 0) {
 							for (var player in players) {
-								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour}));
+								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour, name: players[player].name}));
 							};
 						};
 						
 						// Add new player to the stack
-						players.push(p.init(client.id, json.x, json.y, json.angle, colour));
+						players.push(p.init(client.id, json.x, json.y, json.angle, colour, name));
 						break;
 					case "updatePlayer":
 						var player;
