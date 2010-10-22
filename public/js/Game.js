@@ -27,6 +27,8 @@ var Game = function() {
 	};
  	
 	this.initSocketListeners();
+	
+	this.canvas.fadeIn();
 };
 
 /**
@@ -421,6 +423,5 @@ Game.formatMessage = function(type, args) {
 Game.prototype.resizeCanvas = function(e) {
 	// Horrible passing of game object due to event closure
 	var self = (e != null) ? e.data.self : this;
-	
 	self.canvas.attr({height: $(window).height(), width: $(window).width()});
 };

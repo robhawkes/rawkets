@@ -7,10 +7,14 @@ html, body {
 	height: 100%;
 }
 
+body {
+	background-color: #001429;
+}
+
 #canvas {
 	background-color: #001429;
 	background: -webkit-gradient(linear, left top, left bottom, from(#000306), to(#001429));
-	display: block;
+	display: none;
 	position: absolute;
 }
 
