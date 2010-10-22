@@ -1,5 +1,5 @@
 /**
- * Wrapper for Socket.IO functionality
+ * Wrapper for WebSocket functionality
  *
  * @author Rob Hawkes
  * @requires io.Socket

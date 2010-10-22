@@ -10,9 +10,14 @@ $(function() {
 	 * Initialises client-side functionality
 	 */
 	function init() {
-		game = new Game();
-		
-		initListeners();
+		if ("WebSocket" in window) {
+			// WebSockets supported
+			game = new Game();
+			initListeners();
+		} else {
+			// WebSockets not supported
+			$("#support").fadeIn();
+		};
 	};
 	
 	/**
