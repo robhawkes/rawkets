@@ -2,6 +2,7 @@ var util = require("sys");
 var	ws = require("websocket-server");
 var player = require("./Player");
 var socket;
+var serverStart;
 var players;
 
 /**
@@ -11,12 +12,13 @@ function init() {
 	// Initialise WebSocket server
 	//socket = ws.createServer({debug: true});
 	socket = ws.createServer();
+	serverStart = new Date().getTime();
 	
 	players = [];
 	
 	// On incoming connection from client
 	socket.on("connection", function(client) {
-		//util.log("CONNECT: "+client.id);
+		util.log("CONNECT: "+client.id);
 		
 		var p = player;
 		sendPing(client);
@@ -30,11 +32,21 @@ function init() {
 				switch (json.type) {
 					case "ping":
 						var newTimestamp = new Date().getTime();
-						////util.log("Round trip: "+(newTimestamp-json.ts)+"ms");
+						//util.log("Round trip: "+(newTimestamp-json.ts)+"ms");
 						var ping = newTimestamp-json.ts;
+						
+						// Send ping back to player
 						client.send(formatMessage("ping", {id: client.id, ping: ping}));
+						
+						// Broadcast ping to other players
 						client.broadcast(formatMessage("updatePing", {id: client.id, ping: ping}));
-						//util.log("PING ["+client.id+"]: "+ping);
+						
+						// Log ping to server after every 10 seconds
+						if ((newTimestamp-serverStart) % 10000 <= 3000) {
+							util.log("PING ["+client.id+"]: "+ping);
+						};
+						
+						// Request a new ping
 						sendPing(client);
 						break;
 					case "newPlayer":
@@ -60,15 +72,15 @@ function init() {
 								player.angle = json.angle;
 								client.broadcast(formatMessage("updatePlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, ping: json.ping}));
 							} else {
-								//console.log("Player doesn't exist: ", client.id);
+								console.log("Player doesn't exist: ", client.id);
 							}
 						} catch (e) {
-							//console.log("Caught error during player update: ", e);
-							//console.log("Player: ", player);
+							console.log("Caught error during player update: ", e);
+							console.log("Player: ", player);
 						};
 						break;
 					default:
-						//util.log("Incoming message ["+client.id+"]:", json);
+						util.log("Incoming message ["+client.id+"]:", json);
 				};
 			// Invalid message protocol
 			} else {
@@ -78,7 +90,7 @@ function init() {
 		
 		// On client disconnect
 		client.on("close", function(){
-			//util.log("CLOSE: "+client.id);
+			util.log("CLOSE: "+client.id);
 			players.splice(indexOfByPlayerId(client.id), 1);
 			client.broadcast(formatMessage("removePlayer", {id: client.id}));
 		});	
@@ -91,7 +103,7 @@ function init() {
 	
 	// Start listening for WebSocket connections
 	socket.listen(8080);
-	//util.log("Server listening on port 8080");
+	util.log("Server listening on port 8080");
 };
 
 function sendPing(client) {
