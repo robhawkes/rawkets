@@ -102,8 +102,8 @@ function init() {
 	});
 	
 	// Start listening for WebSocket connections
-	socket.listen(8080);
-	util.log("Server listening on port 8080");
+	socket.listen(8000);
+	util.log("Server listening on port 8000");
 };
 
 function sendPing(client) {
