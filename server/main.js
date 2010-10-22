@@ -66,7 +66,7 @@ function init() {
 						
 						client.send(formatMessage("setColour", {colour: colour}));
 						
-						client.broadcast(formatMessage("newPlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, colour: colour}));
+						client.broadcast(formatMessage("newPlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, colour: colour, name: name}));
 						
 						// Send data for existing players
 						if (players.length > 0) {
