@@ -11,8 +11,14 @@
 	<body>
 		<canvas id="canvas" width="400" height="400"></canvas>
 		<p id="ping"></p>
-		<p id="offline">Sorry, Rawkets is offline at the moment.</p>
-		<p id="support">Sorry, your browser doesn't support WebSockets.</p>
+		<div id="offline">
+			<h1>Sorry, Rawkets is offline at the moment.</h1>
+			<p>Please try again in 5 minutes.</p>
+		</div>
+		<div id="support">
+			<h1>Sorry, your browser doesn't support WebSockets.</h1>
+			<p>Supported browsers are Safari, Chrome and Firefox 4 beta.</p>
+		</div>
 		
 		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>-->
 		<!--<script src="http://cdn.socket.io/stable/socket.io.js"></script>-->

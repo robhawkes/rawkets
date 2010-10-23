@@ -11,6 +11,22 @@ body {
 	background-color: #001429;
 }
 
+h1 {
+	color: #fff;
+	font-family: Georgia, serif;
+	font-size: 60px;
+	margin: 20px 100px;
+	text-align: center;
+}
+
+p {
+	color: #fff;
+	font-family: Georgia, serif;
+	font-size: 40px;
+	margin: 20px 100px;
+	text-align: center;
+}
+
 #canvas {
 	background-color: #001429;
 	background: -webkit-gradient(linear, left top, left bottom, from(#000306), to(#001429));
@@ -19,26 +35,18 @@ body {
 }
 
 #offline {
-	color: #fff;
 	display: none;
-	font-family: Georgia, serif;
-	font-size: 40px;
-	margin-top: -20px;
+	margin-top: -60px;
 	position: absolute;
 	top: 50%;
-	text-align: center;
 	width: 100%;
 }
 
 #support {
-	color: #fff;
 	display: none;
-	font-family: Georgia, serif;
-	font-size: 40px;
-	margin-top: -20px;
+	margin-top: -60px;
 	position: absolute;
 	top: 50%;
-	text-align: center;
 	width: 100%;
 }
 
