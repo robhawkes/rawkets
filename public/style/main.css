@@ -1,0 +1,61 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+
+html, body {
+	height: 100%;
+}
+
+body {
+	background-color: #001429;
+}
+
+h1 {
+	color: #fff;
+	font-family: Georgia, serif;
+	font-size: 60px;
+	margin: 20px 100px;
+	text-align: center;
+}
+
+p {
+	color: #fff;
+	font-family: Georgia, serif;
+	font-size: 40px;
+	margin: 20px 100px;
+	text-align: center;
+}
+
+#canvas {
+	background-color: #001429;
+	background: -webkit-gradient(linear, left top, left bottom, from(#000306), to(#001429));
+	display: none;
+	position: absolute;
+}
+
+#offline {
+	display: none;
+	margin-top: -60px;
+	position: absolute;
+	top: 50%;
+	width: 100%;
+}
+
+#support {
+	display: none;
+	margin-top: -60px;
+	position: absolute;
+	top: 50%;
+	width: 100%;
+}
+
+#ping {
+	bottom: 20px;
+	color: #fff;
+	font-size: 20px;
+	margin: 0;
+	position: absolute;
+	right: 20px;
+	text-align: left;
+}

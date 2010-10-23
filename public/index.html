@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+	<head>
+		<title>Rawkets | Rob Hawkes</title>
+		<meta charset="utf-8">		
+		<link rel="stylesheet" href="style/main.css">
+	</head>
+	
+	<body>
+		<canvas id="canvas" width="400" height="400"></canvas>
+		<p id="ping"></p>
+		<div id="offline">
+			<h1>Sorry, Rawkets is offline at the moment.</h1>
+			<p>Please try again in 5 minutes.</p>
+		</div>
+		<div id="support">
+			<h1>Sorry, your browser doesn't support WebSockets.</h1>
+			<p>Supported browsers are Safari, Chrome and Firefox 4 beta.</p>
+		</div>
+		
+		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>-->
+		<!--<script src="http://cdn.socket.io/stable/socket.io.js"></script>-->
+		
+		<script type="text/javascript" src="js/jquery/jquery-dev.js"></script>
+		
+		<script type="text/javascript" src="js/Socket.js"></script>
+		<script type="text/javascript" src="js/Vector.js"></script>
+		<script type="text/javascript" src="js/Rocket.js"></script>
+		<script type="text/javascript" src="js/Player.js"></script>
+		<script type="text/javascript" src="js/Viewport.js"></script>
+		<script type="text/javascript" src="js/Star.js"></script>
+		<script type="text/javascript" src="js/Game.js"></script>
+		<script type="text/javascript" src="js/main.js"></script>
+		
+		<!-- Observer App -->
+		<script type="text/javascript" src="http://www.observerapp.com/record.js"></script>
+		<script type="text/javascript">
+		try { Observerapp.record("4cc2aa5ba7b560500a05879c"); } catch(e) {};
+		</script>
+		
+		<!-- Woopra Code Start -->
+		<script type="text/javascript" src="//static.woopra.com/js/woopra.v2.js"></script>
+		<script type="text/javascript">
+		woopraTracker.track();
+		</script>
+		<!-- Woopra Code End -->
+	</body>
+
+</html>
