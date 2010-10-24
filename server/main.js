@@ -18,6 +18,12 @@ function init() {
 	
 	// On incoming connection from client
 	socket.on("connection", function(client) {
+		// Attempt to fix ECONNRESET errors
+		client._req.socket.on("error", function(err) {
+			// Do error mitigation
+			util.log("Socket error 1");
+		});
+		
 		util.log("CONNECT: "+client.id);
 		
 		var p = player;
@@ -120,6 +126,7 @@ function init() {
 	// Catch socket error
 	socket.on("error", function(err) {
 		// Do error mitigation
+		util.log("Socket error 2");
 	});
 	
 	// Start listening for WebSocket connections
