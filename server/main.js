@@ -19,6 +19,7 @@ function init() {
 	// On incoming connection from client
 	socket.on("connection", function(client) {
 		// Attempt to fix ECONNRESET errors
+		client._req.socket.removeAllListeners("error");
 		client._req.socket.on("error", function(err) {
 			// Do error mitigation
 			util.log("Socket error 1");
@@ -124,6 +125,7 @@ function init() {
 	});
 	
 	// Catch socket error
+	socket.removeAllListeners("error");
 	socket.on("error", function(err) {
 		// Do error mitigation
 		util.log("Socket error 2");
