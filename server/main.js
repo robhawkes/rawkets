@@ -70,17 +70,17 @@ function init() {
 						
 						client.send(formatMessage("setColour", {colour: colour}));
 						
-						client.broadcast(formatMessage("newPlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, colour: colour, name: name}));
+						client.broadcast(formatMessage("newPlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, colour: colour, name: name, trailWorld: json.trailWorld}));
 						
 						// Send data for existing players
 						if (players.length > 0) {
 							for (var player in players) {
-								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour, name: players[player].name}));
+								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour, name: players[player].name, trailWorld: players[player].trailWorld}));
 							};
 						};
 						
 						// Add new player to the stack
-						players.push(p.init(client.id, json.x, json.y, json.angle, colour, name));
+						players.push(p.init(client.id, json.x, json.y, json.angle, colour, json.trailWorld, name));
 						break;
 					case "updatePlayer":
 						var player;
@@ -90,7 +90,8 @@ function init() {
 								player.x = json.x;
 								player.y = json.y;
 								player.angle = json.angle;
-								client.broadcast(formatMessage("updatePlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, ping: json.ping}));
+								player.trailWorld = json.trailWorld;
+								client.broadcast(formatMessage("updatePlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, trailWorld: json.trailWorld}));
 							} else {
 								console.log("Player doesn't exist: ", client.id);
 							};

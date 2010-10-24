@@ -1,5 +1,5 @@
 /**
- * Viewport controls and global to local coordinate calculations
+ * Viewport controls and world to local coordinate calculations
  *
  * @author Rob Hawkes
  */
@@ -27,10 +27,10 @@ var Viewport = function(width, height) {
  * @type Boolean
  */
 Viewport.prototype.withinBounds = function(x, y) {
-	if (x > (this.pos.x - this.width/2)-10 && 
-		x < (this.pos.x + this.width/2)+10 &&
-		y > (this.pos.y - this.height/2)-10 &&
-		y < (this.pos.y + this.height/2)+10) {
+	if (x > (this.pos.x - this.width/2)-50 && 
+		x < (this.pos.x + this.width/2)+50 &&
+		y > (this.pos.y - this.height/2)-50 &&
+		y < (this.pos.y + this.height/2)+50) {
 		return true;	
 	}
 	
@@ -57,14 +57,14 @@ Viewport.prototype.withinWorldBounds = function(x, y) {
 };
 
 /**
- * Convert global coordinates to screen coordinates
+ * Convert world coordinates to screen coordinates
  *
  * @param {Number} x Horizontal position
  * @param {Number} y Vertical position
  * @returns Returns a vector object containing the screen coordinates
  * @type Vector
  */
-Viewport.prototype.globalToScreen = function(x, y) {
+Viewport.prototype.worldToScreen = function(x, y) {
 	var pos = new Vector(0.0, 0.0);
 	
 	pos.x = (this.pos.x - this.width/2) - x;
@@ -77,13 +77,13 @@ Viewport.prototype.globalToScreen = function(x, y) {
 };
 
 /**
- * Convert global X coordinate to screen X coordinate
+ * Convert world X coordinate to screen X coordinate
  *
  * @param {Number} x Horizontal position
  * @returns Returns the X screen coordinate
  * @type Number
  */
-Viewport.prototype.globalXToScreenX = function(x) {
+Viewport.prototype.worldXToScreenX = function(x) {
 	var x = (this.pos.x - this.width/2) - x;
 	x *= -1;
 		
@@ -91,13 +91,13 @@ Viewport.prototype.globalXToScreenX = function(x) {
 };
 
 /**
- * Convert global Y coordinate to screen Y coordinate
+ * Convert world Y coordinate to screen Y coordinate
  *
  * @param {Number} y Horizontal position
  * @returns Returns the Y screen coordinate
  * @type Number
  */
-Viewport.prototype.globalYToScreenY = function(y) {
+Viewport.prototype.worldYToScreenY = function(y) {
 	var y = (this.pos.y - this.height/2) - y;
 	y *= -1;
 	
@@ -118,25 +118,25 @@ Viewport.prototype.draw = function(ctx) {
 	var height = 100;
 	
 	if (0.0 > (this.pos.x - this.width/2)) {
-		pos.x = this.globalXToScreenX(0.0);
+		pos.x = this.worldXToScreenX(0.0);
 	} else {
 		pos.x = 0;
 	};
 	
 	if (0.0 > (this.pos.y - this.height/2)) {
-		pos.y = this.globalYToScreenY(0.0);
+		pos.y = this.worldYToScreenY(0.0);
 	} else {
 		pos.y = 0;
 	};
 	
 	if (this.worldWidth < (this.pos.x + this.width/2)) {
-		width = this.globalXToScreenX(this.worldWidth);
+		width = this.worldXToScreenX(this.worldWidth);
 	} else {
 		width = this.width;
 	};
 	
 	if (this.worldHeight < (this.pos.y + this.height/2)) {
-		height = this.globalYToScreenY(this.worldHeight);
+		height = this.worldYToScreenY(this.worldHeight);
 	} else {
 		height = this.height;
 	};

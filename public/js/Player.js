@@ -22,18 +22,61 @@ var Player = function(x, y) {
 /**
  * Update player
  */
-Player.prototype.update = function() {
+Player.prototype.update = function(viewport) {
 	this.sendUpdate = false;
 	
 	this.rocket.update();
 	
-	if (this.move) {
+	if (this.rocket.trailWorld.length > 0)
+		this.updateTrail(viewport);
+	
+	if (this.move) {	
+		// Add new trail to world array
+		this.rocket.trailWorld.push({pos: new Vector(this.pos.x, this.pos.y), opacity: 255});
+		
+		// Calculate offset of new trail from rocket based on world coordinates
+		if (this.rocket.trail > 0)
+			this.rocket.trail.push({pos: viewport.worldToScreen(this.pos.x, this.pos.y), opacity: 255});
+		
 		this.pos.x += 5*Math.sin(this.rocket.angle);
 		this.pos.y -= 5*Math.cos(this.rocket.angle);
 	};
 	
 	if (this.rocket.rotateRight || this.rocket.rotateLeft || this.move)
 		this.sendUpdate = true;
+};
+
+/**
+ * Update player trail
+ */
+Player.prototype.updateTrail = function (viewport) {
+	this.rocket.trail = [];
+	
+	// Recalculate existing trail
+	var trailWorldLength = this.rocket.trailWorld.length;
+	for (var i = 0; i < trailWorldLength; i++) {
+		var trail = this.rocket.trailWorld[i]
+		trail.opacity *= 0.6;
+		if (trail.opacity < 0.1) {
+			trail.opacity = 0;
+			continue;
+		};
+		// Calculate offset of existing trail from rocket based on world coordinates
+		this.rocket.trail.push({pos: viewport.worldToScreen(trail.pos.x, trail.pos.y), opacity: trail.opacity});
+	};
+	
+	// Remove trail elements that are no longer visible
+	for (var j = 0; j < trailWorldLength; j++) {
+		var trail = this.rocket.trailWorld[j];
+		
+		// Skip elements that don't exist
+		if (trail == null)
+			continue;
+		
+		if (trail.opacity == 0) {
+			this.rocket.trailWorld.splice(j, 1);
+		};
+	};	
 };
 
 /**
