@@ -38,6 +38,8 @@ function init() {
 			if (json.type) {
 				switch (json.type) {
 					case "ping":
+						var player = players[indexOfByPlayerId(client.id)];
+						player.age = 0; // Player is active
 						var newTimestamp = new Date().getTime();
 						//util.log("Round trip: "+(newTimestamp-json.ts)+"ms");
 						var ping = newTimestamp-json.ts;
@@ -124,15 +126,38 @@ function init() {
 		});	
 	});
 	
+	initPlayerActivityMonitor(players, socket);
+	
 	// Catch socket error – this listener seems to catch the ECONNRESET crashes sometimes. Although it seems that the client listener above catches them now.
-	socket.removeAllListeners("error");
+	/*socket.removeAllListeners("error");
 	socket.on("error", function(err) {
 		util.log("Socket error 2: "+err);
-	});
+	});*/
 	
 	// Start listening for WebSocket connections
 	socket.listen(8000);
 	util.log("Server listening on port 8000");
+};
+
+function initPlayerActivityMonitor(players, client) {
+	setInterval(function() {
+		if (players.length > 0) {
+			for (var player in players) {
+				// If player has been idle for over 30 seconds
+				if (players[player].age > 10) {
+					socket.manager.find(players[player].id, function(client) {
+						client.close(); // Disconnect player for being idle
+					});
+					
+					players.splice(indexOfByPlayerId(player.id), 1);
+					socket.broadcast(formatMessage("removePlayer", {id: client.id}));
+					continue;
+				};
+				
+				players[player].age += 1; // Increase player age due to inactivity
+			};
+		};
+	}, 3000);	
 };
 
 function sendPing(client) {
@@ -140,7 +165,7 @@ function sendPing(client) {
 		var timestamp = new Date().getTime();
 		client.send(formatMessage("ping", {ts: timestamp.toString()}));
 	}, 3000);
-}
+};
 
 /**
  * Find player by the player id
@@ -153,8 +178,8 @@ function playerById(id) {
 	for (var i = 0; i < players.length; i++) {
 		if (players[i].id == id)
 			return players[i];
-	}	
-}
+	};	
+};
 
 /**
  * Find index of player by the player id
@@ -167,9 +192,9 @@ function indexOfByPlayerId(id) {
 	for (var i = 0; i < players.length; i++) {
 		if (players[i].id == id) {
 			return i;
-		}
-	}	
-}
+		};
+	};	
+};
 
 /**
  * Format message using game protocols
