@@ -19,10 +19,10 @@ function init() {
 	// On incoming connection from client
 	socket.on("connection", function(client) {
 		// Attempt to fix ECONNRESET errors
+		// This listener is being called without causing any crashes. Good!
 		client._req.socket.removeAllListeners("error");
 		client._req.socket.on("error", function(err) {
-			// Do error mitigation
-			util.log("Socket error 1");
+			util.log("Socket error 1: "+err);
 		});
 		
 		util.log("CONNECT: "+client.id);
@@ -124,11 +124,10 @@ function init() {
 		});	
 	});
 	
-	// Catch socket error
+	// Catch socket error – this listener seems to catch the ECONNRESET crashes sometimes. Although it seems that the client listener above catches them now.
 	socket.removeAllListeners("error");
 	socket.on("error", function(err) {
-		// Do error mitigation
-		util.log("Socket error 2");
+		util.log("Socket error 2: "+err);
 	});
 	
 	// Start listening for WebSocket connections
