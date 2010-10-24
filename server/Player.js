@@ -19,6 +19,7 @@ var Player = function(id, x, y, angle, colour, trailWorld, name) {
 	this.ping = 0;
 	this.colour = colour;
 	this.trailWorld = trailWorld;
+	this.age = 0; // Used to detect timed-out players
 }
 
 /**
