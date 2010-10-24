@@ -28,7 +28,7 @@ Rocket.prototype.update = function() {
 		this.angle += this.rotationVelocity;
 	};
 
-	if (this.trailWorld && this.trailWorld.length > 10) {
+	if (this.trailWorld && this.trailWorld.length > 15) {
 		this.trailWorld.shift();
 	};
 };
