@@ -60,7 +60,7 @@ Game.prototype.onSocketConnect = function() {
 	// Initialise player object if one doesn't exist yet
 	if (this.player == null) {
 		this.player = new Player(1000.0, 1000.0);
-		this.socket.send(Game.formatMessage("newPlayer", {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle}));
+		this.socket.send(Game.formatMessage("newPlayer", {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle, trailWorld: this.player.rocket.trailWorld}));
 		
 		this.timeout();
 	};
@@ -93,9 +93,10 @@ Game.prototype.onSocketMessage = function(msg) {
 					var player = new Player(json.x, json.y);
 					player.id = json.id;
 					player.name = json.name;
-					player.rocket.pos = this.viewport.globalToScreen(player.pos.x, player.pos.y);
+					player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
 					player.rocket.angle = json.angle;
 					player.rocket.colour = json.colour;
+					player.rocket.trailWorld = json.trailWorld;
 					this.players.push(player);
 					break;
 				case "updatePlayer":
@@ -103,6 +104,7 @@ Game.prototype.onSocketMessage = function(msg) {
 					player.pos.x = json.x;
 					player.pos.y = json.y;
 					player.rocket.angle = json.angle;
+					player.rocket.trailWorld = json.trailWorld;
 					break
 				case "updatePing":
 					var player = this.getPlayerById(json.id);
@@ -156,7 +158,7 @@ Game.prototype.timeout = function() {
  * Update game elements
  */
 Game.prototype.update = function() {
-	this.player.update();
+	this.player.update(this.viewport); // Really shouldn't have to pass the viewport here
 	
 	if (!this.viewport.withinWorldBounds(this.player.pos.x, this.player.pos.y)) {
 		if (this.player.pos.x > this.viewport.worldWidth)
@@ -171,25 +173,8 @@ Game.prototype.update = function() {
 		if (this.player.pos.y < 0)
 			this.player.pos.y = 0;
 	};
-
-	var playersLength = this.players.length;
-	for (var i = 0; i < playersLength; i++) {
-		var player = this.players[i];
-		
-		if (player == null)
-			continue;
-		
-		// Player is within viewport bounds
-		if (this.viewport.withinBounds(player.pos.x, player.pos.y)) {
-			player.rocket.pos = this.viewport.globalToScreen(player.pos.x, player.pos.y);
-		// Player is outside of the viewport
-		} else {
-			
-		};
-	};
 	
 	var playerMoveDelta = Vector.sub(this.player.pos, this.viewport.pos);
-	
 	var starsLength = this.stars.length;
 	// This is a resource hog
 	for (var i = 0; i < starsLength; i++) {
@@ -209,7 +194,23 @@ Game.prototype.update = function() {
 	
 	this.viewport.pos.x = this.player.pos.x;
 	this.viewport.pos.y = this.player.pos.y;
-	//this.viewport.pos = this.player.pos;
+
+	var playersLength = this.players.length;
+	for (var i = 0; i < playersLength; i++) {
+		var player = this.players[i];
+		
+		if (player == null)
+			continue;
+		
+		// Player is within viewport bounds
+		if (this.viewport.withinBounds(player.pos.x, player.pos.y)) {
+			player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
+			player.updateTrail(this.viewport); // Really shouldn't have to pass the viewport here
+		// Player is outside of the viewport
+		} else {
+			
+		};
+	};
 };
 
 /**
@@ -245,8 +246,8 @@ Game.prototype.draw = function() {
 		// Player is outside of the viewport
 		} else {
 			// Draw an arrow at the edge of the viewport indicating where the player is
-			var localScreenPos = this.viewport.globalToScreen(this.player.pos.x, this.player.pos.y);
-			var screenPos = this.viewport.globalToScreen(player.pos.x, player.pos.y);
+			var localScreenPos = this.viewport.worldToScreen(this.player.pos.x, this.player.pos.y);
+			var screenPos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
 			
 			var x1 = localScreenPos.x;
 			var y1 = localScreenPos.y;
@@ -326,7 +327,7 @@ Game.prototype.draw = function() {
  */
 Game.prototype.sendPlayerPosition = function() {
 	//console.log("Send update");
-	this.socket.send(Game.formatMessage("updatePlayer", {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle}));
+	this.socket.send(Game.formatMessage("updatePlayer", {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle, trailWorld: this.player.rocket.trailWorld}));
 };
 
 /**
