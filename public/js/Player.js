@@ -56,7 +56,7 @@ Player.prototype.updateTrail = function (viewport) {
 	var trailWorldLength = this.rocket.trailWorld.length;
 	for (var i = 0; i < trailWorldLength; i++) {
 		var trail = this.rocket.trailWorld[i]
-		trail.opacity *= 0.6;
+		trail.opacity *= 0.8;
 		if (trail.opacity < 0.1) {
 			trail.opacity = 0;
 			continue;
