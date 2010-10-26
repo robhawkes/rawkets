@@ -39,7 +39,13 @@ function init() {
 				switch (json.type) {
 					case "ping":
 						var player = players[indexOfByPlayerId(client.id)];
+						
+						if (player != null)
+							break;
+						};
+						
 						player.age = 0; // Player is active
+						
 						var newTimestamp = new Date().getTime();
 						//util.log("Round trip: "+(newTimestamp-json.ts)+"ms");
 						var ping = newTimestamp-json.ts;
@@ -84,6 +90,9 @@ function init() {
 						// Send data for existing players
 						if (players.length > 0) {
 							for (var player in players) {
+								if (player == null)
+									continue;
+									
 								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour, name: players[player].name, trailWorld: players[player].trailWorld}));
 							};
 						};
@@ -95,7 +104,7 @@ function init() {
 						var player;
 						try {
 							player = players[indexOfByPlayerId(client.id)];
-							if (player) {
+							if (player != null) {
 								player.x = json.x;
 								player.y = json.y;
 								player.angle = json.angle;
@@ -126,7 +135,7 @@ function init() {
 		});	
 	});
 	
-	//initPlayerActivityMonitor(players, socket); // Disabled until I can fix the crash
+	initPlayerActivityMonitor(players, socket); // Disabled until I can fix the crash
 	
 	// Catch socket error – this listener seems to catch the ECONNRESET crashes sometimes. Although it seems that the client listener above catches them now.
 	/*socket.removeAllListeners("error");
@@ -143,6 +152,9 @@ function initPlayerActivityMonitor(players, client) {
 	setInterval(function() {
 		if (players.length > 0) {
 			for (var player in players) {
+				if (player == null)
+					continue;
+				
 				// If player has been idle for over 30 seconds
 				if (players[player].age > 10) {
 					socket.manager.find(players[player].id, function(client) {
@@ -151,6 +163,8 @@ function initPlayerActivityMonitor(players, client) {
 					
 					players.splice(indexOfByPlayerId(player.id), 1);
 					socket.broadcast(formatMessage("removePlayer", {id: client.id}));
+					
+					util.log("CLOSE [TIME OUT]: "+client.id);
 					continue;
 				};
 				
