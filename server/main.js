@@ -40,7 +40,7 @@ function init() {
 					case "ping":
 						var player = players[indexOfByPlayerId(client.id)];
 						
-						if (player != null)
+						if (player != null) {
 							break;
 						};
 						
