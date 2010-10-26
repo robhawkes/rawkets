@@ -157,7 +157,6 @@ function initPlayerActivityMonitor(players, socket) {
 				
 				// If player has been idle for over 30 seconds
 				if (players[player].age > 10) {
-					players.splice(indexOfByPlayerId(players[player].id), 1);
 					socket.broadcast(formatMessage("removePlayer", {id: players[player].id}));
 					
 					util.log("CLOSE [TIME OUT]: "+players[player].id);
@@ -165,6 +164,8 @@ function initPlayerActivityMonitor(players, socket) {
 					socket.manager.find(players[player].id, function(client) {
 						client.close(); // Disconnect player for being idle
 					});
+					
+					players.splice(indexOfByPlayerId(players[player].id), 1);
 					continue;
 				};
 				
