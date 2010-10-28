@@ -57,13 +57,13 @@ function init() {
 						
 						var newTimestamp = new Date().getTime();
 						//util.log("Round trip: "+(newTimestamp-data.ts)+"ms");
-						var ping = newTimestamp-data.ts;
+						var ping = newTimestamp-data.t;
 						
 						// Send ping back to player
-						client.send(formatMessage(MESSAGE_TYPE_PING, {id: client.id, ping: ping}));
+						client.send(formatMessage(MESSAGE_TYPE_PING, {i: client.id, p: ping}));
 						
 						// Broadcast ping to other players
-						client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PING, {id: client.id, ping: ping}));
+						client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PING, {i: client.id, p: ping}));
 						
 						// Log ping to server after every 10 seconds
 						if ((newTimestamp-serverStart) % 10000 <= 3000) {
@@ -92,9 +92,9 @@ function init() {
 								break;
 						};
 						
-						client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {colour: colour}));
+						client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {c: colour}));
 						
-						client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: client.id, x: data.x, y: data.y, angle: data.angle, colour: colour, name: name}));
+						client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: data.x, y: data.y, a: data.a, c: colour, n: name}));
 						
 						// Send data for existing players
 						if (players.length > 0) {
@@ -102,12 +102,12 @@ function init() {
 								if (player == null)
 									continue;
 									
-								client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour, name: players[player].name}));
+								client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[player].id, x: players[player].x, y: players[player].y, a: players[player].angle, c: players[player].colour, n: players[player].name}));
 							};
 						};
 						
 						// Add new player to the stack
-						players.push(p.init(client.id, data.x, data.y, data.angle, colour, name));
+						players.push(p.init(client.id, data.x, data.y, data.a, colour, name));
 						break;
 					case MESSAGE_TYPE_UPDATE_PLAYER:
 						var player;
@@ -116,8 +116,8 @@ function init() {
 							if (player != null) {
 								player.x = data.x;
 								player.y = data.y;
-								player.angle = data.angle;
-								client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: client.id, x: data.x, y: data.y, angle: data.angle}));
+								player.angle = data.a;
+								client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {i: client.id, x: data.x, y: data.y, a: data.a}));
 							} else {
 								console.log("Player doesn't exist: ", client.id);
 							};
@@ -127,7 +127,7 @@ function init() {
 						};
 						break;
 					default:
-						util.log("Incoming message ["+client.id+"]:", json);
+						util.log("Incoming message ["+client.id+"]:", data);
 				};
 			// Invalid message protocol
 			} else {
@@ -139,7 +139,7 @@ function init() {
 		client.on("close", function(){
 			util.log("CLOSE: "+client.id);
 			players.splice(indexOfByPlayerId(client.id), 1);
-			client.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: client.id}));
+			client.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {i: client.id}));
 		});	
 	});
 	
@@ -165,7 +165,7 @@ function initPlayerActivityMonitor(players, socket) {
 				
 				// If player has been idle for over 30 seconds
 				if (players[player].age > 10) {
-					socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: players[player].id}));
+					socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {i: players[player].id}));
 					
 					util.log("CLOSE [TIME OUT]: "+players[player].id);
 					
@@ -186,7 +186,7 @@ function initPlayerActivityMonitor(players, socket) {
 function sendPing(client) {
 	setTimeout(function() {
 		var timestamp = new Date().getTime();
-		client.send(formatMessage(MESSAGE_TYPE_PING, {ts: timestamp.toString()}));
+		client.send(formatMessage(MESSAGE_TYPE_PING, {t: timestamp.toString()}));
 	}, 3000);
 };
 
