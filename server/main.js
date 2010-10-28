@@ -102,7 +102,7 @@ function init() {
 								if (player == null)
 									continue;
 									
-								client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[player].id, x: players[player].x, y: players[player].y, a: players[player].angle, c: players[player].colour, n: players[player].name}));
+										client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[player].id, x: players[player].x, y: players[player].y, a: players[player].angle, c: players[player].colour, n: players[player].name}));
 							};
 						};
 						
