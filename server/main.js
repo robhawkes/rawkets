@@ -1,9 +1,17 @@
 var util = require("sys");
 var	ws = require("websocket-server");
+var BISON = require("./bison");
 var player = require("./Player");
 var socket;
 var serverStart;
 var players;
+
+var MESSAGE_TYPE_PING = 1;
+var MESSAGE_TYPE_UPDATE_PING = 2;
+var MESSAGE_TYPE_NEW_PLAYER = 3;
+var MESSAGE_TYPE_SET_COLOUR = 4;
+var MESSAGE_TYPE_UPDATE_PLAYER = 5;
+var MESSAGE_TYPE_REMOVE_PLAYER = 6;
 
 /**
  * Initialises server-side functionality
@@ -32,12 +40,13 @@ function init() {
 		
 		// On incoming message from client
 		client.on("message", function(msg) {
-			var json = JSON.parse(msg);
+			//var json = JSON.parse(msg);
+			var data = BISON.decode(msg);
 			
 			// Only deal with messages using the correct protocol
-			if (json.type) {
-				switch (json.type) {
-					case "ping":
+			if (data.type) {
+				switch (data.type) {
+					case MESSAGE_TYPE_PING:
 						var player = players[indexOfByPlayerId(client.id)];
 						
 						if (player == null) {
@@ -47,14 +56,14 @@ function init() {
 						player.age = 0; // Player is active
 						
 						var newTimestamp = new Date().getTime();
-						//util.log("Round trip: "+(newTimestamp-json.ts)+"ms");
-						var ping = newTimestamp-json.ts;
+						//util.log("Round trip: "+(newTimestamp-data.ts)+"ms");
+						var ping = newTimestamp-data.ts;
 						
 						// Send ping back to player
-						client.send(formatMessage("ping", {id: client.id, ping: ping}));
+						client.send(formatMessage(MESSAGE_TYPE_PING, {id: client.id, ping: ping}));
 						
 						// Broadcast ping to other players
-						client.broadcast(formatMessage("updatePing", {id: client.id, ping: ping}));
+						client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PING, {id: client.id, ping: ping}));
 						
 						// Log ping to server after every 10 seconds
 						if ((newTimestamp-serverStart) % 10000 <= 3000) {
@@ -64,7 +73,7 @@ function init() {
 						// Request a new ping
 						sendPing(client);
 						break;
-					case "newPlayer":
+					case MESSAGE_TYPE_NEW_PLAYER:
 						var colour = "rgb(0, 255, 0)";
 						var name = client.id;
 						switch (client._req.socket.remoteAddress) {
@@ -83,9 +92,9 @@ function init() {
 								break;
 						};
 						
-						client.send(formatMessage("setColour", {colour: colour}));
+						client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {colour: colour}));
 						
-						client.broadcast(formatMessage("newPlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, colour: colour, name: name, trailWorld: json.trailWorld}));
+						client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: client.id, x: data.x, y: data.y, angle: data.angle, colour: colour, name: name, trailWorld: data.trailWorld}));
 						
 						// Send data for existing players
 						if (players.length > 0) {
@@ -93,23 +102,23 @@ function init() {
 								if (player == null)
 									continue;
 									
-								client.send(formatMessage("newPlayer", {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour, name: players[player].name, trailWorld: players[player].trailWorld}));
+								client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour, name: players[player].name, trailWorld: players[player].trailWorld}));
 							};
 						};
 						
 						// Add new player to the stack
-						players.push(p.init(client.id, json.x, json.y, json.angle, colour, json.trailWorld, name));
+						players.push(p.init(client.id, data.x, data.y, data.angle, colour, data.trailWorld, name));
 						break;
-					case "updatePlayer":
+					case MESSAGE_TYPE_UPDATE_PLAYER:
 						var player;
 						try {
 							player = players[indexOfByPlayerId(client.id)];
 							if (player != null) {
-								player.x = json.x;
-								player.y = json.y;
-								player.angle = json.angle;
-								player.trailWorld = json.trailWorld;
-								client.broadcast(formatMessage("updatePlayer", {id: client.id, x: json.x, y: json.y, angle: json.angle, trailWorld: json.trailWorld}));
+								player.x = data.x;
+								player.y = data.y;
+								player.angle = data.angle;
+								player.trailWorld = data.trailWorld;
+								client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: client.id, x: data.x, y: data.y, angle: data.angle, trailWorld: data.trailWorld}));
 							} else {
 								console.log("Player doesn't exist: ", client.id);
 							};
@@ -131,7 +140,7 @@ function init() {
 		client.on("close", function(){
 			util.log("CLOSE: "+client.id);
 			players.splice(indexOfByPlayerId(client.id), 1);
-			client.broadcast(formatMessage("removePlayer", {id: client.id}));
+			client.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: client.id}));
 		});	
 	});
 	
@@ -157,7 +166,7 @@ function initPlayerActivityMonitor(players, socket) {
 				
 				// If player has been idle for over 30 seconds
 				if (players[player].age > 10) {
-					socket.broadcast(formatMessage("removePlayer", {id: players[player].id}));
+					socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: players[player].id}));
 					
 					util.log("CLOSE [TIME OUT]: "+players[player].id);
 					
@@ -178,7 +187,7 @@ function initPlayerActivityMonitor(players, socket) {
 function sendPing(client) {
 	setTimeout(function() {
 		var timestamp = new Date().getTime();
-		client.send(formatMessage("ping", {ts: timestamp.toString()}));
+		client.send(formatMessage(MESSAGE_TYPE_PING, {ts: timestamp.toString()}));
 	}, 3000);
 };
 
@@ -216,7 +225,7 @@ function indexOfByPlayerId(id) {
  *
  * @param {String} type Type of message
  * @param {Object} args Content of message
- * @returns Formatted message as a JSON string. Eg. {type: "update", message: "Hello World"}
+ * @returns Formatted message encoded with BiSON. Eg. {type: "update", message: "Hello World"}
  * @type String
  */
 function formatMessage(type, args) {
@@ -228,7 +237,8 @@ function formatMessage(type, args) {
 			msg[arg] = args[arg];
 	};
 	
-	return JSON.stringify(msg);
+	//return JSON.stringify(msg);
+	return BISON.encode(msg);
 };
 
 // Initialise the server-side functionality

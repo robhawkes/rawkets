@@ -13,7 +13,7 @@
 
 RewriteEngine On
 
-RewriteCond $1 !\.(gif|jpe?g|png)$ [NC]
+#RewriteCond $1 !\.(gif|jpe?g|png)$ [NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 #RewriteCond %{REQUEST_FILENAME} !-d 
 RewriteCond %{REQUEST_URI} !public/

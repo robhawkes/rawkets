@@ -32,6 +32,16 @@ var Game = function() {
 };
 
 /**
+ * Message protocols
+ */
+Game.MESSAGE_TYPE_PING = 1;
+Game.MESSAGE_TYPE_UPDATE_PING = 2;
+Game.MESSAGE_TYPE_NEW_PLAYER = 3;
+Game.MESSAGE_TYPE_SET_COLOUR = 4;
+Game.MESSAGE_TYPE_UPDATE_PLAYER = 5;
+Game.MESSAGE_TYPE_REMOVE_PLAYER = 6;
+
+/**
  * Initialises socket event listeners
  */
 Game.prototype.initSocketListeners = function() {
@@ -60,7 +70,7 @@ Game.prototype.onSocketConnect = function() {
 	// Initialise player object if one doesn't exist yet
 	if (this.player == null) {
 		this.player = new Player(1000.0, 1000.0);
-		this.socket.send(Game.formatMessage("newPlayer", {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle, trailWorld: this.player.rocket.trailWorld}));
+		this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_NEW_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle, trailWorld: this.player.rocket.trailWorld}));
 		
 		this.timeout();
 	};
@@ -71,47 +81,48 @@ Game.prototype.onSocketConnect = function() {
  */
 Game.prototype.onSocketMessage = function(msg) {
 	try {
-		var json = jQuery.parseJSON(msg);
+		//var json = jQuery.parseJSON(msg);
+		var data = BISON.decode(msg);
 		
 		// Only deal with messages using the correct protocol
-		if (json.type) {
-			switch (json.type) {
-				case "setColour":
-					this.player.rocket.colour = json.colour;
+		if (data.type) {
+			switch (data.type) {
+				case Game.MESSAGE_TYPE_SET_COLOUR:
+					this.player.rocket.colour = data.colour;
 					break;
-				case "ping":
-					if (json.ts) {
+				case Game.MESSAGE_TYPE_PING:
+					if (data.ts) {
 						this.socket.send(msg);
 					}
 					
-					if (json.ping) {
-						this.ping.html("ID: "+json.id+" - "+json.ping+"ms");
-						//console.log("Ping: ", json.ping+"ms");
+					if (data.ping) {
+						this.ping.html("ID: "+data.id+" - "+data.ping+"ms");
+						//console.log("Ping: ", data.ping+"ms");
 					}
 					break;
-				case "newPlayer":
-					var player = new Player(json.x, json.y);
-					player.id = json.id;
-					player.name = json.name;
+				case Game.MESSAGE_TYPE_NEW_PLAYER:
+					var player = new Player(data.x, data.y);
+					player.id = data.id;
+					player.name = data.name;
 					player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
-					player.rocket.angle = json.angle;
-					player.rocket.colour = json.colour;
-					player.rocket.trailWorld = json.trailWorld;
+					player.rocket.angle = data.angle;
+					player.rocket.colour = data.colour;
+					player.rocket.trailWorld = data.trailWorld;
 					this.players.push(player);
 					break;
-				case "updatePlayer":
-					var player = this.getPlayerById(json.id);
-					player.pos.x = json.x;
-					player.pos.y = json.y;
-					player.rocket.angle = json.angle;
-					player.rocket.trailWorld = json.trailWorld;
+				case Game.MESSAGE_TYPE_UPDATE_PLAYER:
+					var player = this.getPlayerById(data.id);
+					player.pos.x = data.x;
+					player.pos.y = data.y;
+					player.rocket.angle = data.angle;
+					player.rocket.trailWorld = data.trailWorld;
 					break
-				case "updatePing":
-					var player = this.getPlayerById(json.id);
-					player.ping = json.ping;
+				case Game.MESSAGE_TYPE_UPDATE_PING:
+					var player = this.getPlayerById(data.id);
+					player.ping = data.ping;
 					break;
-				case "removePlayer":
-					this.players.splice(this.players.indexOf(this.getPlayerById(json.id)), 1);
+				case Game.MESSAGE_TYPE_REMOVE_PLAYER:
+					this.players.splice(this.players.indexOf(this.getPlayerById(data.id)), 1);
 					break;
 				default:
 					//console.log("Incoming message:", json);
@@ -327,7 +338,7 @@ Game.prototype.draw = function() {
  */
 Game.prototype.sendPlayerPosition = function() {
 	//console.log("Send update");
-	this.socket.send(Game.formatMessage("updatePlayer", {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle, trailWorld: this.player.rocket.trailWorld}));
+	this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_UPDATE_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle, trailWorld: this.player.rocket.trailWorld}));
 };
 
 /**
@@ -408,7 +419,7 @@ Game.prototype.getPlayerById = function(id) {
  *
  * @param {String} type Type of message
  * @param {Object} args Content of message
- * @returns Formatted message as a JSON string. Eg. {type: "update", message: "Hello World"}
+ * @returns Formatted message encoded with BiSON. Eg. {type: "update", message: "Hello World"}
  * @type String
  */
 Game.formatMessage = function(type, args) {
@@ -420,7 +431,8 @@ Game.formatMessage = function(type, args) {
 			msg[arg] = args[arg];
 	};
 
-	return JSON.stringify(msg);
+	//return JSON.stringify(msg);
+	return BISON.encode(msg);
 };
 
 /**

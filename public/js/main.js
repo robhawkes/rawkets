@@ -13,6 +13,13 @@ $(function() {
 		if ("WebSocket" in window) {
 			// WebSockets supported
 			game = new Game();
+			
+			$("#attribution, #ping").fadeTo(500, 0.3).mouseover(function() {
+				$(this).stop().fadeTo(500, 1);
+			}).mouseout(function() {
+				$(this).stop().fadeTo(500, 0.3);
+			});
+			
 			initListeners();
 		} else {
 			// WebSockets not supported
