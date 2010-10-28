@@ -14,8 +14,8 @@ var Rocket = function() {
 	this.rotateLeft = false;
 	this.rotateRight = false;
 	this.rotationVelocity = 0.15;
-	this.trailWorld = []; // In world coordinate space
-	this.trail; // In screen coordinate space
+	//this.trailWorld = []; // In world coordinate space
+	//this.trail; // In screen coordinate space
 };
 
 /**
@@ -28,23 +28,23 @@ Rocket.prototype.update = function() {
 		this.angle += this.rotationVelocity;
 	};
 
-	if (this.trailWorld && this.trailWorld.length > 30) {
+	/*if (this.trailWorld && this.trailWorld.length > 10) {
 		this.trailWorld.shift();
-	};
+	};*/
 };
 
 /**
  * Draw rocket onto the canvas
  */
 Rocket.prototype.draw = function(ctx) {
-	if (this.trail) {
+	/*if (this.trail) {
 		var trailLength = this.trail.length;
 		for (var i = 0; i < trailLength; i++) {
 			var trail = this.trail[i];
 			ctx.fillStyle = "rgba(255, 255, 255, "+trail.opacity+")";
 			ctx.fillRect(trail.pos.x, trail.pos.y, 1, 1);
 		};
-	};
+	};*/
 	
 	ctx.save();
 	ctx.translate(this.pos.x, this.pos.y);
