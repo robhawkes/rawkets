@@ -34,6 +34,38 @@ p {
 	position: absolute;
 }
 
+#attribution {
+	bottom: 40px;
+	font-family: Helvetica Neue, Verdana, sans-serif;
+	font-size: 20px;
+	font-weight: lighter;
+	margin: 0;
+	position: absolute;
+	right: 30px;
+}
+
+	#attribution a, #attribution a:visited {
+		color: #56bff6;
+		text-decoration: none;
+	}
+
+		#attribution a:hover {
+			border-bottom: 1px solid #56bff6;
+		}
+
+	#attribution iframe {
+		margin-bottom: -3px;
+	}
+	
+	#attribution .fb-button {
+		margin-bottom: -5px;
+	}
+
+	#attribution .twitter-share-button {
+		margin-bottom: -4px;
+		margin-right: -16px;
+	}
+
 #offline {
 	display: none;
 	margin-top: -60px;
@@ -51,11 +83,13 @@ p {
 }
 
 #ping {
-	bottom: 20px;
+	bottom: 40px;
 	color: #fff;
+	font-family: Helvetica Neue, Verdana, sans-serif;
 	font-size: 20px;
+	font-weight: lighter;
+	left: 40px;
 	margin: 0;
 	position: absolute;
-	right: 20px;
 	text-align: left;
 }
