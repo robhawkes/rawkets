@@ -94,7 +94,7 @@ function init() {
 						
 						client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {colour: colour}));
 						
-						client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: client.id, x: data.x, y: data.y, angle: data.angle, colour: colour, name: name, trailWorld: data.trailWorld}));
+						client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: client.id, x: data.x, y: data.y, angle: data.angle, colour: colour, name: name}));
 						
 						// Send data for existing players
 						if (players.length > 0) {
@@ -102,12 +102,12 @@ function init() {
 								if (player == null)
 									continue;
 									
-								client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour, name: players[player].name, trailWorld: players[player].trailWorld}));
+								client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: players[player].id, x: players[player].x, y: players[player].y, angle: players[player].angle, ping: players[player].ping, colour: players[player].colour, name: players[player].name}));
 							};
 						};
 						
 						// Add new player to the stack
-						players.push(p.init(client.id, data.x, data.y, data.angle, colour, data.trailWorld, name));
+						players.push(p.init(client.id, data.x, data.y, data.angle, colour, name));
 						break;
 					case MESSAGE_TYPE_UPDATE_PLAYER:
 						var player;
@@ -117,8 +117,7 @@ function init() {
 								player.x = data.x;
 								player.y = data.y;
 								player.angle = data.angle;
-								player.trailWorld = data.trailWorld;
-								client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: client.id, x: data.x, y: data.y, angle: data.angle, trailWorld: data.trailWorld}));
+								client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: client.id, x: data.x, y: data.y, angle: data.angle}));
 							} else {
 								console.log("Player doesn't exist: ", client.id);
 							};
