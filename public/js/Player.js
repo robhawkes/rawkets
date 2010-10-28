@@ -27,16 +27,18 @@ Player.prototype.update = function(viewport) {
 	
 	this.rocket.update();
 	
-	if (this.rocket.trailWorld.length > 0)
-		this.updateTrail(viewport);
+	/*if (this.rocket.trailWorld.length > 0)
+		this.updateTrail(viewport);*/
 	
 	if (this.move) {	
+		/*
 		// Add new trail to world array
 		this.rocket.trailWorld.push({pos: new Vector(this.pos.x, this.pos.y), opacity: 255});
 		
 		// Calculate offset of new trail from rocket based on world coordinates
 		if (this.rocket.trail > 0)
 			this.rocket.trail.push({pos: viewport.worldToScreen(this.pos.x, this.pos.y), opacity: 255});
+		*/
 		
 		this.pos.x += 5*Math.sin(this.rocket.angle);
 		this.pos.y -= 5*Math.cos(this.rocket.angle);
@@ -56,7 +58,7 @@ Player.prototype.updateTrail = function (viewport) {
 	var trailWorldLength = this.rocket.trailWorld.length;
 	for (var i = 0; i < trailWorldLength; i++) {
 		var trail = this.rocket.trailWorld[i]
-		trail.opacity *= 0.8;
+		trail.opacity *= 0.5;
 		if (trail.opacity < 0.1) {
 			trail.opacity = 0;
 			continue;
