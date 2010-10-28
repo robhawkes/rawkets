@@ -70,7 +70,7 @@ Game.prototype.onSocketConnect = function() {
 	// Initialise player object if one doesn't exist yet
 	if (this.player == null) {
 		this.player = new Player(1000.0, 1000.0);
-		this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_NEW_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle, trailWorld: this.player.rocket.trailWorld}));
+		this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_NEW_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle}));
 		
 		this.timeout();
 	};
@@ -97,7 +97,6 @@ Game.prototype.onSocketMessage = function(msg) {
 					
 					if (data.ping) {
 						this.ping.html("ID: "+data.id+" - "+data.ping+"ms");
-						//console.log("Ping: ", data.ping+"ms");
 					}
 					break;
 				case Game.MESSAGE_TYPE_NEW_PLAYER:
@@ -107,7 +106,6 @@ Game.prototype.onSocketMessage = function(msg) {
 					player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
 					player.rocket.angle = data.angle;
 					player.rocket.colour = data.colour;
-					player.rocket.trailWorld = data.trailWorld;
 					this.players.push(player);
 					break;
 				case Game.MESSAGE_TYPE_UPDATE_PLAYER:
@@ -115,7 +113,6 @@ Game.prototype.onSocketMessage = function(msg) {
 					player.pos.x = data.x;
 					player.pos.y = data.y;
 					player.rocket.angle = data.angle;
-					player.rocket.trailWorld = data.trailWorld;
 					break
 				case Game.MESSAGE_TYPE_UPDATE_PING:
 					var player = this.getPlayerById(data.id);
@@ -216,7 +213,7 @@ Game.prototype.update = function() {
 		// Player is within viewport bounds
 		if (this.viewport.withinBounds(player.pos.x, player.pos.y)) {
 			player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
-			player.updateTrail(this.viewport); // Really shouldn't have to pass the viewport here
+			//player.updateTrail(this.viewport); // Really shouldn't have to pass the viewport here
 		// Player is outside of the viewport
 		} else {
 			
@@ -338,7 +335,7 @@ Game.prototype.draw = function() {
  */
 Game.prototype.sendPlayerPosition = function() {
 	//console.log("Send update");
-	this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_UPDATE_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle, trailWorld: this.player.rocket.trailWorld}));
+	this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_UPDATE_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, angle: this.player.rocket.angle}));
 };
 
 /**
