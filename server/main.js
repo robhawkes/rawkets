@@ -1,4 +1,5 @@
 var util = require("sys");
+var OAuth = require("oauth").OAuth;
 var	ws = require("websocket-server");
 var BISON = require("./bison");
 var player = require("./Player");
@@ -92,22 +93,39 @@ function init() {
 								break;
 						};
 						
-						client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {c: colour}));
+						var player = p.init(client.id, data.x, data.y, data.a, colour, name);
+										
+						player.twitterAccessToken = data.tat;
+						player.twitterAccessTokenSecret = data.tats;
 						
-						client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: data.x, y: data.y, a: data.a, c: colour, n: name}));
-						
-						// Send data for existing players
-						if (players.length > 0) {
-							for (var player in players) {
-								if (player == null)
-									continue;
-									
-										client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[player].id, x: players[player].x, y: players[player].y, a: players[player].angle, c: players[player].colour, n: players[player].name}));
+						var oa = new OAuth(null,
+										   null,
+										   "UR9lK0nq3KX6Wb2qgO4z5w",
+										   "e8jJbu2cj7LxtfS9xnIGLaE4BkuLmvkSUmoBXEOyO4c",
+										   "1.0A",
+										   null,
+										   "HMAC-SHA1");
+										
+						oa.get("http://api.twitter.com/1/account/verify_credentials.json", player.twitterAccessToken, player.twitterAccessTokenSecret, function(error, data) {
+							data = JSON.parse(data);
+							player.name = data.screen_name;
+							
+							client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {c: player.colour}));					
+							client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, n: player.name}));
+							
+							// Send data for existing players
+							if (players.length > 0) {
+								for (var playerId in players) {
+									if (players[playerId] == null)
+										continue;
+
+										client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[playerId].id, x: players[playerId].x, y: players[playerId].y, a: players[playerId].angle, c: players[playerId].colour, n: players[playerId].name}));
+								};
 							};
-						};
-						
-						// Add new player to the stack
-						players.push(p.init(client.id, data.x, data.y, data.a, colour, name));
+
+							// Add new player to the stack
+							players.push(player);
+						});
 						break;
 					case MESSAGE_TYPE_UPDATE_PLAYER:
 						var player;

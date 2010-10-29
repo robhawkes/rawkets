@@ -18,6 +18,9 @@ var Player = function(id, x, y, angle, colour, name) {
 	this.ping = 0;
 	this.colour = colour;
 	this.age = 0; // Used to detect timed-out players
+	
+	this.twitterAccessToken;
+	this.twitterAccessTokenSecret;
 }
 
 /**

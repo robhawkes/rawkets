@@ -5,19 +5,30 @@ $(function() {
 	 * Initialises client-side functionality
 	 */
 	function init() {
+		// WebSockets supported
 		if ("WebSocket" in window) {
-			// WebSockets supported
-			game = new Game();
+			// Player isn't authenticated on Twitter
+			if (window.TWITTER_AUTHENTICATE_URL != undefined && TWITTER_AUTHENTICATE_URL != null) {
+				var twitter = $("<a id='twitterSignIn' href='"+TWITTER_AUTHENTICATE_URL+"'></a>");
+				twitter.appendTo("body");
+			};
 			
-			$("#attribution, #ping").fadeTo(500, 0.3).mouseover(function() {
-				$(this).stop().fadeTo(500, 1);
-			}).mouseout(function() {
-				$(this).stop().fadeTo(500, 0.3);
-			});
-			
-			initListeners();
+			// Player is apparently authenticated on Twitter
+			if (TWITTER_ACCESS_TOKEN != null && TWITTER_ACCESS_TOKEN_SECRET != null) {
+				// Perform check to see if authentication is working
+				
+				game = new Game(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET);
+
+				$("#attribution, #ping").fadeTo(500, 0.1).mouseover(function() {
+					$(this).stop().fadeTo(500, 1);
+				}).mouseout(function() {
+					$(this).stop().fadeTo(500, 0.1);
+				});
+
+				initListeners();
+			};
+		// WebSockets not supported
 		} else {
-			// WebSockets not supported
 			$("#support").fadeIn();
 		};
 	};

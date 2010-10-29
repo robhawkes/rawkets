@@ -7,7 +7,10 @@
 /**
  * @constructor
  */
-var Game = function() {
+var Game = function(twitterAccessToken, twitterAccessTokenSecret) {
+	this.twitterAccessToken = twitterAccessToken;
+	this.twitterAccessTokenSecret = twitterAccessTokenSecret;
+		
 	this.canvas = $("#canvas");
 	this.ctx = this.canvas.get(0).getContext("2d");
 	this.resizeCanvas();
@@ -70,7 +73,7 @@ Game.prototype.onSocketConnect = function() {
 	// Initialise player object if one doesn't exist yet
 	if (this.player == null) {
 		this.player = new Player(1000.0, 1000.0);
-		this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_NEW_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, a: this.player.rocket.angle}));
+		this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_NEW_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, a: this.player.rocket.angle, tat: this.twitterAccessToken, tats: this.twitterAccessTokenSecret}));
 		
 		this.timeout();
 	};

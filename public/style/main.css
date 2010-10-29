@@ -93,3 +93,10 @@ p {
 	position: absolute;
 	text-align: left;
 }
+
+#twitterSignIn {
+	background: url('img/twitter_sign_in.png') no-repeat top left;
+	display: block;
+	height: 24px;
+	width: 151px;
+}
