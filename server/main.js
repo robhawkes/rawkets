@@ -13,6 +13,9 @@ var MESSAGE_TYPE_NEW_PLAYER = 3;
 var MESSAGE_TYPE_SET_COLOUR = 4;
 var MESSAGE_TYPE_UPDATE_PLAYER = 5;
 var MESSAGE_TYPE_REMOVE_PLAYER = 6;
+var MESSAGE_TYPE_AUTHENTICATION_PASSED = 7;
+var MESSAGE_TYPE_AUTHENTICATION_FAILED = 8;
+var MESSAGE_TYPE_AUTHENTICATE = 9;
 
 /**
  * Initialises server-side functionality
@@ -47,6 +50,31 @@ function init() {
 			// Only deal with messages using the correct protocol
 			if (data.type) {
 				switch (data.type) {
+					case MESSAGE_TYPE_AUTHENTICATE:
+						var oa = new OAuth(null,
+										   null,
+										   "UR9lK0nq3KX6Wb2qgO4z5w",
+										   "e8jJbu2cj7LxtfS9xnIGLaE4BkuLmvkSUmoBXEOyO4c",
+										   "1.0A",
+										   null,
+										   "HMAC-SHA1");
+										
+						oa.get("http://api.twitter.com/1/account/verify_credentials.json", data.tat, data.tats, function(error, data) {
+							var type;
+							if (error != null) {
+								type = MESSAGE_TYPE_AUTHENTICATION_FAILED;
+							} else {							
+								data = JSON.parse(data);
+							
+								if (data.screen_name != undefined) {
+									type = MESSAGE_TYPE_AUTHENTICATION_PASSED;
+								} else {
+									type = MESSAGE_TYPE_AUTHENTICATION_FAILED;
+								};
+							};
+							client.send(formatMessage(type, {}));
+						});
+						break;
 					case MESSAGE_TYPE_PING:
 						var player = players[indexOfByPlayerId(client.id)];
 						
