@@ -67,6 +67,8 @@ try {
 		
 		<p id="ping"></p>
 		
+		<div id="mask"></div>
+		
 		<div id="offline">
 			<h1>Sorry, Rawkets is offline at the moment.</h1>
 			<p>Please try again in 5 minutes.</p>
@@ -74,6 +76,10 @@ try {
 		<div id="support">
 			<h1>Sorry, your browser doesn't support WebSockets.</h1>
 			<p>Supported browsers are Safari, Chrome and Firefox 4 beta.</p>
+		</div>
+		<div id="authenticate">
+			<h1>Sorry, Twitter authentication failed.</h1>
+			<p>Unfortunately this is a new feature and isn't perfect just yet.</p>
 		</div>
 		
 		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>-->		
@@ -86,7 +92,7 @@ try {
 				window.TWITTER_ACCESS_TOKEN = "<?=$_SESSION["oauth_access_token"]?>";
 				window.TWITTER_ACCESS_TOKEN_SECRET = "<?=$_SESSION["oauth_access_token_secret"]?>";
 				<?php else : ?>
-				window.TWITTER_AUTHENTICATE_URL = "<?=TWITTER_AUTHENTICATE_URL.'?oauth_token='.$request_token_info["oauth_token"].'&oauth_callback='.urlencode("http://".$_SERVER["SERVER_NAME"])?>";
+				window.TWITTER_AUTHENTICATE_URL = "<?=TWITTER_AUTHENTICATE_URL.'?oauth_token='.$_SESSION["oauth_request_token"].'&oauth_callback='.urlencode("http://".$_SERVER["SERVER_NAME"])?>";
 				<?php endif; ?>
 			});
 		</script>

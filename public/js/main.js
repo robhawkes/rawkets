@@ -9,8 +9,9 @@ $(function() {
 		if ("WebSocket" in window) {
 			// Player isn't authenticated on Twitter
 			if (window.TWITTER_AUTHENTICATE_URL != undefined && TWITTER_AUTHENTICATE_URL != null) {
-				var twitter = $("<a id='twitterSignIn' href='"+TWITTER_AUTHENTICATE_URL+"'></a>");
-				twitter.appendTo("body");
+				var twitter = $("<div id='twitter'><a id='twitterSignIn' href='"+TWITTER_AUTHENTICATE_URL+"'></a></div>");
+				twitter.insertAfter("#mask");
+				$("#mask, #twitter").fadeIn();
 			};
 			
 			// Player is apparently authenticated on Twitter
@@ -29,7 +30,7 @@ $(function() {
 			};
 		// WebSockets not supported
 		} else {
-			$("#support").fadeIn();
+			$("#mask, #support").fadeIn();
 		};
 	};
 	

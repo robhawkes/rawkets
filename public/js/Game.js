@@ -10,28 +10,13 @@
 var Game = function(twitterAccessToken, twitterAccessTokenSecret) {
 	this.twitterAccessToken = twitterAccessToken;
 	this.twitterAccessTokenSecret = twitterAccessTokenSecret;
-		
-	this.canvas = $("#canvas");
-	this.ctx = this.canvas.get(0).getContext("2d");
-	this.resizeCanvas();
-	this.stopAnimation = false;
+	this.authenticated = false;
 	
-	this.ping = $("#ping");
+	this.mask = $("#mask");
 	this.offline = $("#offline");
 	
 	this.socket = new Socket();
-	this.player = null;	
-	this.players = [];
-	
-	this.viewport = new Viewport(this.canvas.width(), this.canvas.height());
-	this.stars = [];
-	for (var i = 0; i < 20; i++) {
-		this.stars.push(new Star(Math.random()*this.canvas.width(), Math.random()*this.canvas.height()));
-	};
- 	
-	this.initSocketListeners();
-	
-	this.canvas.fadeIn();
+	this.initSocketListeners(); // I realise this is going to receive unwanted events	
 };
 
 /**
@@ -43,6 +28,40 @@ Game.MESSAGE_TYPE_NEW_PLAYER = 3;
 Game.MESSAGE_TYPE_SET_COLOUR = 4;
 Game.MESSAGE_TYPE_UPDATE_PLAYER = 5;
 Game.MESSAGE_TYPE_REMOVE_PLAYER = 6;
+Game.MESSAGE_TYPE_AUTHENTICATION_PASSED = 7;
+Game.MESSAGE_TYPE_AUTHENTICATION_FAILED = 8;
+Game.MESSAGE_TYPE_AUTHENTICATE = 9;
+
+/**
+ * Initialise game environment
+ */
+Game.prototype.initGame = function() {
+	this.canvas = $("#canvas");
+	this.ctx = this.canvas.get(0).getContext("2d");
+	this.resizeCanvas();
+	this.stopAnimation = false;
+	
+	this.ping = $("#ping");
+	
+	this.player = null;	
+	this.players = [];
+	
+	this.viewport = new Viewport(this.canvas.width(), this.canvas.height());
+	this.stars = [];
+	for (var i = 0; i < 20; i++) {
+		this.stars.push(new Star(Math.random()*this.canvas.width(), Math.random()*this.canvas.height()));
+	};
+	
+	this.canvas.fadeIn();
+	
+	// Initialise player object if one doesn't exist yet
+	if (this.player == null) {
+		this.player = new Player(1000.0, 1000.0);
+		this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_NEW_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, a: this.player.rocket.angle, tat: this.twitterAccessToken, tats: this.twitterAccessTokenSecret}));
+		
+		this.timeout();
+	};
+};
 
 /**
  * Initialises socket event listeners
@@ -69,14 +88,7 @@ Game.prototype.onSocketConnect = function() {
 	//console.log("Socket connected");
 	
 	this.offline.fadeOut();
-	
-	// Initialise player object if one doesn't exist yet
-	if (this.player == null) {
-		this.player = new Player(1000.0, 1000.0);
-		this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_NEW_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, a: this.player.rocket.angle, tat: this.twitterAccessToken, tats: this.twitterAccessTokenSecret}));
-		
-		this.timeout();
-	};
+	this.authenticate();
 };
 
 /**
@@ -87,49 +99,72 @@ Game.prototype.onSocketMessage = function(msg) {
 		//var json = jQuery.parseJSON(msg);
 		var data = BISON.decode(msg);
 		
-		// Only deal with messages using the correct protocol
-		if (data.type) {
-			switch (data.type) {
-				case Game.MESSAGE_TYPE_SET_COLOUR:
-					this.player.rocket.colour = data.c;
-					break;
-				case Game.MESSAGE_TYPE_PING:
-					if (data.t) {
-						this.socket.send(msg);
-					}
+		// Player has been authenticated on the server
+		if (this.authenticated) {
+			// Only deal with messages using the correct protocol
+			if (data.type) {
+				switch (data.type) {
+					case Game.MESSAGE_TYPE_SET_COLOUR:
+						this.player.rocket.colour = data.c;
+						break;
+					case Game.MESSAGE_TYPE_PING:
+						if (data.t) {
+							this.socket.send(msg);
+						}
 					
-					if (data.p) {
-						this.ping.html("ID: "+data.i+" - "+data.p+"ms");
-					}
-					break;
-				case Game.MESSAGE_TYPE_NEW_PLAYER:
-					var player = new Player(data.x, data.y);
-					player.id = data.i;
-					player.name = data.n;
-					player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
-					player.rocket.angle = data.a;
-					player.rocket.colour = data.c;
-					this.players.push(player);
-					break;
-				case Game.MESSAGE_TYPE_UPDATE_PLAYER:
-					var player = this.getPlayerById(data.i);
-					player.pos.x = data.x;
-					player.pos.y = data.y;
-					player.rocket.angle = data.a;
-					break
-				case Game.MESSAGE_TYPE_UPDATE_PING:
-					var player = this.getPlayerById(data.i);
-					player.ping = data.p;
-					break;
-				case Game.MESSAGE_TYPE_REMOVE_PLAYER:
-					this.players.splice(this.players.indexOf(this.getPlayerById(data.i)), 1);
-					break;
-				default:
-					//console.log("Incoming message:", json);
-			};
-		// Invalid message protocol
-		} else {
+						if (data.p) {
+							this.ping.html("ID: "+data.i+" - "+data.p+"ms");
+						}
+						break;
+					case Game.MESSAGE_TYPE_NEW_PLAYER:
+						var player = new Player(data.x, data.y);
+						player.id = data.i;
+						player.name = data.n;
+						player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
+						player.rocket.angle = data.a;
+						player.rocket.colour = data.c;
+						this.players.push(player);
+						break;
+					case Game.MESSAGE_TYPE_UPDATE_PLAYER:
+						var player = this.getPlayerById(data.i);
+						player.pos.x = data.x;
+						player.pos.y = data.y;
+						player.rocket.angle = data.a;
+						break
+					case Game.MESSAGE_TYPE_UPDATE_PING:
+						var player = this.getPlayerById(data.i);
+						player.ping = data.p;
+						break;
+					case Game.MESSAGE_TYPE_REMOVE_PLAYER:
+						this.players.splice(this.players.indexOf(this.getPlayerById(data.i)), 1);
+						break;
+					default:
+						//console.log("Incoming message:", json);
+				};
+			// Invalid message protocol
+			} else {
 			
+			};
+		// Player hasn't been authenticated on the server
+		} else {
+			// Only deal with messages using the correct protocol
+			if (data.type) {
+				switch (data.type) {
+					case Game.MESSAGE_TYPE_AUTHENTICATION_PASSED:
+						this.authenticated = true;
+						this.initGame();
+						break;
+					case Game.MESSAGE_TYPE_AUTHENTICATION_FAILED:
+						this.mask.fadeIn();
+						$("#authenticate").fadeIn();
+						break;
+					default:
+						//console.log("Incoming message:", json);
+				};
+			// Invalid message protocol
+			} else {
+			
+			};	
 		};
 	// Data is not a valid JSON string
 	} catch (e) {
@@ -142,7 +177,16 @@ Game.prototype.onSocketMessage = function(msg) {
  */
 Game.prototype.onSocketDisconnect = function() {
 	//console.log("Socket disconnected");
+	this.mask.fadeIn();
 	this.offline.fadeIn();
+};
+
+/**
+ * Authenticate player on the server
+ */
+Game.prototype.authenticate = function() {
+	var msg = Game.formatMessage(Game.MESSAGE_TYPE_AUTHENTICATE, {tat: this.twitterAccessToken, tats: this.twitterAccessTokenSecret});
+	this.socket.send(msg);
 };
 
 /**
