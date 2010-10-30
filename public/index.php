@@ -13,8 +13,8 @@ try {
 	
 	if ((!isset($_SESSION["oauth_access_token"])) || ($_SESSION["oauth_access_token"]) == "") {
 		if ((!isset($_SESSION["oauth_request_token"])) || ($_SESSION["oauth_request_token"]) == "") {
-			$request_token_info = $oauth->getRequestToken(TWITTER_REQUEST_TOKEN_URL);
-			echo TWITTER_AUTHENTICATE_URL.'?oauth_token='.$request_token_info["oauth_token"].'<br>';
+			$request_token_info = $oauth->getRequestToken(TWITTER_REQUEST_TOKEN_URL."?oauth_callback=".urlencode("http://".$_SERVER["SERVER_NAME"]));
+			//echo TWITTER_AUTHENTICATE_URL.'?oauth_token='.$request_token_info["oauth_token"].'&oauth_callback='.urlencode($_SERVER["SERVER_NAME"]).'<br>';
 
 			$_SESSION["oauth_request_token"] = $request_token_info["oauth_token"];
 			$_SESSION["oauth_request_token_secret"] = $request_token_info["oauth_token_secret"];
@@ -86,7 +86,7 @@ try {
 				window.TWITTER_ACCESS_TOKEN = "<?=$_SESSION["oauth_access_token"]?>";
 				window.TWITTER_ACCESS_TOKEN_SECRET = "<?=$_SESSION["oauth_access_token_secret"]?>";
 				<?php else : ?>
-				window.TWITTER_AUTHENTICATE_URL = "<?=TWITTER_AUTHENTICATE_URL.'?oauth_token='.$_SESSION["oauth_request_token"]?>";
+				window.TWITTER_AUTHENTICATE_URL = "<?=TWITTER_AUTHENTICATE_URL.'?oauth_token='.$request_token_info["oauth_token"].'&oauth_callback='.urlencode("http://".$_SERVER["SERVER_NAME"])?>";
 				<?php endif; ?>
 			});
 		</script>
