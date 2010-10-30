@@ -485,5 +485,19 @@ Game.formatMessage = function(type, args) {
 Game.prototype.resizeCanvas = function(e) {
 	// Horrible passing of game object due to event closure
 	var self = (e != null) ? e.data.self : this;
-	self.canvas.attr({height: $(window).height(), width: $(window).width()});
+	
+	var height = $(window).height();
+	var width = $(window).width()
+	
+	self.canvas.attr({height: height, width: width});
+	
+	if (self.viewport != undefined) {
+		self.viewport.height = height;
+		self.viewport.width = width;
+	};
+	
+	if (self.player != undefined) {
+		self.player.rocket.pos.x = width/2;
+		self.player.rocket.pos.y = height/2;
+	};
 };
