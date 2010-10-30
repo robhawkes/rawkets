@@ -89,7 +89,7 @@ function init() {
 						var ping = newTimestamp-data.t;
 						
 						// Send ping back to player
-						client.send(formatMessage(MESSAGE_TYPE_PING, {i: client.id, p: ping}));
+						client.send(formatMessage(MESSAGE_TYPE_PING, {n: player.name, p: ping}));
 						
 						// Broadcast ping to other players
 						client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PING, {i: client.id, p: ping}));

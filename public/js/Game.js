@@ -48,6 +48,8 @@ Game.prototype.initGame = function() {
 	
 	this.viewport = new Viewport(this.canvas.width(), this.canvas.height());
 	this.stars = [];
+	this.starsOriginalWidth = this.canvas.width();
+	this.starsOriginalHeight = this.canvas.height();
 	for (var i = 0; i < 20; i++) {
 		this.stars.push(new Star(Math.random()*this.canvas.width(), Math.random()*this.canvas.height()));
 	};
@@ -113,7 +115,7 @@ Game.prototype.onSocketMessage = function(msg) {
 						}
 					
 						if (data.p) {
-							this.ping.html("ID: "+data.i+" - "+data.p+"ms");
+							this.ping.html("@"+data.n+" - "+data.p+"ms");
 						}
 						break;
 					case Game.MESSAGE_TYPE_NEW_PLAYER:
@@ -499,5 +501,24 @@ Game.prototype.resizeCanvas = function(e) {
 	if (self.player != undefined) {
 		self.player.rocket.pos.x = width/2;
 		self.player.rocket.pos.y = height/2;
+	};
+	
+	if (self.stars != undefined) {
+		var xRatio = width/self.starsOriginalWidth;
+		var yRatio = height/self.starsOriginalHeight;
+		
+		var starsLength = self.stars.length;
+		for (var i = 0; i < starsLength; i++) {
+			var star = self.stars[i];
+		
+			if (star == null)
+				continue;
+			
+			star.pos.x *= xRatio;
+			star.pos.y *= yRatio;
+		};
+		
+		self.starsOriginalWidth = width;
+		self.starsOriginalHeight = height;
 	};
 };
