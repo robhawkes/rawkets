@@ -8,44 +8,66 @@ define("TWITTER_REQUEST_TOKEN_URL", TWITTER_OAUTH_HOST."/oauth/request_token");
 define("TWITTER_AUTHENTICATE_URL", TWITTER_OAUTH_HOST."/oauth/authenticate");
 define("TWITTER_ACCESS_TOKEN_URL", TWITTER_OAUTH_HOST."/oauth/access_token");
 
+function checkAuth($oauth) {
+	// Perform quick authentication check
+	try {
+		$oauth->setToken($_SESSION["oauth_access_token"], $_SESSION["oauth_access_token_secret"]);
+		$data = $oauth->fetch("http://api.twitter.com/1/account/verify_credentials.json");
+		$response_info = $oauth->getLastResponse();
+		
+		//echo "<pre>";
+		//print_r(json_decode($response_info));
+		//echo "</pre>";
+	
+		return true;
+	} catch (OAuthException $e) {
+		return false;
+	}	
+}
+
+function generateRequestToken($oauth) {
+	try {
+		$request_token_info = $oauth->getRequestToken(TWITTER_REQUEST_TOKEN_URL."?oauth_callback=".urlencode("http://".$_SERVER["SERVER_NAME"]));
+
+		$_SESSION["oauth_request_token"] = $request_token_info["oauth_token"];
+		$_SESSION["oauth_request_token_secret"] = $request_token_info["oauth_token_secret"];
+	
+		return true;
+	} catch (OAuthException $e) {
+		return false;
+	}
+}
+
 try {
 	$oauth = new OAuth(TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET, OAUTH_SIG_METHOD_HMACSHA1, OAUTH_AUTH_TYPE_URI);
 	
 	if ((!isset($_SESSION["oauth_access_token"])) || ($_SESSION["oauth_access_token"]) == "") {
-		if ((!isset($_SESSION["oauth_request_token"])) || ($_SESSION["oauth_request_token"]) == "") {
-			$request_token_info = $oauth->getRequestToken(TWITTER_REQUEST_TOKEN_URL."?oauth_callback=".urlencode("http://".$_SERVER["SERVER_NAME"]));
-			//echo TWITTER_AUTHENTICATE_URL.'?oauth_token='.$request_token_info["oauth_token"].'&oauth_callback='.urlencode($_SERVER["SERVER_NAME"]).'<br>';
 
-			$_SESSION["oauth_request_token"] = $request_token_info["oauth_token"];
-			$_SESSION["oauth_request_token_secret"] = $request_token_info["oauth_token_secret"];
-		} else {
+		if ((isset($_SESSION["oauth_request_token"])) && ($_SESSION["oauth_request_token"]) != "") {
 			$oauth->setToken($_SESSION["oauth_request_token"], $_SESSION["oauth_request_token_secret"]);
 		
-			$access_token_info = $oauth->getAccessToken(TWITTER_ACCESS_TOKEN_URL);
+			try {
+				$access_token_info = $oauth->getAccessToken(TWITTER_ACCESS_TOKEN_URL);
+				$_SESSION["oauth_access_token"] = $access_token_info["oauth_token"];
+				$_SESSION["oauth_access_token_secret"] = $access_token_info["oauth_token_secret"];
 
-			$_SESSION["oauth_access_token"] = $access_token_info["oauth_token"];
-			$_SESSION["oauth_access_token_secret"] = $access_token_info["oauth_token_secret"];
-			
-			$_SESSION["oauth_request_token"] = "";
-			$_SESSION["oauth_request_token_secret"] = "";
+				$_SESSION["oauth_request_token"] = "";
+				$_SESSION["oauth_request_token_secret"] = "";
+
+				checkAuth($oauth);
+			} catch (OAuthException $e) {
+				// Generate a new request token
+				generateRequestToken($oauth);
+			}
 		}
+		
+		if ((!isset($_SESSION["oauth_access_token"])) || ($_SESSION["oauth_access_token"]) == "") {
+			// Generate a new request token
+			generateRequestToken($oauth);
+		}
+	} else {
+		checkAuth($oauth);
 	}
-
-	/*
-	printf("Request token: %s<br>", $_SESSION["oauth_request_token"]);
-	printf("Request token secret: %s<br>", $_SESSION["oauth_request_token_secret"]);	
-	printf("Access token: %s<br>", $_SESSION["oauth_access_token"]);
-	printf("Access token secret: %s<br>", $_SESSION["oauth_access_token_secret"]);
-	*/
-	
-	/*if (isset($_SESSION["oauth_access_token"])) {
-		$oauth->setToken($_SESSION["oauth_access_token"], $_SESSION["oauth_access_token_secret"]);
-		$data = $oauth->fetch("http://api.twitter.com/1/account/verify_credentials.json");
-		$response_info = $oauth->getLastResponse();
-		echo "<pre>";
-		print_r(json_decode($response_info));
-		echo "</pre>";
-	}*/
 } catch(OAuthException $e) {
 	//print_r($e);
 }
