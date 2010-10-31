@@ -27,7 +27,7 @@ function checkAuth($oauth) {
 
 function generateRequestToken($oauth) {
 	try {
-		$request_token_info = $oauth->getRequestToken(TWITTER_REQUEST_TOKEN_URL."?oauth_callback=".urlencode("http://".$_SERVER["SERVER_NAME"]));
+		$request_token_info = $oauth->getRequestToken(TWITTER_REQUEST_TOKEN_URL, "http://".$_SERVER["SERVER_NAME"]);
 
 		$_SESSION["oauth_request_token"] = $request_token_info["oauth_token"];
 		$_SESSION["oauth_request_token_secret"] = $request_token_info["oauth_token_secret"];
@@ -39,7 +39,7 @@ function generateRequestToken($oauth) {
 }
 
 try {
-	$oauth = new OAuth(TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET, OAUTH_SIG_METHOD_HMACSHA1, OAUTH_AUTH_TYPE_URI);
+	$oauth = new OAuth(TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET, OAUTH_SIG_METHOD_HMACSHA1, OAUTH_AUTH_TYPE_AUTHORIZATION);
 	
 	if ((!isset($_SESSION["oauth_access_token"])) || ($_SESSION["oauth_access_token"]) == "") {
 
