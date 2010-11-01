@@ -40,7 +40,6 @@ function init() {
 		util.log("CONNECT: "+client.id);
 		
 		var p = player;
-		sendPing(client);
 		
 		// On incoming message from client
 		client.on("message", function(msg) {
@@ -121,7 +120,7 @@ function init() {
 								break;
 						};
 						
-						var player = p.init(client.id, data.x, data.y, data.a, colour, name);
+						var player = p.init(client.id, data.x, data.y, data.a, data.f, colour, name);
 										
 						player.twitterAccessToken = data.tat;
 						player.twitterAccessTokenSecret = data.tats;
@@ -138,8 +137,10 @@ function init() {
 							data = JSON.parse(data);
 							player.name = data.screen_name;
 							
-							client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {c: player.colour}));					
-							client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, n: player.name}));
+							client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {c: player.colour}));
+							sendPing(client);				
+							
+							client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, f: player.showFlame, n: player.name}));
 							
 							// Send data for existing players
 							if (players.length > 0) {
@@ -147,7 +148,7 @@ function init() {
 									if (players[playerId] == null)
 										continue;
 
-										client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[playerId].id, x: players[playerId].x, y: players[playerId].y, a: players[playerId].angle, c: players[playerId].colour, n: players[playerId].name}));
+										client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[playerId].id, x: players[playerId].x, y: players[playerId].y, a: players[playerId].angle, f: players[playerId].showFlame, c: players[playerId].colour, n: players[playerId].name}));
 								};
 							};
 
@@ -163,7 +164,8 @@ function init() {
 								player.x = data.x;
 								player.y = data.y;
 								player.angle = data.a;
-								client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {i: client.id, x: data.x, y: data.y, a: data.a}));
+								player.showFlame = data.f;
+								client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {i: client.id, x: data.x, y: data.y, a: data.a, f: data.f}));
 							} else {
 								console.log("Player doesn't exist: ", client.id);
 							};

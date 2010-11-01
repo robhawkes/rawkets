@@ -40,12 +40,30 @@ Player.prototype.update = function(viewport) {
 			this.rocket.trail.push({pos: viewport.worldToScreen(this.pos.x, this.pos.y), opacity: 255});
 		*/
 		
-		this.pos.x += 5*Math.sin(this.rocket.angle);
-		this.pos.y -= 5*Math.cos(this.rocket.angle);
+		var a = new Vector(Math.sin(this.rocket.angle)*this.rocket.thrust, Math.cos(this.rocket.angle)*this.rocket.thrust);
+		this.rocket.velocity.x += a.x;
+		this.rocket.velocity.y += a.y;
+
+		/*this.pos.x += 5*Math.sin(this.rocket.angle);
+		this.pos.y -= 5*Math.cos(this.rocket.angle);*/
 	};
 	
-	if (this.rocket.rotateRight || this.rocket.rotateLeft || this.move)
+	this.oldPos = new Vector(this.pos.x, this.pos.y);
+	
+	this.pos.x += this.rocket.velocity.x;
+	this.pos.y -= this.rocket.velocity.y;
+	
+	if (Math.abs(this.oldPos.x - this.pos.x) < 0.1) {
+		this.pos.x = this.oldPos.x;
+	};
+	
+	if (Math.abs(this.oldPos.y - this.pos.y) < 0.1) {
+		this.pos.y = this.oldPos.y;
+	};
+	
+	if (this.rocket.rotateRight || this.rocket.rotateLeft || this.pos.x != this.oldPos.x || this.pos.y != this.oldPos.y) {
 		this.sendUpdate = true;
+	};
 };
 
 /**
@@ -129,6 +147,7 @@ Player.prototype.haltRotateRight = function() {
  */
 Player.prototype.moveForward = function() {
 	this.move = true;
+	this.rocket.showFlame = true;
 };
 
 /**
@@ -136,4 +155,5 @@ Player.prototype.moveForward = function() {
  */
 Player.prototype.haltMove = function() {
 	this.move = false;
+	this.rocket.showFlame = false;
 };

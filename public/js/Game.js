@@ -59,7 +59,7 @@ Game.prototype.initGame = function() {
 	// Initialise player object if one doesn't exist yet
 	if (this.player == null) {
 		this.player = new Player(1000.0, 1000.0);
-		this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_NEW_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, a: this.player.rocket.angle, tat: this.twitterAccessToken, tats: this.twitterAccessTokenSecret}));
+		this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_NEW_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, a: this.player.rocket.angle, f: this.player.rocket.showFlame, tat: this.twitterAccessToken, tats: this.twitterAccessTokenSecret}));
 		
 		this.timeout();
 	};
@@ -125,6 +125,7 @@ Game.prototype.onSocketMessage = function(msg) {
 						player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
 						player.rocket.angle = data.a;
 						player.rocket.colour = data.c;
+						player.rocket.showFlame = data.f;
 						this.players.push(player);
 						break;
 					case Game.MESSAGE_TYPE_UPDATE_PLAYER:
@@ -132,6 +133,7 @@ Game.prototype.onSocketMessage = function(msg) {
 						player.pos.x = data.x;
 						player.pos.y = data.y;
 						player.rocket.angle = data.a;
+						player.rocket.showFlame = data.f;
 						break
 					case Game.MESSAGE_TYPE_UPDATE_PING:
 						var player = this.getPlayerById(data.i);
@@ -384,7 +386,7 @@ Game.prototype.draw = function() {
  */
 Game.prototype.sendPlayerPosition = function() {
 	//console.log("Send update");
-	this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_UPDATE_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, a: this.player.rocket.angle}));
+	this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_UPDATE_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, a: this.player.rocket.angle, f: this.player.rocket.showFlame}));
 };
 
 /**
