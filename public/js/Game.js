@@ -217,9 +217,7 @@ Game.prototype.timeout = function() {
 	
 	//console.log(this.player.sendUpdate);
 	if (this.player.sendUpdate) {
-		if (this.player.name) {
-			this.sendPlayerPosition();
-		};
+		this.sendPlayerPosition();
 	};
 
 	// Horrible passing of game object due to event closure
