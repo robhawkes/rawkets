@@ -127,6 +127,7 @@ try {
 		<script type="text/javascript" src="js/Socket.js"></script>
 		<script type="text/javascript" src="js/Vector.js"></script>
 		<script type="text/javascript" src="js/Rocket.js"></script>
+		<script type="text/javascript" src="js/Bullet.js"></script>
 		<script type="text/javascript" src="js/Player.js"></script>
 		<script type="text/javascript" src="js/Viewport.js"></script>
 		<script type="text/javascript" src="js/Star.js"></script>

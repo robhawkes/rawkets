@@ -32,6 +32,8 @@ Game.MESSAGE_TYPE_AUTHENTICATION_PASSED = 7;
 Game.MESSAGE_TYPE_AUTHENTICATION_FAILED = 8;
 Game.MESSAGE_TYPE_AUTHENTICATE = 9;
 Game.MESSAGE_TYPE_ERROR = 10;
+Game.MESSAGE_TYPE_ADD_BULLET = 11;
+Game.MESSAGE_TYPE_UPDATE_BULLET = 12;
 
 /**
  * Initialise game environment
@@ -46,6 +48,8 @@ Game.prototype.initGame = function() {
 	
 	this.player = null;	
 	this.players = [];
+	
+	this.bullets = [];
 	
 	this.viewport = new Viewport(this.canvas.width(), this.canvas.height());
 	this.stars = [];
@@ -145,6 +149,18 @@ Game.prototype.onSocketMessage = function(msg) {
 						break;
 					case Game.MESSAGE_TYPE_REMOVE_PLAYER:
 						this.players.splice(this.players.indexOf(this.getPlayerById(data.i)), 1);
+						break;
+					case Game.MESSAGE_TYPE_ADD_BULLET:
+						var bullet = new Bullet();
+						bullet.id = data.i;
+						bullet.worldPos.set(data.x, data.y);
+						this.bullets.push(bullet);
+						break;
+					case Game.MESSAGE_TYPE_UPDATE_BULLET:
+						//console.log("Update bullets");
+						var bullet = this.getBulletById(data.i);
+						bullet.worldPos.x = data.x;
+						bullet.worldPos.y = data.y;
 						break;
 					default:
 						//console.log("Incoming message:", json);
@@ -285,6 +301,17 @@ Game.prototype.update = function() {
 			
 		};
 	};
+	
+	var bulletsLength = this.bullets.length;
+	for (var i = 0; i < bulletsLength; i++) {
+		var bullet = this.bullets[i];
+		
+		// Skip elements that don't exist
+		if (bullet == null)
+			continue;
+
+		bullet.pos = this.viewport.worldToScreen(bullet.worldPos.x, bullet.worldPos.y);
+	};
 };
 
 /**
@@ -394,6 +421,17 @@ Game.prototype.draw = function() {
 			};
 		};
 	};
+	
+	var bulletsLength = this.bullets.length;
+	for (var i = 0; i < bulletsLength; i++) {
+		var bullet = this.bullets[i];
+		
+		// Skip elements that don't exist
+		if (bullet == null)
+			continue;
+
+		bullet.draw(this.ctx);
+	};
 };
 
 /**
@@ -405,11 +443,12 @@ Game.prototype.sendPlayerPosition = function() {
 };
 
 /**
- * Move and rotate player based on keyboard input
+ * Keyboard input down
  */
-Game.prototype.movePlayer = function(e) {
+Game.prototype.keyDown = function(e) {
 	var keyCode = e.keyCode;
 	// Refer to key codes using descriptive variables (enumeration)
+	var space = 32;
 	var arrow = {left: 37, up: 38, right: 39, down: 40 };
 	
 	// Horrible passing of game object due to event closure
@@ -430,15 +469,21 @@ Game.prototype.movePlayer = function(e) {
 			break;
 		case arrow.down:
 			break;
+		case space:
+			//self.player.shoot();
+			var msg = Game.formatMessage(Game.MESSAGE_TYPE_ADD_BULLET, {x: self.player.pos.x, y: self.player.pos.y, vX: Math.sin(self.player.rocket.angle)*3, vY: Math.cos(self.player.rocket.angle)*3});
+			self.socket.send(msg);
+			break;
 	};
 };
 
 /**
- * Halt player movement
+ * Keyboard input up
  */
-Game.prototype.haltPlayer = function(e) {
+Game.prototype.keyUp = function(e) {
 	var keyCode = e.keyCode;
 	// Refer to key codes using descriptive variables (enumeration)
+	var space = 32;
 	var arrow = {left: 37, up: 38, right: 39, down: 40 };
 	
 	// Horrible passing of game object due to event closure
@@ -455,6 +500,8 @@ Game.prototype.haltPlayer = function(e) {
 			self.player.haltMove();
 			break;
 		case arrow.down:
+			break;
+		case space:
 			break;
 	};
 };
@@ -474,6 +521,24 @@ Game.prototype.getPlayerById = function(id) {
 		
 		if (player.id == id)
 			return player;
+	};
+};
+
+/**
+ * Get bullet by id
+ *
+ * @param {Number} id Id of bullet
+ * @returns Bullet object with specified id
+ * @type Bullet
+ */
+Game.prototype.getBulletById = function(id) {
+	var bulletsLength = this.bullets.length;
+	
+	for (var i = 0; i < bulletsLength; i++) {
+		var bullet = this.bullets[i];
+		
+		if (bullet.id == id)
+			return bullet;
 	};
 };
 
