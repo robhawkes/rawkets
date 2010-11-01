@@ -7,6 +7,9 @@ var socket;
 var serverStart;
 var players;
 
+/**
+ * Message protocols
+ */
 var MESSAGE_TYPE_PING = 1;
 var MESSAGE_TYPE_UPDATE_PING = 2;
 var MESSAGE_TYPE_NEW_PLAYER = 3;
@@ -16,6 +19,7 @@ var MESSAGE_TYPE_REMOVE_PLAYER = 6;
 var MESSAGE_TYPE_AUTHENTICATION_PASSED = 7;
 var MESSAGE_TYPE_AUTHENTICATION_FAILED = 8;
 var MESSAGE_TYPE_AUTHENTICATE = 9;
+var MESSAGE_TYPE_ERROR = 10;
 
 /**
  * Initialises server-side functionality
@@ -57,21 +61,30 @@ function init() {
 										   "1.0A",
 										   null,
 										   "HMAC-SHA1");
-										
+									
 						oa.get("http://api.twitter.com/1/account/verify_credentials.json", data.tat, data.tats, function(error, data) {
-							var type;
-							if (error != null) {
-								type = MESSAGE_TYPE_AUTHENTICATION_FAILED;
-							} else {							
-								data = JSON.parse(data);
-							
-								if (data.screen_name != undefined) {
-									type = MESSAGE_TYPE_AUTHENTICATION_PASSED;
-								} else {
+							try {
+								var type;
+								if (error != null) {
 									type = MESSAGE_TYPE_AUTHENTICATION_FAILED;
+								} else {							
+									data = JSON.parse(data);
+						
+									if (data.screen_name != undefined) {
+										if (playerByName(data.screen_name) != null) {
+											throw {type: "playerExists", msg: "Player already exists"};
+										};
+									
+										type = MESSAGE_TYPE_AUTHENTICATION_PASSED;
+									} else {
+										type = MESSAGE_TYPE_AUTHENTICATION_FAILED;
+									};
 								};
+								client.send(formatMessage(type, {}));
+							} catch (err) {
+								client.send(formatMessage(MESSAGE_TYPE_ERROR, {e: err.type, msg: err.msg}));
+								client.close();
 							};
-							client.send(formatMessage(type, {}));
 						});
 						break;
 					case MESSAGE_TYPE_PING:
@@ -104,7 +117,8 @@ function init() {
 					case MESSAGE_TYPE_NEW_PLAYER:
 						var colour = "rgb(0, 255, 0)";
 						var name = client.id;
-						switch (client._req.socket.remoteAddress) {
+						
+						/*switch (client._req.socket.remoteAddress) {
 							case "213.104.213.216": // John
 								colour = "rgb(255, 255, 0)";
 								name = "John";
@@ -118,7 +132,7 @@ function init() {
 								colour = "rgb(217, 65, 30)";
 								name = "Rob";
 								break;
-						};
+						};*/
 						
 						var player = p.init(client.id, data.x, data.y, data.a, data.f, colour, name);
 										
@@ -134,26 +148,53 @@ function init() {
 										   "HMAC-SHA1");
 										
 						oa.get("http://api.twitter.com/1/account/verify_credentials.json", player.twitterAccessToken, player.twitterAccessTokenSecret, function(error, data) {
-							data = JSON.parse(data);
-							player.name = data.screen_name;
-							
-							client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {c: player.colour}));
-							sendPing(client);				
-							
-							client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, f: player.showFlame, n: player.name}));
-							
-							// Send data for existing players
-							if (players.length > 0) {
-								for (var playerId in players) {
-									if (players[playerId] == null)
-										continue;
-
-										client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[playerId].id, x: players[playerId].x, y: players[playerId].y, a: players[playerId].angle, f: players[playerId].showFlame, c: players[playerId].colour, n: players[playerId].name}));
+							try {
+								if (error != undefined) {
+									throw {type: "twitterError", msg: "Error retrieving details from Twitter"};
 								};
-							};
+							
+								data = JSON.parse(data);
+								player.name = data.screen_name;
+							
+								if (playerByName(player.name) != null) {
+									throw {type: "playerExists", msg: "Player already exists"};
+								};
+							
+								switch (player.name) {
+									case "JohnONolan": // John
+										colour = "rgb(255, 255, 0)";
+										break;
+									case "ErisDS": // Hannah
+										colour = "rgb(199, 68, 145)";
+										break;
+									case "robhawkes": // Me
+										colour = "rgb(217, 65, 30)";
+										break;
+								};
+							
+								player.colour = colour;
+							
+								client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {c: player.colour}));
+								sendPing(client);				
+							
+								client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, f: player.showFlame, n: player.name}));
+							
+								// Send data for existing players
+								if (players.length > 0) {
+									for (var playerId in players) {
+										if (players[playerId] == null)
+											continue;
 
-							// Add new player to the stack
-							players.push(player);
+											client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[playerId].id, x: players[playerId].x, y: players[playerId].y, a: players[playerId].angle, f: players[playerId].showFlame, c: players[playerId].colour, n: players[playerId].name}));
+									};
+								};
+
+								// Add new player to the stack
+								players.push(player);
+							} catch (err) {
+								client.send(formatMessage(MESSAGE_TYPE_ERROR, {e: err.type, msg: err.msg}));
+								client.close();
+							};
 						});
 						break;
 					case MESSAGE_TYPE_UPDATE_PLAYER:
@@ -239,9 +280,23 @@ function sendPing(client) {
 };
 
 /**
+ * Find player by the player name
+ *
+ * @param {String} name Name of player
+ * @returns Player object
+ * @type Player
+ */
+function playerByName(name) {
+	for (var i = 0; i < players.length; i++) {
+		if (players[i].name == name)
+			return players[i];
+	};	
+};
+
+/**
  * Find player by the player id
  *
- * @param {Number} id Type of message
+ * @param {Number} id Id of player
  * @returns Player object
  * @type Player
  */

@@ -103,6 +103,10 @@ try {
 			<h1>Sorry, Twitter authentication failed.</h1>
 			<p>Unfortunately this is a new feature and isn't perfect just yet.</p>
 		</div>
+		<div id="playerExists">
+			<h1>Sorry, you seem to have a twin.</h1>
+			<p>Only one rawket is allowed per Twitter account.</p>
+		</div>
 		
 		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>-->		
 		<script type="text/javascript" src="js/jquery/jquery-dev.js"></script>

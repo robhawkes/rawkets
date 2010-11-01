@@ -31,6 +31,7 @@ Game.MESSAGE_TYPE_REMOVE_PLAYER = 6;
 Game.MESSAGE_TYPE_AUTHENTICATION_PASSED = 7;
 Game.MESSAGE_TYPE_AUTHENTICATION_FAILED = 8;
 Game.MESSAGE_TYPE_AUTHENTICATE = 9;
+Game.MESSAGE_TYPE_ERROR = 10;
 
 /**
  * Initialise game environment
@@ -100,12 +101,15 @@ Game.prototype.onSocketMessage = function(msg) {
 	try {
 		//var json = jQuery.parseJSON(msg);
 		var data = BISON.decode(msg);
-		
+
 		// Player has been authenticated on the server
 		if (this.authenticated) {
 			// Only deal with messages using the correct protocol
 			if (data.type) {
 				switch (data.type) {
+					case Game.MESSAGE_TYPE_ERROR:
+						console.log(data.e);
+						break;
 					case Game.MESSAGE_TYPE_SET_COLOUR:
 						this.player.rocket.colour = data.c;
 						break;
@@ -154,6 +158,15 @@ Game.prototype.onSocketMessage = function(msg) {
 			// Only deal with messages using the correct protocol
 			if (data.type) {
 				switch (data.type) {
+					case Game.MESSAGE_TYPE_ERROR:
+						//console.log(data.e);						
+						switch (data.e) {
+							case "playerExists":
+								this.mask.fadeIn();
+								$("#playerExists").fadeIn();
+								break;
+						};
+						break;
 					case Game.MESSAGE_TYPE_AUTHENTICATION_PASSED:
 						this.authenticated = true;
 						this.initGame();
@@ -181,8 +194,10 @@ Game.prototype.onSocketMessage = function(msg) {
  */
 Game.prototype.onSocketDisconnect = function() {
 	//console.log("Socket disconnected");
-	this.mask.fadeIn();
-	this.offline.fadeIn();
+	if (!$("#playerExists").is(":visible")) {
+		this.mask.fadeIn();
+		this.offline.fadeIn();
+	};
 };
 
 /**
@@ -202,7 +217,9 @@ Game.prototype.timeout = function() {
 	
 	//console.log(this.player.sendUpdate);
 	if (this.player.sendUpdate) {
-		this.sendPlayerPosition();
+		if (this.player.name) {
+			this.sendPlayerPosition();
+		};
 	};
 
 	// Horrible passing of game object due to event closure
