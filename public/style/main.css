@@ -98,6 +98,14 @@ p {
 	width: 100%;
 }
 
+#playerExists {
+	display: none;
+	margin-top: -60px;
+	position: absolute;
+	top: 50%;
+	width: 100%;
+}
+
 #twitter {
 	display: none;
 	margin-top: -12px;
