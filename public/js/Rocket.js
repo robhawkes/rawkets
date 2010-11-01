@@ -10,10 +10,15 @@
 var Rocket = function() {
 	this.angle = 0;
 	this.colour = "rgb(0, 255, 0)";
+	this.flameHeight = 6;
+	this.friction = 0.95;
 	this.pos = new Vector($(window).width()/2, $(window).height()/2);
 	this.rotateLeft = false;
 	this.rotateRight = false;
 	this.rotationVelocity = 0.15;
+	this.showFlame = false;
+	this.thrust = 0.5;
+	this.velocity = new Vector(0.0, 0.0);
 	//this.trailWorld = []; // In world coordinate space
 	//this.trail; // In screen coordinate space
 };
@@ -28,6 +33,9 @@ Rocket.prototype.update = function() {
 		this.angle += this.rotationVelocity;
 	};
 
+	this.velocity.x *= this.friction;
+	this.velocity.y *= this.friction;
+	
 	/*if (this.trailWorld && this.trailWorld.length > 10) {
 		this.trailWorld.shift();
 	};*/
@@ -50,11 +58,23 @@ Rocket.prototype.draw = function(ctx) {
 	ctx.translate(this.pos.x, this.pos.y);
 	ctx.rotate(this.angle);
 	
+	if (this.showFlame) {
+		this.flameHeight = (this.flameHeight == 8) ? 6 : 8;
+		ctx.fillStyle = "orange";
+		//ctx.fillRect(-2, 6, 4, 4);
+		ctx.beginPath();
+		ctx.moveTo(0, 6+this.flameHeight);
+		ctx.lineTo(-2, 6);
+		ctx.lineTo(2, 6);
+		ctx.closePath();
+		ctx.fill();
+	}
+	
 	ctx.fillStyle = this.colour;
 	ctx.beginPath();
-	ctx.moveTo(0, -5);
-	ctx.lineTo(4, 5);
-	ctx.lineTo(-4, 5);
+	ctx.moveTo(0, -7);
+	ctx.lineTo(6, 7);
+	ctx.lineTo(-6, 7);
 	ctx.closePath();
 	ctx.fill();
 	
