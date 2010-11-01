@@ -3,9 +3,11 @@ var OAuth = require("oauth").OAuth;
 var	ws = require("websocket-server");
 var BISON = require("./bison");
 var player = require("./Player");
+var bullet = require("./Bullet");
 var socket;
 var serverStart;
 var players;
+var bullets;
 
 /**
  * Message protocols
@@ -20,6 +22,8 @@ var MESSAGE_TYPE_AUTHENTICATION_PASSED = 7;
 var MESSAGE_TYPE_AUTHENTICATION_FAILED = 8;
 var MESSAGE_TYPE_AUTHENTICATE = 9;
 var MESSAGE_TYPE_ERROR = 10;
+var MESSAGE_TYPE_ADD_BULLET = 11;
+var MESSAGE_TYPE_UPDATE_BULLET = 12;
 
 /**
  * Initialises server-side functionality
@@ -31,6 +35,7 @@ function init() {
 	serverStart = new Date().getTime();
 	
 	players = [];
+	bullets = [];
 	
 	// On incoming connection from client
 	socket.on("connection", function(client) {
@@ -188,6 +193,16 @@ function init() {
 											client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[playerId].id, x: players[playerId].x, y: players[playerId].y, a: players[playerId].angle, f: players[playerId].showFlame, c: players[playerId].colour, n: players[playerId].name}));
 									};
 								};
+								
+								// Send data for exisiting bullets
+								if (bullets.length > 0) {
+									for (var bulletId in bullets) {
+										if (bullets[bulletId] == null)
+											continue;
+
+											client.send(formatMessage(MESSAGE_TYPE_ADD_BULLET, {x: bullets[bulletId].x, y: bullets[bulletId].y}));
+									};
+								};
 
 								// Add new player to the stack
 								players.push(player);
@@ -215,6 +230,12 @@ function init() {
 							console.log("Player: ", player);
 						};
 						break;
+					case MESSAGE_TYPE_ADD_BULLET:
+						var b = bullet.init(client.id, data.x, data.y, data.vX, data.vY);
+						bullets.push(b);
+						b.id = bullets.length;
+						socket.broadcast(formatMessage(MESSAGE_TYPE_ADD_BULLET, {i: b.id, x: data.x, y: data.y}));
+						break;
 					default:
 						util.log("Incoming message ["+client.id+"]:", data);
 				};
@@ -233,6 +254,8 @@ function init() {
 	});
 	
 	initPlayerActivityMonitor(players, socket); // Disabled until I can fix the crash
+	
+	sendBulletUpdates(bullets, socket);
 	
 	// Catch socket error – this listener seems to catch the ECONNRESET crashes sometimes. Although it seems that the client listener above catches them now.
 	/*socket.removeAllListeners("error");
@@ -279,6 +302,27 @@ function sendPing(client) {
 	}, 3000);
 };
 
+function sendBulletUpdates(bullets, socket) {
+	setInterval(function() {
+		//console.log(bullets);
+		if (bullets != undefined && bullets.length > 0) {
+			for (var bulletId in bullets) {
+				if (bullets[bulletId] == null)
+					continue;
+
+					bullets[bulletId].update();
+					
+					if (!bullets[bulletId].alive) {
+						bullets.splice(indexOfByBulletId(bullets[bulletId].id), 1);
+						continue;
+					};
+					
+					socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_BULLET, {i: bullets[bulletId].id, x: bullets[bulletId].x, y: bullets[bulletId].y}));
+			};
+		};
+	}, 30);
+};
+
 /**
  * Find player by the player name
  *
@@ -310,13 +354,28 @@ function playerById(id) {
 /**
  * Find index of player by the player id
  *
- * @param {Number} id Type of message
+ * @param {Number} id Id of player
  * @returns Index of player
  * @type Number
  */
 function indexOfByPlayerId(id) {
 	for (var i = 0; i < players.length; i++) {
 		if (players[i].id == id) {
+			return i;
+		};
+	};	
+};
+
+/**
+ * Find index of bullet by the bullet id
+ *
+ * @param {Number} id Id of bullet
+ * @returns Index of bullet
+ * @type Number
+ */
+function indexOfByBulletId(id) {
+	for (var i = 0; i < bullets.length; i++) {
+		if (bullets[i].id == id) {
 			return i;
 		};
 	};	

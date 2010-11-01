@@ -10,6 +10,7 @@
  * @param {Number} y Vertical position of player in global space
  */
 var Player = function(x, y) {
+	this.bullets = [];
 	this.id;
 	this.move = false;
 	this.name;
@@ -26,6 +27,25 @@ Player.prototype.update = function(viewport) {
 	this.sendUpdate = false;
 	
 	this.rocket.update();
+	
+	/*var bulletsLength = this.bullets.length;
+	for (var i = 0; i < bulletsLength; i++) {
+		var bullet = this.bullets[i];
+		
+		// Skip elements that don't exist
+		if (bullet == null)
+			continue;
+			
+		// Remove old bullets
+		if (!bullet.alive) {
+			this.bullets.splice(i, 1);
+			i--;
+			continue;
+		};
+			
+		bullet.update();
+		bullet.pos = viewport.worldToScreen(bullet.worldPos.x, bullet.worldPos.y);
+	};*/	
 	
 	/*if (this.rocket.trailWorld.length > 0)
 		this.updateTrail(viewport);*/
@@ -105,6 +125,17 @@ Player.prototype.updateTrail = function (viewport) {
 Player.prototype.draw = function(ctx) {
 	this.rocket.draw(ctx);
 	
+	/*var bulletsLength = this.bullets.length;
+	for (var i = 0; i < bulletsLength; i++) {
+		var bullet = this.bullets[i];
+		
+		// Skip elements that don't exist
+		if (bullet == null)
+			continue;
+			
+		bullet.draw(ctx);
+	};*/
+	
 	if (this.id) {
 		ctx.fillStyle = "rgb(255, 255, 255)";
 		ctx.font = "10px Courier";
@@ -156,4 +187,16 @@ Player.prototype.moveForward = function() {
 Player.prototype.haltMove = function() {
 	this.move = false;
 	this.rocket.showFlame = false;
+};
+
+/**
+ * Shoot a bullet
+ */
+Player.prototype.shoot = function() {	
+	/*var bullet = new Bullet();
+	bullet.worldPos.set(this.pos.x, this.pos.y);
+	bullet.velocity.set(Math.sin(this.rocket.angle)*bullet.velocityAmount, Math.cos(this.rocket.angle)*bullet.velocityAmount);
+	
+	this.bullets.push(bullet);*/
+	
 };

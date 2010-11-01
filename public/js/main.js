@@ -40,8 +40,8 @@ $(function() {
 	function initListeners() {
 		$(window).bind("resize", {self: game}, game.resizeCanvas)
 				 // Horrible passing of game object due to event closure
-				 .bind("keydown", {self: game}, game.movePlayer)
-				 .bind("keyup", {self: game}, game.haltPlayer);
+				 .bind("keydown", {self: game}, game.keyDown)
+				 .bind("keyup", {self: game}, game.keyUp);
 	};
 	
 	// Initialise client-side functionality
