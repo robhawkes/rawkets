@@ -62,6 +62,8 @@ Game.prototype.initGame = function() {
 	
 	this.canvas.fadeIn();
 	
+	this.haltMessages = false;
+	
 	// Initialise player object if one doesn't exist yet
 	if (this.player == null) {
 		this.player = new Player(1000.0, 1000.0);
@@ -443,7 +445,15 @@ Game.prototype.draw = function() {
  */
 Game.prototype.sendPlayerPosition = function() {
 	//console.log("Send update");
-	this.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_UPDATE_PLAYER, {x: this.player.pos.x, y: this.player.pos.y, a: this.player.rocket.angle, f: this.player.rocket.showFlame}));
+	// Crude rate limiter - should really build this into the core functionality of sending messages
+	if (!this.haltMessages) {
+		self = this;
+		self.haltMessages = true;
+		setTimeout(function() {
+			self.socket.send(Game.formatMessage(Game.MESSAGE_TYPE_UPDATE_PLAYER, {x: self.player.pos.x, y: self.player.pos.y, a: self.player.rocket.angle, f: self.player.rocket.showFlame}));
+			self.haltMessages = false;
+		}, 30);
+	};
 };
 
 /**
