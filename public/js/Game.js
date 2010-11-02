@@ -475,8 +475,11 @@ Game.prototype.keyDown = function(e) {
 			break;
 		case space:
 			//self.player.shoot();
-			var msg = Game.formatMessage(Game.MESSAGE_TYPE_ADD_BULLET, {x: self.player.pos.x, y: self.player.pos.y, vX: Math.sin(self.player.rocket.angle)*15, vY: Math.cos(self.player.rocket.angle)*15});
-			self.socket.send(msg);
+			if (self.player.allowedToShoot) {
+				var msg = Game.formatMessage(Game.MESSAGE_TYPE_ADD_BULLET, {x: self.player.pos.x, y: self.player.pos.y, vX: Math.sin(self.player.rocket.angle)*15, vY: Math.cos(self.player.rocket.angle)*15});
+				self.socket.send(msg);
+				self.player.shoot();
+			};
 			break;
 	};
 };

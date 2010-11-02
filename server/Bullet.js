@@ -42,7 +42,7 @@ Bullet.prototype.update = function() {
 	this.y -= this.vY;
 	
 	this.age += 1;
-	if (this.age > 100) {
+	if (this.age > 50) {
 		this.alive = false;
 	};
 };
