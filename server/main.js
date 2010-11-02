@@ -233,7 +233,8 @@ function init() {
 						break;
 					case MESSAGE_TYPE_ADD_BULLET:
 						var b = bullet.init(client.id, data.x, data.y, data.vX, data.vY);
-						b.id = new Date().getTime()+client.id.toString();
+						var timestamp = new Date().getTime();
+						b.id = timestamp+client.id.toString();
 						bullets.push(b);
 						socket.broadcast(formatMessage(MESSAGE_TYPE_ADD_BULLET, {i: b.id, x: data.x, y: data.y}));
 						break;
@@ -271,27 +272,29 @@ function init() {
 
 function initPlayerActivityMonitor(players, socket) {
 	setInterval(function() {
-		if (players.length > 0) {
-			for (var player in players) {
-				if (players[player] == null)
-					continue;
+		var playersLength = players.length;
+		for (var i = 0; i < playersLength; i++) {
+			var player = players[i];
+			
+			if (player == null)
+				continue;
+			
+			// If player has been idle for over 30 seconds
+			if (player.age > 10) {
+				socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {i: player.id}));
 				
-				// If player has been idle for over 30 seconds
-				if (players[player].age > 10) {
-					socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {i: players[player].id}));
-					
-					util.log("CLOSE [TIME OUT]: "+players[player].id);
-					
-					socket.manager.find(players[player].id, function(client) {
-						client.close(); // Disconnect player for being idle
-					});
-					
-					players.splice(indexOfByPlayerId(players[player].id), 1);
-					continue;
-				};
+				util.log("CLOSE [TIME OUT]: "+player.id);
 				
-				players[player].age += 1; // Increase player age due to inactivity
+				socket.manager.find(player.id, function(client) {
+					client.close(); // Disconnect player for being idle
+				});
+				
+				players.splice(indexOfByPlayerId(player.id), 1);
+				i--;
+				continue;
 			};
+			
+			player.age += 1; // Increase player age due to inactivity
 		};
 	}, 3000);	
 };
@@ -307,20 +310,24 @@ function sendPing(client) {
 function sendBulletUpdates(bullets, socket) {
 	setInterval(function() {
 		//console.log(bullets);
-		if (bullets != undefined && bullets.length > 0) {
-			for (var bulletId in bullets) {
-				if (bullets[bulletId] == null)
+		if (bullets != undefined) {
+			var bulletsLength = bullets.length;
+			for (var i = 0; i < bulletsLength; i++) {
+				var bullet = bullets[i];
+				
+				if (bullet == null)
 					continue;
 
-					bullets[bulletId].update();
-					
-					if (!bullets[bulletId].alive) {
-						socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {i: bullets[bulletId].id}));
-						bullets.splice(indexOfByBulletId(bullets[bulletId].id), 1);
-						continue;
-					};
-					
-					socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_BULLET, {i: bullets[bulletId].id, x: bullets[bulletId].x, y: bullets[bulletId].y}));
+				bullet.update();
+				
+				if (!bullet.alive) {
+					socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {i: bullet.id}));
+					bullets.splice(indexOfByBulletId(bullet.id), 1);
+					i--;
+					continue;
+				};
+				
+				socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_BULLET, {i: bullet.id, x: bullet.x, y: bullet.y}));
 			};
 		};
 	}, 30);
