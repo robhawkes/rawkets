@@ -34,6 +34,7 @@ Game.MESSAGE_TYPE_AUTHENTICATE = 9;
 Game.MESSAGE_TYPE_ERROR = 10;
 Game.MESSAGE_TYPE_ADD_BULLET = 11;
 Game.MESSAGE_TYPE_UPDATE_BULLET = 12;
+Game.MESSAGE_TYPE_REMOVE_BULLET = 13;
 
 /**
  * Initialise game environment
@@ -161,6 +162,9 @@ Game.prototype.onSocketMessage = function(msg) {
 						var bullet = this.getBulletById(data.i);
 						bullet.worldPos.x = data.x;
 						bullet.worldPos.y = data.y;
+						break;
+					case Game.MESSAGE_TYPE_REMOVE_BULLET:
+						this.bullets.splice(this.bullets.indexOf(this.getBulletById(data.i)), 1);
 						break;
 					default:
 						//console.log("Incoming message:", json);
@@ -471,7 +475,7 @@ Game.prototype.keyDown = function(e) {
 			break;
 		case space:
 			//self.player.shoot();
-			var msg = Game.formatMessage(Game.MESSAGE_TYPE_ADD_BULLET, {x: self.player.pos.x, y: self.player.pos.y, vX: Math.sin(self.player.rocket.angle)*3, vY: Math.cos(self.player.rocket.angle)*3});
+			var msg = Game.formatMessage(Game.MESSAGE_TYPE_ADD_BULLET, {x: self.player.pos.x, y: self.player.pos.y, vX: Math.sin(self.player.rocket.angle)*15, vY: Math.cos(self.player.rocket.angle)*15});
 			self.socket.send(msg);
 			break;
 	};
