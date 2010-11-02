@@ -10,6 +10,7 @@
  * @param {Number} y Vertical position of player in global space
  */
 var Player = function(x, y) {
+	this.allowedToShoot = true;
 	this.bullets = [];
 	this.id;
 	this.move = false;
@@ -198,5 +199,9 @@ Player.prototype.shoot = function() {
 	bullet.velocity.set(Math.sin(this.rocket.angle)*bullet.velocityAmount, Math.cos(this.rocket.angle)*bullet.velocityAmount);
 	
 	this.bullets.push(bullet);*/
-	
+	this.allowedToShoot = false;
+	var self = this;
+	setTimeout(function() {
+		self.allowedToShoot = true;
+	}, 250);
 };
