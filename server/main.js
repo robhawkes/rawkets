@@ -224,7 +224,7 @@ function init() {
 								player.showFlame = data.f;
 								client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {i: client.id, x: data.x, y: data.y, a: data.a, f: data.f}));
 							} else {
-								console.log("Player doesn't exist: ", client.id);
+								//console.log("Player doesn't exist: ", client.id);
 							};
 						} catch (e) {
 							console.log("Caught error during player update: ", e);
