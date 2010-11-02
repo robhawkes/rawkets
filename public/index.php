@@ -123,16 +123,17 @@ try {
 			});
 		</script>
 		
-		<script type="text/javascript" src="js/bison.js"></script>
-		<script type="text/javascript" src="js/Socket.js"></script>
-		<script type="text/javascript" src="js/Vector.js"></script>
-		<script type="text/javascript" src="js/Rocket.js"></script>
-		<script type="text/javascript" src="js/Bullet.js"></script>
-		<script type="text/javascript" src="js/Player.js"></script>
-		<script type="text/javascript" src="js/Viewport.js"></script>
-		<script type="text/javascript" src="js/Star.js"></script>
-		<script type="text/javascript" src="js/Game.js"></script>
-		<script type="text/javascript" src="js/main.js"></script>
+		<!-- Timestamps prevent cached scripts screwing with testing - REMOVE WHEN GAME IS COMPLETE -->
+		<script type="text/javascript" src="js/bison.js?<?=time()?>"></script>
+		<script type="text/javascript" src="js/Socket.js?<?=time()?>"></script>
+		<script type="text/javascript" src="js/Vector.js?<?=time()?>"></script>
+		<script type="text/javascript" src="js/Rocket.js?<?=time()?>"></script>
+		<script type="text/javascript" src="js/Bullet.js?<?=time()?>"></script>
+		<script type="text/javascript" src="js/Player.js?<?=time()?>"></script>
+		<script type="text/javascript" src="js/Viewport.js?<?=time()?>"></script>
+		<script type="text/javascript" src="js/Star.js?<?=time()?>"></script>
+		<script type="text/javascript" src="js/Game.js?<?=time()?>"></script>
+		<script type="text/javascript" src="js/main.js?<?=time()?>"></script>
 		
 		<!-- Observer App -->
 		<script type="text/javascript" src="http://www.observerapp.com/record.js"></script>
