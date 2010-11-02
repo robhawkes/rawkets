@@ -24,6 +24,7 @@ var MESSAGE_TYPE_AUTHENTICATE = 9;
 var MESSAGE_TYPE_ERROR = 10;
 var MESSAGE_TYPE_ADD_BULLET = 11;
 var MESSAGE_TYPE_UPDATE_BULLET = 12;
+var MESSAGE_TYPE_REMOVE_BULLET = 13;
 
 /**
  * Initialises server-side functionality
@@ -232,8 +233,8 @@ function init() {
 						break;
 					case MESSAGE_TYPE_ADD_BULLET:
 						var b = bullet.init(client.id, data.x, data.y, data.vX, data.vY);
+						b.id = new Date().getTime()+client.id.toString();
 						bullets.push(b);
-						b.id = bullets.length;
 						socket.broadcast(formatMessage(MESSAGE_TYPE_ADD_BULLET, {i: b.id, x: data.x, y: data.y}));
 						break;
 					default:
@@ -302,6 +303,7 @@ function sendPing(client) {
 	}, 3000);
 };
 
+// Change this to a tick/time based animation to avoid jerkiness
 function sendBulletUpdates(bullets, socket) {
 	setInterval(function() {
 		//console.log(bullets);
@@ -313,6 +315,7 @@ function sendBulletUpdates(bullets, socket) {
 					bullets[bulletId].update();
 					
 					if (!bullets[bulletId].alive) {
+						socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {i: bullets[bulletId].id}));
 						bullets.splice(indexOfByBulletId(bullets[bulletId].id), 1);
 						continue;
 					};
