@@ -10,6 +10,7 @@
  * @param {Number} y Vertical position of player in global space
  */
 var Player = function(x, y) {
+	this.alive = true;
 	this.allowedToShoot = true;
 	this.bullets = [];
 	this.id;
@@ -137,7 +138,7 @@ Player.prototype.draw = function(ctx) {
 		bullet.draw(ctx);
 	};*/
 	
-	if (this.id) {
+	if (this.name) {
 		ctx.fillStyle = "rgb(255, 255, 255)";
 		ctx.font = "10px Courier";
 		ctx.fillText(this.name+" | "+this.ping+"ms", this.rocket.pos.x+15, this.rocket.pos.y+2);
@@ -203,5 +204,17 @@ Player.prototype.shoot = function() {
 	var self = this;
 	setTimeout(function() {
 		self.allowedToShoot = true;
-	}, 250);
+	}, 500);
+};
+
+Player.prototype.kill = function() {
+	if (this.alive) {
+		this.alive = false;
+		this.rocket.colour = "rgb(243, 113, 9)";
+		var self = this;
+		setTimeout(function() {
+			self.rocket.colour = self.rocket.originalColour;
+			self.alive = true;
+		}, 2000);
+	};
 };

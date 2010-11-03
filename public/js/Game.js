@@ -35,6 +35,7 @@ Game.MESSAGE_TYPE_ERROR = 10;
 Game.MESSAGE_TYPE_ADD_BULLET = 11;
 Game.MESSAGE_TYPE_UPDATE_BULLET = 12;
 Game.MESSAGE_TYPE_REMOVE_BULLET = 13;
+Game.MESSAGE_TYPE_KILL_PLAYER = 14;
 
 /**
  * Initialise game environment
@@ -118,7 +119,7 @@ Game.prototype.onSocketMessage = function(msg) {
 						console.log(data.e);
 						break;
 					case Game.MESSAGE_TYPE_SET_COLOUR:
-						this.player.rocket.colour = data.c;
+						this.player.rocket.colour = this.player.rocket.originalColour = data.c;
 						break;
 					case Game.MESSAGE_TYPE_PING:
 						if (data.t) {
@@ -126,6 +127,9 @@ Game.prototype.onSocketMessage = function(msg) {
 						}
 					
 						if (data.p) {
+							if (this.player.id == null) {
+								this.player.id = data.i;
+							};
 							this.ping.html("@"+data.n+" - "+data.p+"ms");
 						}
 						break;
@@ -135,7 +139,7 @@ Game.prototype.onSocketMessage = function(msg) {
 						player.name = data.n;
 						player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
 						player.rocket.angle = data.a;
-						player.rocket.colour = data.c;
+						player.rocket.colour = player.rocket.originalColour = data.c;
 						player.rocket.showFlame = data.f;
 						this.players.push(player);
 						break;
@@ -167,6 +171,16 @@ Game.prototype.onSocketMessage = function(msg) {
 						break;
 					case Game.MESSAGE_TYPE_REMOVE_BULLET:
 						this.bullets.splice(this.bullets.indexOf(this.getBulletById(data.i)), 1);
+						break;
+					case Game.MESSAGE_TYPE_KILL_PLAYER:
+						// Local player killed
+						if (this.player.id == data.i) {
+							this.player.kill();
+						// Remote player killed
+						} else {
+							var player = this.getPlayerById(data.i);
+							player.kill();
+						};
 						break;
 					default:
 						//console.log("Incoming message:", json);
@@ -315,8 +329,11 @@ Game.prototype.update = function() {
 		// Skip elements that don't exist
 		if (bullet == null)
 			continue;
-
-		bullet.pos = this.viewport.worldToScreen(bullet.worldPos.x, bullet.worldPos.y);
+		
+		// Only update bullets within the viewport
+		if (this.viewport.withinBounds(bullet.worldPos.x, bullet.worldPos.y)) {
+			bullet.pos = this.viewport.worldToScreen(bullet.worldPos.x, bullet.worldPos.y);
+		};
 	};
 };
 
@@ -336,6 +353,20 @@ Game.prototype.draw = function() {
 			continue;
 			
 		star.draw(this.ctx);
+	};
+	
+	var bulletsLength = this.bullets.length;
+	for (var i = 0; i < bulletsLength; i++) {
+		var bullet = this.bullets[i];
+		
+		// Skip elements that don't exist
+		if (bullet == null)
+			continue;
+		
+		// Only draw bullets within the viewport
+		if (this.viewport.withinBounds(bullet.worldPos.x, bullet.worldPos.y)) {
+			bullet.draw(this.ctx);
+		};
 	};
 	
 	this.player.draw(this.ctx);
@@ -427,17 +458,6 @@ Game.prototype.draw = function() {
 			};
 		};
 	};
-	
-	var bulletsLength = this.bullets.length;
-	for (var i = 0; i < bulletsLength; i++) {
-		var bullet = this.bullets[i];
-		
-		// Skip elements that don't exist
-		if (bullet == null)
-			continue;
-
-		bullet.draw(this.ctx);
-	};
 };
 
 /**
@@ -484,12 +504,11 @@ Game.prototype.keyDown = function(e) {
 		case arrow.down:
 			break;
 		case space:
-			//self.player.shoot();
-			/*if (self.player.allowedToShoot) {
-				var msg = Game.formatMessage(Game.MESSAGE_TYPE_ADD_BULLET, {x: self.player.pos.x, y: self.player.pos.y, vX: Math.sin(self.player.rocket.angle)*15, vY: Math.cos(self.player.rocket.angle)*15});
+			if (self.player.allowedToShoot) {
+				var msg = Game.formatMessage(Game.MESSAGE_TYPE_ADD_BULLET, {x: self.player.pos.x, y: self.player.pos.y, vX: self.player.rocket.velocity.x+(Math.sin(self.player.rocket.angle)*15), vY: self.player.rocket.velocity.y+(Math.cos(self.player.rocket.angle)*15)});
 				self.socket.send(msg);
 				self.player.shoot();
-			};*/
+			};
 			break;
 	};
 };
