@@ -140,13 +140,6 @@ try {
 		<script type="text/javascript">
 		try { Observerapp.record("4cc2aa5ba7b560500a05879c"); } catch(e) {};
 		</script>
-		
-		<!-- Woopra Code Start -->
-		<script type="text/javascript" src="//static.woopra.com/js/woopra.v2.js"></script>
-		<script type="text/javascript">
-		woopraTracker.track();
-		</script>
-		<!-- Woopra Code End -->
 	</body>
 
 </html>

@@ -36,6 +36,7 @@ Game.MESSAGE_TYPE_ADD_BULLET = 11;
 Game.MESSAGE_TYPE_UPDATE_BULLET = 12;
 Game.MESSAGE_TYPE_REMOVE_BULLET = 13;
 Game.MESSAGE_TYPE_KILL_PLAYER = 14;
+Game.MESSAGE_TYPE_UPDATE_KILLS = 15;
 
 /**
  * Initialise game environment
@@ -137,6 +138,7 @@ Game.prototype.onSocketMessage = function(msg) {
 						var player = new Player(data.x, data.y);
 						player.id = data.i;
 						player.name = data.n;
+						player.killCount = data.k;
 						player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
 						player.rocket.angle = data.a;
 						player.rocket.colour = player.rocket.originalColour = data.c;
@@ -182,6 +184,7 @@ Game.prototype.onSocketMessage = function(msg) {
 							player.kill();
 						};
 						
+						/*
 						// Bullet was from the local player
 						if (this.player.id == data.bp) {
 							this.player.killCount++;
@@ -189,6 +192,17 @@ Game.prototype.onSocketMessage = function(msg) {
 						} else {
 							var player = this.getPlayerById(data.bp);
 							player.killCount++;
+						};
+						*/
+						break;
+					case Game.MESSAGE_TYPE_UPDATE_KILLS:
+						// Local player
+						if (this.player.id == data.i) {
+							this.player.killCount = data.k;
+						// Remote player
+						} else {
+							var player = this.getPlayerById(data.i);
+							player.killCount = data.k;
 						};
 						break;
 					default:

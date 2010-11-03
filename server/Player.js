@@ -15,11 +15,12 @@ var Player = function(id, x, y, angle, showFlame, colour, name) {
 	this.x = x;
 	this.y = y;
 	this.name = name;
+	this.age = 0; // Used to detect timed-out players
 	this.angle = angle;
-	this.showFlame = showFlame;
 	this.ping = 0;
 	this.colour = colour;
-	this.age = 0; // Used to detect timed-out players
+	this.showFlame = showFlame;
+	this.killCount = 0;
 	
 	this.twitterAccessToken;
 	this.twitterAccessTokenSecret;
