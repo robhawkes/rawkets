@@ -214,7 +214,7 @@ Player.prototype.kill = function() {
 		this.alive = false;
 		this.allowedToShoot = false;
 		this.move = false;
-		this.rocket.showFlame = true;
+		this.rocket.showFlame = false;
 		this.rocket.colour = "rgb(243, 113, 9)";
 		var self = this;
 		setTimeout(function() {
