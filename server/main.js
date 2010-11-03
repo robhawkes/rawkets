@@ -26,6 +26,7 @@ var MESSAGE_TYPE_ADD_BULLET = 11;
 var MESSAGE_TYPE_UPDATE_BULLET = 12;
 var MESSAGE_TYPE_REMOVE_BULLET = 13;
 var MESSAGE_TYPE_KILL_PLAYER = 14;
+var MESSAGE_TYPE_UPDATE_KILLS = 15;
 
 /**
  * Initialises server-side functionality
@@ -184,7 +185,7 @@ function init() {
 								client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {c: player.colour}));
 								sendPing(client);				
 							
-								client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, f: player.showFlame, n: player.name}));
+								client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, f: player.showFlame, n: player.name, k: player.killCount}));
 							
 								// Send data for existing players
 								if (players.length > 0) {
@@ -192,7 +193,7 @@ function init() {
 										if (players[playerId] == null)
 											continue;
 
-											client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[playerId].id, x: players[playerId].x, y: players[playerId].y, a: players[playerId].angle, f: players[playerId].showFlame, c: players[playerId].colour, n: players[playerId].name}));
+											client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: players[playerId].id, x: players[playerId].x, y: players[playerId].y, a: players[playerId].angle, f: players[playerId].showFlame, c: players[playerId].colour, n: players[playerId].name, k: players[playerId].killCount}));
 									};
 								};
 								
@@ -351,7 +352,10 @@ function sendBulletUpdates(bullets, socket) {
 					
 					// Bullet is within kill radius
 					if (d < 10) {
-						socket.broadcast(formatMessage(MESSAGE_TYPE_KILL_PLAYER, {i: player.id, bp: bullet.playerId}));
+						socket.broadcast(formatMessage(MESSAGE_TYPE_KILL_PLAYER, {i: player.id}));
+						var bulletPlayer = playerById(bullet.playerId);
+						bulletPlayer.killCount++;
+						socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_KILLS, {i: bulletPlayer.id, k: bulletPlayer.killCount}));
 						alive = false;
 						break;
 					};
