@@ -52,7 +52,7 @@ Player.prototype.update = function(viewport) {
 	/*if (this.rocket.trailWorld.length > 0)
 		this.updateTrail(viewport);*/
 	
-	if (this.move) {	
+	if (this.move && this.alive) {	
 		/*
 		// Add new trail to world array
 		this.rocket.trailWorld.push({pos: new Vector(this.pos.x, this.pos.y), opacity: 255});
