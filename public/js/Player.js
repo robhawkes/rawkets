@@ -14,6 +14,7 @@ var Player = function(x, y) {
 	this.allowedToShoot = true;
 	this.bullets = [];
 	this.id;
+	this.killCount = 0;
 	this.move = false;
 	this.name;
 	this.ping = 0;
@@ -141,7 +142,7 @@ Player.prototype.draw = function(ctx) {
 	if (this.name) {
 		ctx.fillStyle = "rgb(255, 255, 255)";
 		ctx.font = "10px Courier";
-		ctx.fillText(this.name+" | "+this.ping+"ms", this.rocket.pos.x+15, this.rocket.pos.y+2);
+		ctx.fillText(this.name+" | "+this.ping+"ms | "+this.killCount+" kills", this.rocket.pos.x+15, this.rocket.pos.y+2);
 	};
 };
 

@@ -181,6 +181,15 @@ Game.prototype.onSocketMessage = function(msg) {
 							var player = this.getPlayerById(data.i);
 							player.kill();
 						};
+						
+						// Bullet was from the local player
+						if (this.player.id == data.bp) {
+							this.player.killCount++;
+						// Bullet was from a remote player
+						} else {
+							var player = this.getPlayerById(data.bp);
+							player.killCount++;
+						};
 						break;
 					default:
 						//console.log("Incoming message:", json);
