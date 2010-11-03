@@ -179,8 +179,10 @@ Player.prototype.haltRotateRight = function() {
  * Move player forwards
  */
 Player.prototype.moveForward = function() {
-	this.move = true;
-	this.rocket.showFlame = true;
+	if (this.alive) {
+		this.move = true;
+		this.rocket.showFlame = true;
+	};
 };
 
 /**
@@ -210,11 +212,15 @@ Player.prototype.shoot = function() {
 Player.prototype.kill = function() {
 	if (this.alive) {
 		this.alive = false;
+		this.allowedToShoot = false;
+		this.move = false;
+		this.rocket.showFlame = true;
 		this.rocket.colour = "rgb(243, 113, 9)";
 		var self = this;
 		setTimeout(function() {
 			self.rocket.colour = self.rocket.originalColour;
 			self.alive = true;
+			self.allowedToShoot = true;
 		}, 2000);
 	};
 };
