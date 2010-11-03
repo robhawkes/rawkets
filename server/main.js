@@ -258,7 +258,7 @@ function init() {
 	
 	initPlayerActivityMonitor(players, socket); // Disabled until I can fix the crash
 	
-	//sendBulletUpdates(bullets, socket);
+	sendBulletUpdates(bullets, socket);
 	
 	// Catch socket error – this listener seems to catch the ECONNRESET crashes sometimes. Although it seems that the client listener above catches them now.
 	/*socket.removeAllListeners("error");
