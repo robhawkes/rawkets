@@ -139,10 +139,13 @@ Player.prototype.draw = function(ctx) {
 		bullet.draw(ctx);
 	};*/
 	
+	ctx.fillStyle = "rgb(255, 255, 255)";
+	ctx.font = "10px Courier";
+	
 	if (this.name) {
-		ctx.fillStyle = "rgb(255, 255, 255)";
-		ctx.font = "10px Courier";
 		ctx.fillText(this.name+" | "+this.ping+"ms | "+this.killCount+" kills", this.rocket.pos.x+15, this.rocket.pos.y+2);
+	} else {
+		ctx.fillText(this.killCount+" kills", this.rocket.pos.x+15, this.rocket.pos.y+2);	
 	};
 };
 
