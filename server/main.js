@@ -351,7 +351,7 @@ function sendBulletUpdates(bullets, socket) {
 					
 					// Bullet is within kill radius
 					if (d < 10) {
-						socket.broadcast(formatMessage(MESSAGE_TYPE_KILL_PLAYER, {i: player.id}));
+						socket.broadcast(formatMessage(MESSAGE_TYPE_KILL_PLAYER, {i: player.id, bp: bullet.playerId}));
 						alive = false;
 						break;
 					};
