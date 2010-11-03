@@ -309,6 +309,11 @@ function sendPing(client) {
 
 // Change this to a tick/time based animation to avoid jerkiness
 function sendBulletUpdates(bullets, socket) {
+	function removeBullet(bulletId) {
+		socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {i: bulletId}));
+		bullets.splice(indexOfByBulletId(bulletId), 1);
+	}
+	
 	setInterval(function() {
 		//console.log(bullets);
 		if (bullets != undefined) {
@@ -322,13 +327,13 @@ function sendBulletUpdates(bullets, socket) {
 				bullet.update();
 				
 				if (!bullet.alive) {
-					socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {i: bullet.id}));
-					bullets.splice(indexOfByBulletId(bullet.id), 1);
+					removeBullet(bullet.id);
 					i--;
 					continue;
 				};
 				
 				// Check for kill
+				var alive = true;
 				var playersLength = players.length;
 				for (var j = 0; j < playersLength; j++) {
 					var player = players[j];
@@ -347,7 +352,15 @@ function sendBulletUpdates(bullets, socket) {
 					// Bullet is within kill radius
 					if (d < 10) {
 						socket.broadcast(formatMessage(MESSAGE_TYPE_KILL_PLAYER, {i: player.id}));
+						alive = false;
+						break;
 					};
+				};
+				
+				if (!alive) {
+					removeBullet(bullet.id);
+					i--;
+					continue;
 				};
 				
 				socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_BULLET, {i: bullet.id, x: bullet.x, y: bullet.y}));
