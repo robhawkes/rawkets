@@ -25,6 +25,7 @@ var MESSAGE_TYPE_ERROR = 10;
 var MESSAGE_TYPE_ADD_BULLET = 11;
 var MESSAGE_TYPE_UPDATE_BULLET = 12;
 var MESSAGE_TYPE_REMOVE_BULLET = 13;
+var MESSAGE_TYPE_KILL_PLAYER = 14;
 
 /**
  * Initialises server-side functionality
@@ -107,7 +108,7 @@ function init() {
 						var ping = newTimestamp-data.t;
 						
 						// Send ping back to player
-						client.send(formatMessage(MESSAGE_TYPE_PING, {n: player.name, p: ping}));
+						client.send(formatMessage(MESSAGE_TYPE_PING, {i: player.id, n: player.name, p: ping}));
 						
 						// Broadcast ping to other players
 						client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_PING, {i: client.id, p: ping}));
@@ -257,7 +258,7 @@ function init() {
 	
 	initPlayerActivityMonitor(players, socket); // Disabled until I can fix the crash
 	
-	sendBulletUpdates(bullets, socket);
+	//sendBulletUpdates(bullets, socket);
 	
 	// Catch socket error – this listener seems to catch the ECONNRESET crashes sometimes. Although it seems that the client listener above catches them now.
 	/*socket.removeAllListeners("error");
@@ -325,6 +326,28 @@ function sendBulletUpdates(bullets, socket) {
 					bullets.splice(indexOfByBulletId(bullet.id), 1);
 					i--;
 					continue;
+				};
+				
+				// Check for kill
+				var playersLength = players.length;
+				for (var j = 0; j < playersLength; j++) {
+					var player = players[j];
+
+					if (player == null)
+						continue;
+						
+					if (player.id == bullet.playerId)
+						continue;
+						
+					var dx = bullet.x - player.x;
+					var dy = bullet.y - player.y;
+					var dd = (dx * dx) + (dy * dy);
+					var d = Math.sqrt(dd);
+					
+					// Bullet is within kill radius
+					if (d < 10) {
+						socket.broadcast(formatMessage(MESSAGE_TYPE_KILL_PLAYER, {i: player.id}));
+					};
 				};
 				
 				socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_BULLET, {i: bullet.id, x: bullet.x, y: bullet.y}));

@@ -26,8 +26,9 @@ Bullet.prototype.update = function() {
  */
 Bullet.prototype.draw = function(ctx) {
 	ctx.fillStyle = "rgb(255, 255, 0)";
-	ctx.beginPath();
-	ctx.arc(this.pos.x, this.pos.y, 2, 0, Math.PI*2, false);
-	ctx.closePath();
-	ctx.fill();
+	//ctx.beginPath();
+	//ctx.arc(this.pos.x, this.pos.y, 2, 0, Math.PI*2, false);
+	//ctx.closePath();
+	//ctx.fill();
+	ctx.fillRect(this.pos.x-1, this.pos.y-1, 2, 2);
 };
