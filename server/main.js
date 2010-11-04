@@ -344,15 +344,26 @@ function sendBulletUpdates(bullets, socket) {
 						
 					if (player.id == bullet.playerId)
 						continue;
+
+					// Don't kill players who are already dead
+					if (!player.alive)
+						continue;
 						
 					var dx = bullet.x - player.x;
 					var dy = bullet.y - player.y;
 					var dd = (dx * dx) + (dy * dy);
 					var d = Math.sqrt(dd);
-					
+				
 					// Bullet is within kill radius
 					if (d < 10) {
 						socket.broadcast(formatMessage(MESSAGE_TYPE_KILL_PLAYER, {i: player.id}));
+						player.alive = false;
+						
+						// Give player some time to get away after being shot
+						setTimeout(function() {
+							player.alive = true;
+						}, 4000);
+					
 						var bulletPlayer = playerById(bullet.playerId);
 						bulletPlayer.killCount++;
 						socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_KILLS, {i: bulletPlayer.id, k: bulletPlayer.killCount}));

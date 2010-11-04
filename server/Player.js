@@ -21,6 +21,7 @@ var Player = function(id, x, y, angle, showFlame, colour, name) {
 	this.colour = colour;
 	this.showFlame = showFlame;
 	this.killCount = 0;
+	this.alive = true;
 	
 	this.twitterAccessToken;
 	this.twitterAccessTokenSecret;
