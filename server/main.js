@@ -244,6 +244,7 @@ function init() {
 					case MESSAGE_TYPE_REVIVE_PLAYER:
 						var player = players[indexOfByPlayerId(client.id)];
 						player.alive = true;
+						break;
 					default:
 						util.log("Incoming message ["+client.id+"]: "+data.type);
 				};
