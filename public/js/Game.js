@@ -56,12 +56,7 @@ Game.prototype.initGame = function() {
 	this.bullets = [];
 	
 	this.viewport = new Viewport(this.canvas.width(), this.canvas.height());
-	this.stars = [];
-	this.starsOriginalWidth = this.canvas.width();
-	this.starsOriginalHeight = this.canvas.height();
-	for (var i = 0; i < 20; i++) {
-		this.stars.push(new Star(Math.random()*this.canvas.width(), Math.random()*this.canvas.height()));
-	};
+	this.createStars();
 	
 	this.canvas.fadeIn();
 	
@@ -178,7 +173,7 @@ Game.prototype.onSocketMessage = function(msg) {
 					case Game.MESSAGE_TYPE_KILL_PLAYER:
 						// Local player killed
 						if (this.player.id == data.i) {
-							this.player.kill();
+							this.player.kill(this.viewport);
 							var self = this;
 							setTimeout(function() {
 								var msg = Game.formatMessage(Game.MESSAGE_TYPE_REVIVE_PLAYER, {});
@@ -284,6 +279,11 @@ Game.prototype.timeout = function() {
 	if (this.player.sendUpdate) {
 		this.sendPlayerPosition();
 	};
+	
+	if (this.player.teleport) {
+		this.createStars();
+		this.player.teleport = false;
+	};
 
 	// Horrible passing of game object due to event closure
 	var self = this;
@@ -296,7 +296,7 @@ Game.prototype.timeout = function() {
 /**
  * Update game elements
  */
-Game.prototype.update = function() {
+Game.prototype.update = function() {	
 	this.player.update(this.viewport); // Really shouldn't have to pass the viewport here
 	
 	if (!this.viewport.withinWorldBounds(this.player.pos.x, this.player.pos.y)) {
@@ -492,6 +492,18 @@ Game.prototype.draw = function() {
 				this.ctx.fillRect(px-4, py-2, 4, 4);
 			};
 		};
+	};
+};
+
+/**
+ * Create stars
+ */
+Game.prototype.createStars = function() {
+	this.stars = [];
+	this.starsOriginalWidth = this.canvas.width();
+	this.starsOriginalHeight = this.canvas.height();
+	for (var i = 0; i < 20; i++) {
+		this.stars.push(new Star(Math.random()*this.canvas.width(), Math.random()*this.canvas.height()));
 	};
 };
 

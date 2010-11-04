@@ -22,6 +22,7 @@ var Player = function(x, y) {
 	this.pos = new Vector(x, y);
 	this.rocket = new Rocket();
 	this.sendUpdate = false;
+	this.teleport = false;
 };
 
 /**
@@ -29,6 +30,10 @@ var Player = function(x, y) {
  */
 Player.prototype.update = function(viewport) {
 	this.sendUpdate = false;
+	
+	if (this.teleport) {
+		this.sendUpdate = true;
+	};	
 	
 	this.rocket.update();
 	
@@ -216,11 +221,11 @@ Player.prototype.shoot = function() {
 	}, 500);
 };
 
-Player.prototype.kill = function() {
+Player.prototype.kill = function(viewport) {
 	if (this.alive) {
 		this.alive = false;
 		this.allowedToShoot = false;
-		this.move = false;
+		this.forceUpdate = true;
 		this.rocket.rotateLeft = false;
 		this.rocket.rotateRight = false;
 		this.rocket.showFlame = false;
@@ -230,6 +235,9 @@ Player.prototype.kill = function() {
 			self.rocket.colour = self.rocket.originalColour;
 			self.alive = true;
 			self.allowedToShoot = true;
+			self.pos.x = Math.random()*viewport.worldWidth;
+			self.pos.y = Math.random()*viewport.worldHeight;
+			self.teleport = true;
 		}, 2000);
 	};
 };
