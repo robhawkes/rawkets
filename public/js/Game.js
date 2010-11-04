@@ -358,6 +358,12 @@ Game.prototype.update = function() {
 			bullet.pos = this.viewport.worldToScreen(bullet.worldPos.x, bullet.worldPos.y);
 		};
 	};
+		
+	if (this.player.fireGun && this.player.allowedToShoot && this.player.alive) {
+		var msg = Game.formatMessage(Game.MESSAGE_TYPE_ADD_BULLET, {x: this.player.pos.x, y: this.player.pos.y, vX: this.player.rocket.velocity.x+(Math.sin(this.player.rocket.angle)*15), vY: this.player.rocket.velocity.y+(Math.cos(this.player.rocket.angle)*15)});
+		this.socket.send(msg);
+		this.player.shoot();
+	};
 };
 
 /**
@@ -527,11 +533,7 @@ Game.prototype.keyDown = function(e) {
 		case arrow.down:
 			break;
 		case space:
-			if (self.player.allowedToShoot && self.player.alive) {
-				var msg = Game.formatMessage(Game.MESSAGE_TYPE_ADD_BULLET, {x: self.player.pos.x, y: self.player.pos.y, vX: self.player.rocket.velocity.x+(Math.sin(self.player.rocket.angle)*15), vY: self.player.rocket.velocity.y+(Math.cos(self.player.rocket.angle)*15)});
-				self.socket.send(msg);
-				self.player.shoot();
-			};
+			self.player.fireGun = true;
 			break;
 	};
 };
@@ -561,6 +563,7 @@ Game.prototype.keyUp = function(e) {
 		case arrow.down:
 			break;
 		case space:
+			self.player.fireGun = false;
 			break;
 	};
 };

@@ -14,6 +14,7 @@ var Player = function(x, y) {
 	this.allowedToShoot = true;
 	this.bullets = [];
 	this.id;
+	this.fireGun = false;
 	this.killCount = 0;
 	this.move = false;
 	this.name;
@@ -153,16 +154,18 @@ Player.prototype.draw = function(ctx) {
  * Rotate player left
  */
 Player.prototype.rotateLeft = function() {
-	//this.rocket.rotateRight = false;
-	this.rocket.rotateLeft = true;
+	if (this.alive) {
+		this.rocket.rotateLeft = true;
+	};
 };
 
 /**
  * Rotate player right
  */
 Player.prototype.rotateRight = function() {
-	//this.rocket.rotateLeft = false;
-	this.rocket.rotateRight = true;
+	if (this.alive) {
+		this.rocket.rotateRight = true;
+	};
 };
 
 /**
@@ -218,6 +221,8 @@ Player.prototype.kill = function() {
 		this.alive = false;
 		this.allowedToShoot = false;
 		this.move = false;
+		this.rocket.rotateLeft = false;
+		this.rocket.rotateRight = false;
 		this.rocket.showFlame = false;
 		this.rocket.colour = "rgb(243, 113, 9)";
 		var self = this;
