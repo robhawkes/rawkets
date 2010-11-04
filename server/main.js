@@ -245,7 +245,7 @@ function init() {
 						var player = players[indexOfByPlayerId(client.id)];
 						player.alive = true;
 					default:
-						util.log("Incoming message ["+client.id+"]:", data);
+						util.log("Incoming message ["+client.id+"]: "+data);
 				};
 			// Invalid message protocol
 			} else {
