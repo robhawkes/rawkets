@@ -27,6 +27,7 @@ var MESSAGE_TYPE_UPDATE_BULLET = 12;
 var MESSAGE_TYPE_REMOVE_BULLET = 13;
 var MESSAGE_TYPE_KILL_PLAYER = 14;
 var MESSAGE_TYPE_UPDATE_KILLS = 15;
+var MESSAGE_TYPE_REVIVE_PLAYER = 16;
 
 /**
  * Initialises server-side functionality
@@ -240,6 +241,9 @@ function init() {
 						bullets.push(b);
 						socket.broadcast(formatMessage(MESSAGE_TYPE_ADD_BULLET, {i: b.id, x: data.x, y: data.y}));
 						break;
+					case MESSAGE_TYPE_REVIVE_PLAYER:
+						var player = players[indexOfByPlayerId(client.id)];
+						player.alive = true;
 					default:
 						util.log("Incoming message ["+client.id+"]:", data);
 				};
@@ -357,17 +361,12 @@ function sendBulletUpdates(bullets, socket) {
 					// Bullet is within kill radius
 					if (d < 10) {
 						socket.broadcast(formatMessage(MESSAGE_TYPE_KILL_PLAYER, {i: player.id}));
-						//player.alive = false;
+						player.alive = false;
 					
 						var bulletPlayer = playerById(bullet.playerId);
 						bulletPlayer.killCount++;
 						socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_KILLS, {i: bulletPlayer.id, k: bulletPlayer.killCount}));
 						alive = false;
-						
-						// Give player some time to get away after being shot
-						//setTimeout(function() {
-						//	player.alive = true;
-						//}, 4000);
 						break;
 					};
 				};
