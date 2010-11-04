@@ -37,6 +37,7 @@ Game.MESSAGE_TYPE_UPDATE_BULLET = 12;
 Game.MESSAGE_TYPE_REMOVE_BULLET = 13;
 Game.MESSAGE_TYPE_KILL_PLAYER = 14;
 Game.MESSAGE_TYPE_UPDATE_KILLS = 15;
+Game.MESSAGE_TYPE_REVIVE_PLAYER = 16;
 
 /**
  * Initialise game environment
@@ -178,6 +179,11 @@ Game.prototype.onSocketMessage = function(msg) {
 						// Local player killed
 						if (this.player.id == data.i) {
 							this.player.kill();
+							var self = this;
+							setTimeout(function() {
+								var msg = Game.formatMessage(Game.MESSAGE_TYPE_REVIVE_PLAYER, {});
+								self.socket.send(msg);
+							}, 4000);
 						// Remote player killed
 						} else {
 							var player = this.getPlayerById(data.i);
