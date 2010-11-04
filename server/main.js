@@ -362,11 +362,15 @@ function sendBulletUpdates(bullets, socket) {
 					if (d < 10) {
 						socket.broadcast(formatMessage(MESSAGE_TYPE_KILL_PLAYER, {i: player.id}));
 						player.alive = false;
-					
-						var bulletPlayer = playerById(bullet.playerId);
-						bulletPlayer.killCount++;
-						socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_KILLS, {i: bulletPlayer.id, k: bulletPlayer.killCount}));
-						alive = false;
+						
+						try {
+							var bulletPlayer = playerById(bullet.playerId);
+							bulletPlayer.killCount++;
+							socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_KILLS, {i: bulletPlayer.id, k: bulletPlayer.killCount}));
+							alive = false;
+						} catch (e) {
+							
+						};
 						break;
 					};
 				};
