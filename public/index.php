@@ -78,7 +78,9 @@ try {
 
 	<head>
 		<title>Rawkets | Massively Multiplayer HTML5 Canvas and WebSockets Game | Rob Hawkes</title>
-		<meta charset="utf-8">		
+		<meta charset="utf-8">
+		<meta name="description" content="Rawkets is a massively multiplayer game which lets you shoot and interact with other players, in real-time, in space! It uses the latest Web technologies, including HTML5 canvas and WebSockets.">
+			
 		<link rel="stylesheet" href="style/main.css">
 	</head>
 	
