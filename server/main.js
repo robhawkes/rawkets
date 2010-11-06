@@ -182,9 +182,8 @@ function init() {
 								};
 							
 								player.colour = colour;
-							
-								client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {c: player.colour}));
-								sendPing(client);				
+								
+								client.send(formatMessage(MESSAGE_TYPE_SET_COLOUR, {i: client.id, c: player.colour}));			
 							
 								client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, f: player.showFlame, n: player.name, k: player.killCount}));
 							
@@ -210,6 +209,8 @@ function init() {
 
 								// Add new player to the stack
 								players.push(player);
+								
+								sendPing(client);	
 							} catch (err) {
 								client.send(formatMessage(MESSAGE_TYPE_ERROR, {e: err.type, msg: err.msg}));
 								client.close();

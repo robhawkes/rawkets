@@ -45,7 +45,7 @@ Rocket.prototype.update = function() {
 /**
  * Draw rocket onto the canvas
  */
-Rocket.prototype.draw = function(ctx) {
+Rocket.prototype.draw = function(ctx, active) {
 	/*if (this.trail) {
 		var trailLength = this.trail.length;
 		for (var i = 0; i < trailLength; i++) {
@@ -72,6 +72,12 @@ Rocket.prototype.draw = function(ctx) {
 	}
 	
 	ctx.fillStyle = this.colour;
+	
+	// Manually set a default, transparent colour
+	if (!active) {
+		ctx.fillStyle = "rgba(0, 255, 0, 0.3)";
+	};
+	
 	ctx.beginPath();
 	ctx.moveTo(0, -7);
 	ctx.lineTo(6, 7);
