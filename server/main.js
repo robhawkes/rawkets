@@ -179,6 +179,9 @@ function init() {
 									case "robhawkes": // Me
 										colour = "rgb(217, 65, 30)";
 										break;
+									case "lizzyrobins":
+										colour = "rgb(58, 200, 246)";
+										break;
 								};
 							
 								player.colour = colour;
