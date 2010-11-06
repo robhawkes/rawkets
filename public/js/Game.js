@@ -116,7 +116,19 @@ Game.prototype.onSocketMessage = function(msg) {
 						console.log(data.e);
 						break;
 					case Game.MESSAGE_TYPE_SET_COLOUR:
+						if (this.player.id == null) {
+							this.player.id = data.i;
+						};
+					
 						this.player.rocket.colour = this.player.rocket.originalColour = data.c;
+						
+						// Player is set up so let them get shot now
+						this.player.active = true;
+						this.player.alive = true;
+						this.player.allowedToShoot = true;
+						
+						var msg = Game.formatMessage(Game.MESSAGE_TYPE_REVIVE_PLAYER, {});
+						this.socket.send(msg);
 						break;
 					case Game.MESSAGE_TYPE_PING:
 						if (data.t) {
@@ -124,9 +136,6 @@ Game.prototype.onSocketMessage = function(msg) {
 						}
 					
 						if (data.p) {
-							if (this.player.id == null) {
-								this.player.id = data.i;
-							};
 							this.ping.html("@"+data.n+" - "+data.p+"ms");
 						}
 						break;
@@ -134,6 +143,8 @@ Game.prototype.onSocketMessage = function(msg) {
 						var player = new Player(data.x, data.y);
 						player.id = data.i;
 						player.name = data.n;
+						player.active = true;
+						player.alive = true;
 						player.killCount = data.k;
 						player.rocket.pos = this.viewport.worldToScreen(player.pos.x, player.pos.y);
 						player.rocket.angle = data.a;
@@ -296,16 +307,16 @@ Game.prototype.timeout = function() {
 /**
  * Update game elements
  */
-Game.prototype.update = function() {	
+Game.prototype.update = function() {
 	this.player.update(this.viewport); // Really shouldn't have to pass the viewport here
-	
+
 	if (!this.viewport.withinWorldBounds(this.player.pos.x, this.player.pos.y)) {
 		if (this.player.pos.x > this.viewport.worldWidth)
 			this.player.pos.x = this.viewport.worldWidth;
-			
+		
 		if (this.player.pos.x < 0)
 			this.player.pos.x = 0;
-			
+		
 		if (this.player.pos.y > this.viewport.worldHeight)
 			this.player.pos.y = this.viewport.worldHeight;
 

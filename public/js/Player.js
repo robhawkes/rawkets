@@ -10,8 +10,9 @@
  * @param {Number} y Vertical position of player in global space
  */
 var Player = function(x, y) {
-	this.alive = true;
-	this.allowedToShoot = true;
+	this.active = false;
+	this.alive = false;
+	this.allowedToShoot = false;
 	this.bullets = [];
 	this.id;
 	this.fireGun = false;
@@ -132,7 +133,7 @@ Player.prototype.updateTrail = function (viewport) {
  * Draw player
  */
 Player.prototype.draw = function(ctx) {
-	this.rocket.draw(ctx);
+	this.rocket.draw(ctx, this.active);
 	
 	/*var bulletsLength = this.bullets.length;
 	for (var i = 0; i < bulletsLength; i++) {
@@ -229,15 +230,19 @@ Player.prototype.kill = function(viewport) {
 		this.rocket.rotateLeft = false;
 		this.rocket.rotateRight = false;
 		this.rocket.showFlame = false;
-		this.rocket.colour = "rgb(243, 113, 9)";
+		this.rocket.colour = "rgba(243, 113, 9, 0.5)";
+		
 		var self = this;
 		setTimeout(function() {
 			self.rocket.colour = self.rocket.originalColour;
 			self.alive = true;
-			self.allowedToShoot = true;
-			self.pos.x = Math.random()*viewport.worldWidth;
-			self.pos.y = Math.random()*viewport.worldHeight;
-			self.teleport = true;
+			
+			if (viewport != undefined) {
+				self.allowedToShoot = true;
+				self.pos.x = Math.random()*viewport.worldWidth;
+				self.pos.y = Math.random()*viewport.worldHeight;
+				self.teleport = true;
+			};
 		}, 2000);
 	};
 };
