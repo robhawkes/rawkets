@@ -278,6 +278,7 @@ function init() {
 };
 
 function initPlayerActivityMonitor(players, socket) {
+	// Should probably stop this function from running if there are no players in the game
 	setInterval(function() {
 		var playersLength = players.length;
 		for (var i = 0; i < playersLength; i++) {
@@ -320,6 +321,7 @@ function sendBulletUpdates(bullets, socket) {
 		bullets.splice(indexOfByBulletId(bulletId), 1);
 	}
 	
+	// Should probably stop this function from running if there are no players in the game
 	setInterval(function() {
 		//console.log(bullets);
 		if (bullets != undefined) {
