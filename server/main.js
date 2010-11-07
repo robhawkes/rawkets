@@ -4,10 +4,24 @@ var	ws = require("websocket-server");
 var BISON = require("./bison");
 var player = require("./Player");
 var bullet = require("./Bullet");
+var fs = require("fs");
+var yaml = require("yaml");
 var socket;
 var serverStart;
 var players;
 var bullets;
+
+var TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET;
+fs.readFile("config.yml", "binary", function(err, file) {
+	if (err) {
+		util.puts(err);
+	};
+	
+	//util.puts(file.toString());
+	var output = yaml.eval(file.toString());
+	TWITTER_CONSUMER_KEY = output["TWITTER_CONSUMER_KEY"];
+	TWITTER_CONSUMER_SECRET = output["TWITTER_CONSUMER_SECRET"];	
+});
 
 /**
  * Message protocols
@@ -65,8 +79,8 @@ function init() {
 					case MESSAGE_TYPE_AUTHENTICATE:
 						var oa = new OAuth(null,
 										   null,
-										   "UR9lK0nq3KX6Wb2qgO4z5w",
-										   "e8jJbu2cj7LxtfS9xnIGLaE4BkuLmvkSUmoBXEOyO4c",
+										   TWITTER_CONSUMER_KEY,
+										   TWITTER_CONSUMER_SECRET,
 										   "1.0A",
 										   null,
 										   "HMAC-SHA1");
@@ -150,8 +164,8 @@ function init() {
 						
 						var oa = new OAuth(null,
 										   null,
-										   "UR9lK0nq3KX6Wb2qgO4z5w",
-										   "e8jJbu2cj7LxtfS9xnIGLaE4BkuLmvkSUmoBXEOyO4c",
+										   TWITTER_CONSUMER_KEY,
+										   TWITTER_CONSUMER_SECRET,
 										   "1.0A",
 										   null,
 										   "HMAC-SHA1");
