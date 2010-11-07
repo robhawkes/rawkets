@@ -170,7 +170,7 @@ function init() {
 								};
 							
 								switch (player.name) {
-									case "elliottkember": // John
+									case "elliottkember": // Eliott
 										colour = "rgb(255, 0, 255)";
 										break;
 									case "JohnONolan": // John
