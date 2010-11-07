@@ -1,8 +1,11 @@
 <?php
 session_start();
 
-define("TWITTER_CONSUMER_KEY", "UR9lK0nq3KX6Wb2qgO4z5w");
-define("TWITTER_CONSUMER_SECRET", "e8jJbu2cj7LxtfS9xnIGLaE4BkuLmvkSUmoBXEOyO4c");
+require_once("lib/spyc.php");
+$config = Spyc::YAMLLoad("../config.yml");
+
+define("TWITTER_CONSUMER_KEY", $config["TWITTER_CONSUMER_KEY"]);
+define("TWITTER_CONSUMER_SECRET", $config["TWITTER_CONSUMER_SECRET"]);
 define("TWITTER_OAUTH_HOST", "https://api.twitter.com");
 define("TWITTER_REQUEST_TOKEN_URL", TWITTER_OAUTH_HOST."/oauth/request_token");
 define("TWITTER_AUTHENTICATE_URL", TWITTER_OAUTH_HOST."/oauth/authenticate");
