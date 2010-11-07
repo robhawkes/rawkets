@@ -87,11 +87,11 @@ try {
 	<body>
 		<canvas id="canvas" width="400" height="400"></canvas>
 		
-		<p id="attribution">By Rob Hawkes – <a href="http://twitter.com/rawkets">Twitter</a> – <a href="http://rawkes.com/blog/2010/10/23/rawkets-development-update-1">About</a> - <a href="http://github.com/robhawkes/rawkets">Source Code</a> - <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rawkets.com" data-counturl="http://rawkets.com" data-text="Check out Rawkets, a massively multiplayer game made by @robhawkes using HTML5 canvas and WebSockets" data-count="horizontal" data-via="rawkets" data-related="robhawkes:The guy behind Rawkets">Tweet</a><script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script> - <script src="http://www.stumbleupon.com/hostedbadge.php?s=2&r=http://rawkets.com"></script> - <iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Frawkets.com&amp;layout=button_count&amp;show_faces=false&amp;width=90&amp;action=like&amp;colorscheme=light&amp;height=21" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:90px; height:21px;" allowTransparency="true" class="fb-button"></iframe></p>
-		
 		<p id="ping"></p>
 		
 		<div id="mask"></div>
+		
+		<p id="attribution">By Rob Hawkes – <a href="http://twitter.com/rawkets">Twitter</a> – <a href="http://rawkes.com/blog/2010/10/23/rawkets-development-update-1">About</a> - <a href="http://github.com/robhawkes/rawkets">Source Code</a> - <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rawkets.com" data-counturl="http://rawkets.com" data-text="Check out Rawkets, a massively multiplayer game made by @robhawkes using HTML5 canvas and WebSockets" data-count="horizontal" data-via="rawkets" data-related="robhawkes:The guy behind Rawkets">Tweet</a><script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script> - <script src="http://www.stumbleupon.com/hostedbadge.php?s=2&r=http://rawkets.com"></script> - <iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Frawkets.com&amp;layout=button_count&amp;show_faces=false&amp;width=90&amp;action=like&amp;colorscheme=light&amp;height=21" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:90px; height:21px;" allowTransparency="true" class="fb-button"></iframe></p>
 		
 		<div id="offline">
 			<h1>Sorry, Rawkets is offline at the moment.</h1>

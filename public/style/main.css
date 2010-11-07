@@ -30,6 +30,7 @@ p {
 #canvas {
 	background-color: #001429;
 	background: -webkit-gradient(linear, left top, left bottom, from(#000306), to(#001429));
+	background: -moz-linear-gradient(top, #000306 0%, #001429 100%);
 	display: none;
 	position: absolute;
 }
