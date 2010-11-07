@@ -6,7 +6,7 @@
 #RewriteRule $ /offline/index.html [R=302,L]
 
 # Block access to system files like log and git
-<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak|git)$">
+<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak|git|yml)$">
 	Order Allow,Deny
 	Deny from all
 </FilesMatch>
