@@ -15,16 +15,27 @@ h1 {
 	color: #fff;
 	font-family: Georgia, serif;
 	font-size: 60px;
-	margin: 20px 100px;
+	margin: 30px 0;
 	text-align: center;
 }
 
 p {
 	color: #fff;
 	font-family: Georgia, serif;
-	font-size: 40px;
-	margin: 20px 100px;
-	text-align: center;
+	font-size: 25px;
+	line-height: 1.5em;
+	margin: 30px 0;
+	text-align: left;
+}
+
+section p:first-of-type {
+	border-top: 1px solid #fff;
+	padding-top: 30px;
+}
+
+section p:last-of-type {
+	border-bottom: 1px solid #fff;
+	padding-bottom: 30px;
 }
 
 #canvas {
@@ -70,49 +81,58 @@ p {
 #mask {
 	background: rgba(0, 0, 0, 0.5);
 	display: none;
-	height: 100%;
 	position: absolute;
 	width: 100%;	
 }
 
+#welcome {
+	display: none;
+	left: 50%;
+	margin: 50px 0 0 -400px;
+	position: absolute;
+	width: 800px;
+}
+
+	#twitterSignIn {
+		background: url("img/twitter_sign_in.png") no-repeat top left;
+		display: block;
+		height: 46px;
+		left: 50%;
+		margin: 30px 0 30px -188px;
+		position: relative;
+		width: 377px;
+	}
+
 #offline {
 	display: none;
-	margin-top: -60px;
+	left: 50%;
+	margin: 50px 0 0 -400px;
 	position: absolute;
-	top: 50%;
-	width: 100%;
+	width: 800px;
 }
 
 #support {
 	display: none;
-	margin-top: -60px;
+	left: 50%;
+	margin: 50px 0 0 -400px;
 	position: absolute;
-	top: 50%;
-	width: 100%;
+	width: 800px;
 }
 
 #authenticate {
 	display: none;
-	margin-top: -60px;
+	left: 50%;
+	margin: 50px 0 0 -400px;
 	position: absolute;
-	top: 50%;
-	width: 100%;
+	width: 800px;
 }
 
 #playerExists {
 	display: none;
-	margin-top: -60px;
+	left: 50%;
+	margin: 50px 0 0 -400px;
 	position: absolute;
-	top: 50%;
-	width: 100%;
-}
-
-#twitter {
-	display: none;
-	margin-top: -12px;
-	position: absolute;
-	top: 50%;
-	width: 100%;
+	width: 800px;
 }
 
 #ping {
@@ -125,14 +145,4 @@ p {
 	margin: 0;
 	position: absolute;
 	text-align: left;
-}
-
-#twitterSignIn {
-	background: url('img/twitter_sign_in.png') no-repeat top left;
-	display: block;
-	height: 24px;
-	left: 50%;
-	margin-left: -75px;
-	position: relative;
-	width: 151px;
 }

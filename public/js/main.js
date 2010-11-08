@@ -7,16 +7,21 @@ $(function() {
 	function init() {
 		// WebSockets supported
 		if ("WebSocket" in window) {
+			var welcome = $("#welcome");
+			
 			// Player isn't authenticated on Twitter
 			if (window.TWITTER_AUTHENTICATE_URL != undefined && TWITTER_AUTHENTICATE_URL != null) {
-				var twitter = $("<div id='twitter'><a id='twitterSignIn' href='"+TWITTER_AUTHENTICATE_URL+"'></a></div>");
-				twitter.insertAfter("#mask");
-				$("#mask, #twitter").fadeIn();
+				var twitter = $("<a id='twitterSignIn' href='"+TWITTER_AUTHENTICATE_URL+"'></a>");
+				twitter.appendTo("#welcome");
 			};
+			
+			welcome.fadeIn();
 			
 			// Player is apparently authenticated on Twitter
 			if (TWITTER_ACCESS_TOKEN != null && TWITTER_ACCESS_TOKEN_SECRET != null) {
 				// Perform check to see if authentication is working
+				
+				welcome.fadeOut();
 				
 				game = new Game(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET);
 
