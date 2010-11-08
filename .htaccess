@@ -13,6 +13,8 @@
 
 RewriteEngine On
 
+RewriteRule ^experiments/rawkets/*$ / [L,R=302]
+
 #RewriteCond $1 !\.(gif|jpe?g|png)$ [NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 #RewriteCond %{REQUEST_FILENAME} !-d 
