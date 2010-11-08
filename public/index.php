@@ -108,7 +108,7 @@ try {
 		<meta name="description" content="Rawkets is a massively multiplayer game in which you can shoot and interact with other players, in real-time, in space! It uses the latest Web technologies, including HTML5 canvas and WebSockets.">
 			
 		<link rel="stylesheet" href="style/reset.css">
-		<link rel="stylesheet" href="style/main.css">
+		<link rel="stylesheet" href="style/main.css?<?=time()?>">
 	</head>
 	
 	<body>
