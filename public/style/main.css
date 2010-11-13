@@ -146,3 +146,7 @@ section p:last-of-type {
 	position: absolute;
 	text-align: left;
 }
+
+#soundContainer {
+	visibility: hidden;
+}

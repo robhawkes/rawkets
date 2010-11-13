@@ -147,6 +147,8 @@ try {
 			<p>Only one rawket is allowed per Twitter account.</p>
 		</section>
 		
+		<div id="soundContainer"></div>
+		
 		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>-->		
 		<script type="text/javascript" src="js/jquery/jquery-dev.js"></script>
 		
@@ -162,8 +164,11 @@ try {
 			});
 		</script>
 		
+		<script type="text/javascript" src="js/swfobject/swfobject.js"></script>
+		
 		<!-- Timestamps prevent cached scripts screwing with testing - REMOVE WHEN GAME IS COMPLETE -->
 		<script type="text/javascript" src="js/bison.js?<?=time()?>"></script>
+		<script type="text/javascript" src="js/Sound.js?<?=time()?>"></script>
 		<script type="text/javascript" src="js/Socket.js?<?=time()?>"></script>
 		<script type="text/javascript" src="js/Vector.js?<?=time()?>"></script>
 		<script type="text/javascript" src="js/Rocket.js?<?=time()?>"></script>
