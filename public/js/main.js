@@ -23,6 +23,11 @@ $(function() {
 				
 				welcome.fadeOut();
 				
+				// Manual sound setup – move this at a later date
+				var flashvars = {};
+				var params = {allowscriptaccess: "always"};
+				swfobject.embedSWF("lib/Sounds.swf", "soundContainer", "0", "0", "9.0.0", "", flashvars, params);
+				
 				game = new Game(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET);
 
 				$("#attribution, #ping").fadeTo(500, 0.1).mouseover(function() {

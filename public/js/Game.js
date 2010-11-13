@@ -43,6 +43,9 @@ Game.MESSAGE_TYPE_REVIVE_PLAYER = 16;
  * Initialise game environment
  */
 Game.prototype.initGame = function() {
+	this.sound = new Sound();
+	this.sound.play("background");
+	
 	this.canvas = $("#canvas");
 	this.ctx = this.canvas.get(0).getContext("2d");
 	this.resizeCanvas();
@@ -171,6 +174,8 @@ Game.prototype.onSocketMessage = function(msg) {
 						bullet.id = data.i;
 						bullet.worldPos.set(data.x, data.y);
 						this.bullets.push(bullet);
+						
+						this.sound.play("laser"); // This plays for all bullets right now
 						break;
 					case Game.MESSAGE_TYPE_UPDATE_BULLET:
 						//console.log("Update bullets");
@@ -556,8 +561,10 @@ Game.prototype.keyDown = function(e) {
 				self.player.rotateRight();
 			break;
 		case arrow.up:
-			if (!self.player.move)
+			if (!self.player.move) {
 				self.player.moveForward();
+				self.sound.play("thrust");
+			};
 			break;
 		case arrow.down:
 			break;
@@ -588,6 +595,7 @@ Game.prototype.keyUp = function(e) {
 			break;
 		case arrow.up:
 			self.player.haltMove();
+			self.sound.stop("thrust");
 			break;
 		case arrow.down:
 			break;

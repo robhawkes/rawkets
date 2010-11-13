@@ -223,7 +223,7 @@ function init() {
 										if (bullets[bulletId] == null)
 											continue;
 
-											client.send(formatMessage(MESSAGE_TYPE_ADD_BULLET, {x: bullets[bulletId].x, y: bullets[bulletId].y}));
+											client.send(formatMessage(MESSAGE_TYPE_ADD_BULLET, {i: b.id, x: bullets[bulletId].x, y: bullets[bulletId].y}));
 									};
 								};
 
