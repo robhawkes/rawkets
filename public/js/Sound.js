@@ -22,6 +22,12 @@ Sound.prototype.play = function(soundName) {
 		case "laser":
 			this.container.playLaser();
 			break;
+		case "respawn":
+			this.container.playRespawn();
+			break;
+		case "die":
+			this.container.playDie();
+			break;
 	};
 };
 
