@@ -201,6 +201,8 @@ Game.prototype.onSocketMessage = function(msg) {
 							player.kill();
 						};
 						
+						this.sound.play("die");
+						
 						/*
 						// Bullet was from the local player
 						if (this.player.id == data.bp) {
@@ -299,6 +301,7 @@ Game.prototype.timeout = function() {
 	if (this.player.teleport) {
 		this.createStars();
 		this.player.teleport = false;
+		this.sound.play("respawn"); // Probably should be in a proper respawn handler
 	};
 
 	// Horrible passing of game object due to event closure
@@ -561,7 +564,7 @@ Game.prototype.keyDown = function(e) {
 				self.player.rotateRight();
 			break;
 		case arrow.up:
-			if (!self.player.move) {
+			if (!self.player.move && self.player.alive) {
 				self.player.moveForward();
 				self.sound.play("thrust");
 			};
