@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+	<head>
+		<title>Rawkets | A massively multiplayer game built using HTML5 canvas and WebSockets</title>
+		
+		<meta charset="utf-8">
+		<meta name="description" content="Rawkets is a massively multiplayer game in which you can shoot and interact with other players, in real-time, in space! It uses the latest Web technologies, including HTML5 canvas and WebSockets.">
+	</head>
+	
+	<body>
+		<canvas id="canvas" width="400" height="400"></canvas>
+		
+		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>-->		
+		<script src="js/jquery/jquery-dev.js"></script>
+		<script src="js/rawkets.js"></script>
+		
+		<script type="text/javascript">
+			// Not using jQuery until I work out if I need it for the core game logic
+			var canvas = document.getElementById("canvas");
+			var game = r.game;
+			game.init(canvas);
+			
+			console.log(game);
+		</script>
+	</body>
+</html>
