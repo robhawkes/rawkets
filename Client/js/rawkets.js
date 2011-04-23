@@ -46,6 +46,113 @@
 		}
 	};
 	
+	r.namespace("input");
+	rawkets.input = (function() {
+		// Dependencies
+		var e = r.events.Dispatcher;
+		
+		// Local (private) variables
+		var keys = {arrow_left: {code: 37, down: false},
+					arrow_up: {code: 38, down: false},
+					arrow_right: {code: 39, down: false},
+					arrow_down: {code: 40, down: false},
+					space: {code: 32, down: false}};
+		
+		// Private methods
+		var onKeydown = function(e) {
+			var c = e.keyCode;
+
+			for (var key in keys) {
+				if (keys[key].code == c) {
+					keys[key].down = true;
+					return;
+				};
+			};
+			
+			//console.log("Key down [code: "+e.keyCode+"]");
+		};
+		
+		var onKeyup = function(e) {
+			var c = e.keyCode;
+			
+			for (var key in keys) {
+				if (keys[key].code == c) {
+					keys[key].down = false;
+					return;
+				};
+			};
+			//console.log("Key up [code: "+e.keyCode+"]");
+		};
+		
+		// Public methods
+		var init = function() {
+			window.addEventListener("keydown", onKeydown, false);
+			window.addEventListener("keyup", onKeyup, false);
+		};
+		
+		var down = function(key_name) {
+			if (keys[key_name].down) {
+				return true;
+			}
+			
+			return false;
+		};
+		
+		return {
+			init: init,
+			down: down
+		};
+	})();
+	
+	// Sort out scoping of variables in here. Ideally I want
+	// things like x and y to be private, with an API to access
+	// the, from the outside.
+	r.namespace("entities.Player");
+	rawkets.entities.Player = (function() {
+		// Dependencies
+		var input = r.input;
+		
+		// Local (private) variables
+		var x = Math.random()*500;
+		var y = Math.random()*500;
+		
+		// Public methods
+		var init = function() {
+			
+		};
+		
+		var update = function() {
+			if (input.down("arrow_up")) {
+				y -= 2;
+			};
+			
+			if (input.down("arrow_down")) {
+				y += 2;
+			};
+			
+			if (input.down("arrow_left")) {
+				x -= 2;
+			};
+			
+			if (input.down("arrow_right")) {
+				x += 2;
+			};
+		};
+		
+		var draw = function(ctx) {
+			ctx.save();
+			ctx.fillStyle = "rgb(255, 0, 0)";
+			ctx.fillRect(x-5, y-5, 10, 10);
+			ctx.restore();
+		};
+		
+		return {
+			init: init,
+			update: update,
+			draw: draw
+		};
+	})();
+	
 	// Sort out scoping of variables in here. Ideally I want
 	// things like x and y to be private, with an API to access
 	// the, from the outside.
@@ -53,13 +160,11 @@
 	rawkets.entities.Star = function(width, height) {
 		// Local (private) variables
 		var radius = Math.random()*10;
-		
-		// Public variables
-		this.x = Math.random()*width;
-		this.y = Math.random()*height;
+		var x = Math.random()*width;
+		var y = Math.random()*height;
 		
 		this.draw = function(ctx) {
-			ctx.fillRect(this.x, this.y, radius, radius);
+			ctx.fillRect(x, y, radius, radius);
 		};
 	};
 	
@@ -67,6 +172,7 @@
 	rawkets.viewport = (function() {
 		// Dependencies
 		var Star = r.entities.Star,
+			player = r.entities.Player,
 			e = r.events.Dispatcher;
 		
 		// Local (private) variables
@@ -95,11 +201,15 @@
 		};
 		
 		// Public methods
-		var init = function(tmp_canvas) {
+		var init = function(tmp_canvas, tmp_width, tmp_height) {
 			canvas = tmp_canvas;
 			ctx = canvas.getContext("2d");
-			width = canvas.width;
-			height = canvas.height;
+			width = tmp_width;
+			height = tmp_height;
+			
+			// Resize the canvas
+			canvas.width = width;
+			canvas.height = height;
 			
 			// Set up stars
 			for (var i = 0; i < num_stars; i++) {
@@ -115,6 +225,12 @@
 			e.fire("viewportLoaded");
 		};
 		
+		var draw = function() {
+			ctx.clearRect(0, 0, width, height);
+			drawStars();
+			player.draw(ctx);
+		};
+		
 		var drawStars = function() {
 			for (var i = 0; i < num_stars; i++) {
 				var star = stars[i];
@@ -124,7 +240,7 @@
 		
 		return {
 			init: init,
-			drawStars: drawStars
+			draw: draw
 		};
 	})();
 
@@ -135,18 +251,56 @@
 	r.namespace("game");
 	rawkets.game = (function() {
 		// Dependencies
-		var e = r.events.Dispatcher;
-			viewport = r.viewport;
+		var e = r.events.Dispatcher,
+			viewport = r.viewport,
+			input = r.input,
+			player = r.entities.Player;
+			
+		// Local (private) variables
+			
+		// Private methods
+		var update = function() {
+			player.update();
+		};
 		
-		var init = function(canvas) {
+		var draw = function() {
+			viewport.draw();
+		};
+		
+		var loop = function() {
+			update();
+			draw();
+			
+			// Restart loop (use requestAnimationFrame)
+			setTimeout(loop, 33);
+		};
+		
+		// Public methods
+		var init = function(canvas, width, height) {
 			// Set up event listeners
+			// Window resize listener
+			window.addEventListener("resize", function(evt) {
+				var w = evt.target;
+				e.fire("windowResize", {width: w.innerWidth, height: w.innerHeight});
+			}, false);
+			
+			// Viewport loaded listener
 			e.listen("viewportLoaded", function() {
-				e.fire("windowResize", {width: 600, height: 600});
-				viewport.drawStars();
+				
 			});
 			
 			// Initialise viewport
-			viewport.init(canvas);
+			viewport.init(canvas, width, height);
+			console.log(viewport);
+			
+			// Initialise input
+			input.init();
+			
+			// Initialise player
+			player.init();
+			
+			// Start game loop
+			loop();
 			
 			// Sector has finished loading
 			e.fire("sectorLoaded");

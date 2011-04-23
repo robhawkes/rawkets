@@ -7,22 +7,83 @@
 		
 		<meta charset="utf-8">
 		<meta name="description" content="Rawkets is a massively multiplayer game in which you can shoot and interact with other players, in real-time, in space! It uses the latest Web technologies, including HTML5 canvas and WebSockets.">
+		
+		<link rel="stylesheet" href="style/reset.css">
+		<link rel="stylesheet" href="style/rawkets.css">
 	</head>
 	
 	<body>
 		<canvas id="canvas" width="400" height="400"></canvas>
-		
-		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>-->		
-		<script src="js/jquery/jquery-dev.js"></script>
+
+		<script src="js/socket.io.min.js"></script>
+		<script src="js/bison.js"></script>
 		<script src="js/rawkets.js"></script>
 		
 		<script type="text/javascript">
 			// Not using jQuery until I work out if I need it for the core game logic
+			/*
 			var canvas = document.getElementById("canvas");
 			var game = r.game;
-			game.init(canvas);
+			game.init(canvas, window.innerWidth, window.innerHeight);
+			*/
 			
-			console.log(game);
+			// TESTING - REMOVE THIS
+			var canvas = document.getElementById("canvas");
+			var ctx = canvas.getContext("2d");
+			// TESTING - REMOVE THIS
+			
+			function formatMessage(type, args) {
+				var msg = {type: type};
+
+				for (var arg in args) {
+					// Don't overwrite the message type
+					if (arg != "type")
+						msg[arg] = args[arg];
+				};
+
+				//return JSON.stringify(msg);
+				return BISON.encode(msg);
+			};
+			
+			// Message types
+			var MESSAGE_TYPE_UPDATE_PLAYER = 0;
+			
+			// Socket settings
+			var WEB_SOCKET_SWF_LOCATION = "js/WebSocketMain.swf",
+				socket = new io.Socket("localhost", {port: 8000, transports: ["websocket", "flashsocket"]});
+				
+			socket.connect();
+			
+			// EVENTS
+			// connect, connecting, connect_failed, message, close,
+			// disconnect, reconnect, reconnecting, reconnect_failed
+			
+			// Connection successful
+			socket.on("connect", function(){
+				console.log("Connected");
+				var msg = formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: 123});
+				socket.send(msg);
+			});
+			
+			// Connection failed
+			socket.on("connect_failed", function() {
+				console.log("Connect failed");
+			});
+			
+			// Disconnection
+			socket.on("disconnect", function() {
+				console.log("Disconnected");
+			});
+			
+			// Message received
+			socket.on("message", function(data){
+				console.log("Message received: ", BISON.decode(data));
+				//var state = BISON.decode(data);
+				//ctx.clearRect(0, 0, canvas.width, canvas.height);
+				//ctx.fillRect(state.pos.x, 100, 5, 5);
+			});
+			
+			//socket.send("Some data");
 		</script>
 	</body>
 </html>
