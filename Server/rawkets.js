@@ -47,7 +47,7 @@ var PlayerState = function(opts) {
 var Player = function(opts) {
 	// Public variables
 	var id = opts.id || false,
-		currentState = new PlayerState({x: opts.x || 0, y: opts.y || 0, acc: {x: opts.acc.x || 0, y: opts.acc.y || 0}}),
+		currentState = opts.state || new PlayerState({x: opts.x || 0, y: opts.y || 0, acc: {x: opts.acc.x || 0, y: opts.acc.y || 0}}),
 		previousState = currentState.clone();
 		
 	// Public methods
@@ -56,12 +56,38 @@ var Player = function(opts) {
 		previousState = currentState.clone();
 		
 		// Do stuff depending on what keys are currently pressed down
-		if (currentState.keys.up) {
-			currentState.acc.x += 10;
+		if (currentState.keys.left) {
+			currentState.acc.x -= 30;
+		} else if (currentState.keys.right) {
+			currentState.acc.x += 30;
 		} else {
-			currentState.acc.x = 0;
+			if (Math.abs(currentState.acc.x) < 0.5) {
+				currentState.acc.x = 0;
+			} else {
+				if (currentState.acc.x < 0) {
+					currentState.acc.x += 5;
+				} else {
+					currentState.acc.x -= 5;
+				}
+			}
 		};
-
+		
+		if (currentState.keys.up) {
+			currentState.acc.y -= 30;
+		} else if (currentState.keys.down) {
+			currentState.acc.y += 30;
+		} else {
+			if (Math.abs(currentState.acc.y) < 6) {
+				currentState.acc.y = 0;
+			} else {
+				if (currentState.acc.y < 0) {
+					currentState.acc.y += 5;
+				} else {
+					currentState.acc.y -= 5;
+				}
+			}
+		};
+		
 		// Verlet integration (http://www.gotoandplay.it/_articles/2005/08/advCharPhysics.php)
 		currentState.pos.x = 2 * currentState.pos.x - previousState.pos.x + currentState.acc.x * dtdt;
 		currentState.pos.y = 2 * currentState.pos.y - previousState.pos.y + currentState.acc.y * dtdt;
@@ -75,8 +101,27 @@ var Player = function(opts) {
 	};
 };
 
+// Message formatter helper
+function formatMessage(type, args) {
+	var msg = {type: type};
+
+	for (var arg in args) {
+		// Don't overwrite the message type
+		if (arg != "type")
+			msg[arg] = args[arg];
+	};
+
+	//return JSON.stringify(msg);
+	return BISON.encode(msg);
+};
+
 // Message types
-var MESSAGE_TYPE_UPDATE_PLAYER = 0;
+var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
+	MESSAGE_TYPE_NEW_PLAYER = 1,
+	MESSAGE_TYPE_REMOVE_PLAYER = 2,
+	MESSAGE_TYPE_ENABLE_PLAYER_KEY = 3,
+	MESSAGE_TYPE_DISABLE_PLAYER_KEY = 4,
+	MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION = 5;
 
 // Start of main game setup
 var http = require("http"), 
@@ -108,7 +153,8 @@ var http = require("http"),
 	players = [],
 	
 	// Communication
-	msgQueue = [];
+	msgInQueue = [], // Incoming messages
+	msgOutQueue = []; // Outgoing messages
 
 // HTTP server	
 server = http.createServer(function(req, res){});
@@ -131,14 +177,20 @@ socket.on("connection", function(client){
 	
 	// Add new player to the game
 	console.log("New player has connected: ", client.sessionId);
-	players.push(new Player({id: client.sessionId, y: 200, acc: {x: 100}}));
-	console.log("Players connected: ", players.length);
+	//players.push(new Player({id: client.sessionId, y: 200, acc: {x: 100}}));
+	//console.log("Players connected: ", players.length);
 	
 	// Send new player to existing players
 	//client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, f: player.showFlame, n: player.name, k: player.killCount}));
 	
 	// Sync game state with new player
-	// HERE
+	var i, playerCount = players.length;
+	if (playerCount > 0) {
+		for (i = 0; i < playerCount; i++) {
+			player = players[i];
+			client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: player.id, state: player.currentState}));
+		};
+	};
 	 
 	// Client disconnected
 	client.on("disconnect", function(){
@@ -153,14 +205,14 @@ socket.on("connection", function(client){
 			console.log("Players connected: ", players.length);
 			
 			// Sync other players
-			//client.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {i: client.id}));
+			client.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: client.id}));
 		};
 	});
 	
 	// Client sent a message
 	client.on("message", function(msg){
 		// Add message to queue
-		msgQueue.push({id: client.sessionId, msg: msg});
+		msgInQueue.push({client: client, msg: msg});
 		
 		//console.log(BISON.decode(msg));
 		//client.send(msg);
@@ -169,25 +221,39 @@ socket.on("connection", function(client){
 
 // Main update loop
 function update() {
-	// Deal with queued messages
-	unqueueMessages(msgQueue);
+	// Clear outgoing messages queue
+	msgOutQueue = [];
 	
-	// Clear original message queue (move into unqueueMessages?)
-	msgQueue = [];
+	// Deal with queued incoming messages
+	unqueueIncomingMessages(msgInQueue);
+	
+	// Clear incoming messages queue (move into unqueueReceivedMessages?)
+	msgInQueue = [];
 	
 	//updatePhysics();
 	
 	// Update every single player in the game
-	var i, player, numPlayers = players.length;
+	var i, player, client, numPlayers = players.length;
 	for (i = 0; i < numPlayers; i++) {
 		player = players[i];
-		player.update(dtdt);
+		
+		if (player) {
+			player.update(dtdt);
+		
+			client = socket.clients[player.id];
+			
+			if (client) {
+				client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, state: player.currentState}));
+				client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: player.id, pos: player.currentState.pos}));
+			};
+		};
 	};
-	
-	//socket.broadcast(JSON.stringify(player.currentState));
 	
 	// Move game time forward
 	t += dt;
+	
+	// Deal with queued outgoing messages
+	unqueueOutgoingMessages(msgOutQueue);
 	
 	// Schedule next game update
 	if (runUpdate) {
@@ -195,8 +261,8 @@ function update() {
 	};
 };
 
-// Unqueue messages and do stuff with them
-function unqueueMessages(msgQueue) {
+// Unqueue incoming messages and do stuff with them
+function unqueueIncomingMessages(msgQueue) {
 	// Check for messages
 	if (msgQueue.length == 0) {
 		return;
@@ -206,7 +272,92 @@ function unqueueMessages(msgQueue) {
 	var msgs = msgQueue.slice(0); // Necessary?
 	
 	// Clear original message queue
-	//msgQueue = []; // Doesn't seem to act as a reference to the original array
+	//msgOutQueue = []; // Doesn't seem to act as a reference to the original array
+	
+	// Do stuff with message queue
+	var data, client, msg;
+	while (msgs.length > 0) {
+		// Grab and remove the oldest message in the array
+		data = msgs.shift();
+		client = data.client;
+		msg = BISON.decode(data.msg);
+		
+		// Only deal with messages using the correct protocol
+		if (msg.type !== undefined) {
+			var player;
+			switch (msg.type) {
+				case MESSAGE_TYPE_NEW_PLAYER:
+					console.log("Adding new player: ", client.sessionId);
+					players.push(new Player({id: client.sessionId, state: msg.state}));
+					console.log("Players connected: ", players.length);
+					
+					// Move into a queueing system
+					client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: client.sessionId, state: msg.state}));
+					
+					break;
+				/*case MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE:
+					console.log("Update player state: ", client.sessionId);
+					
+					var player = playerById(client.sessionId);
+					if (player) {
+						console.log("Player state: ", player.currentState);
+					};
+					break;*/
+				case MESSAGE_TYPE_ENABLE_PLAYER_KEY:
+					player = playerById(client.sessionId);
+					if (player) {
+						switch (msg.key) {
+							case 37: // Left
+								player.currentState.keys.left = true;
+								break;
+							case 38: // Up
+								player.currentState.keys.up = true;
+								break;
+							case 39: // Right
+								player.currentState.keys.right = true;
+								break;
+							case 40: // Down
+								player.currentState.keys.down = true;
+								break;
+						};
+					};
+					break;
+				case MESSAGE_TYPE_DISABLE_PLAYER_KEY:
+					player = playerById(client.sessionId);
+					if (player) {
+						switch (msg.key) {
+							case 37: // Left
+								player.currentState.keys.left = false;
+								break;
+							case 38: // Up
+								player.currentState.keys.up = false;
+								break;
+							case 39: // Right
+								player.currentState.keys.right = false;
+								break;
+							case 40: // Down
+								player.currentState.keys.down = false;
+								break;
+						};
+					};
+					break;
+			};
+		};
+	};
+};
+
+// Unqueue outgoing messages and do stuff with them
+function unqueueOutgoingMessages(msgQueue) {
+	// Check for messages
+	if (msgQueue.length == 0) {
+		return;
+	};
+	
+	// Copy message queue
+	var msgs = msgQueue.slice(0); // Necessary?
+	
+	// Clear original message queue
+	//msgOutQueue = []; // Doesn't seem to act as a reference to the original array
 	
 	// Do stuff with message queue
 	var data, msg;
@@ -218,14 +369,7 @@ function unqueueMessages(msgQueue) {
 		// Only deal with messages using the correct protocol
 		if (msg.type !== undefined) {
 			switch (msg.type) {
-				case MESSAGE_TYPE_UPDATE_PLAYER:
-					console.log("Update player: ", data.id);
-					
-					var player = playerById(data.id);
-					if (player) {
-						console.log("Player state: ", player.currentState);
-					};
-					break;
+				// Do stuff and broadcast the messages
 			};
 		};
 	};

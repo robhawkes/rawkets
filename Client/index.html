@@ -20,6 +20,10 @@
 		<script src="js/rawkets.js"></script>
 		
 		<script type="text/javascript">
+			// TODO
+			// Add ability to have default options for game objects and functions
+			
+			
 			// Not using jQuery until I work out if I need it for the core game logic
 			/*
 			var canvas = document.getElementById("canvas");
@@ -32,6 +36,90 @@
 			var ctx = canvas.getContext("2d");
 			// TESTING - REMOVE THIS
 			
+			// Funky Object clone method
+			Object.prototype.clone = function() {
+				var newObj = (this instanceof Array) ? [] : {};
+
+				for (i in this) {
+					if (i == "clone") continue;
+
+					if (this[i] && typeof this[i] == "object") {
+						newObj[i] = this[i].clone();
+					} else {
+						newObj[i] = this[i];
+					};
+				};
+
+				return newObj;
+			};
+			
+			// Vector object
+			var Vector = function(opts) {
+				// Public variables
+				var x = opts.x || 0,
+					y = opts.y || 0;
+
+				return {
+					x: x,
+					y: y
+				};
+			};
+
+			// Player state object
+			var PlayerState = function(opts) {
+				// Private variables
+				var keys = {left: false, right: false, up: false};
+
+				// Public variables
+				var pos = new Vector({x: opts.x || 0, y: opts.y || 0}),
+					acc = new Vector({x: opts.acc.x || 0, y: opts.acc.y || 0});
+
+				return {
+					pos: pos,
+					acc: acc,
+					keys: keys
+				};
+			};
+			
+			// Player object
+			var Player = function(opts) {
+				// Public variables
+				var id = opts.id,
+					currentState = new PlayerState({x: opts.x, y: opts.y, acc: {x: opts.acc.x, y: opts.acc.y}}),
+					previousState = currentState.clone();
+
+				// Public methods
+				/*var update = function(dtdt) {
+					// Update previous state
+					previousState = currentState.clone();
+
+					// Do stuff depending on what keys are currently pressed down
+					if (currentState.keys.up) {
+						currentState.acc.x += 10;
+					} else {
+						currentState.acc.x = 0;
+					};
+
+					// Verlet integration (http://www.gotoandplay.it/_articles/2005/08/advCharPhysics.php)
+					currentState.pos.x = 2 * currentState.pos.x - previousState.pos.x + currentState.acc.x * dtdt;
+					currentState.pos.y = 2 * currentState.pos.y - previousState.pos.y + currentState.acc.y * dtdt;
+				};*/
+				
+				var draw = function(ctx) {
+					//console.log(currentState.pos.x);
+					ctx.fillRect(currentState.pos.x-2, currentState.pos.y-2, 6, 6);
+				};
+
+				return {
+					id: id, // Should probably be made read-only
+					//update: update,
+					draw: draw,
+					currentState: currentState,
+					previousState: previousState
+				};
+			};
+			
+			// Message formatter helper
 			function formatMessage(type, args) {
 				var msg = {type: type};
 
@@ -45,45 +133,227 @@
 				return BISON.encode(msg);
 			};
 			
+			// Add remote player
+			function addRemotePlayer(opts) {
+				var id = opts.id,
+					state = opts.state,
+					player;
+				
+				player = new Player({id: id, x: 0, y: 0, acc: {x: 0, y: 0}});
+				player.currentState.pos = state.pos;
+				player.currentState.acc = state.acc;
+				player.currentState.keys = state.keys;
+				remotePlayers.push(player);
+			};
+			
+			// Find player by ID
+			function playerById(id) {
+				for (var i = 0; i < remotePlayers.length; i++) {
+					if (remotePlayers[i].id == id)
+						return remotePlayers[i];
+				};
+
+				return false;
+			};
+
+			// Find player index by ID
+			function indexOfByPlayerId(id) {
+				for (var i = 0; i < remotePlayers.length; i++) {
+					if (remotePlayers[i].id == id) {
+						return i;
+					};
+				};
+
+				return false;
+			};
+			
+			// Event listeners
+			window.addEventListener("keydown", onKeydown, false);
+			window.addEventListener("keyup", onKeyup, false);
+			
+			function onKeydown(e) {
+				var c = e.keyCode;
+				
+				switch (c) {
+					case 37: // Left
+						localPlayer.currentState.keys.left = true;
+						break;
+					case 38: // Up
+						localPlayer.currentState.keys.up = true;
+						break;
+					case 39: // Right
+						localPlayer.currentState.keys.right = true;
+						break;
+					case 40: // Down
+						localPlayer.currentState.keys.down = true;
+						break;
+				};
+
+				//console.log("Key down [code: "+e.keyCode+"]");
+			};
+			
+			function onKeyup(e) {
+				var c = e.keyCode;
+
+				switch (c) {
+					case 37: // Left
+						localPlayer.currentState.keys.left = false;
+						break;
+					case 38: // Up
+						localPlayer.currentState.keys.up = false;
+						break;
+					case 39: // Right
+						localPlayer.currentState.keys.right = false;
+						break;
+					case 40: // Down
+						localPlayer.currentState.keys.down = false;
+						break;
+				};
+
+				//console.log("Key down [code: "+e.keyCode+"]");
+			};
+			
 			// Message types
-			var MESSAGE_TYPE_UPDATE_PLAYER = 0;
+			var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
+				MESSAGE_TYPE_NEW_PLAYER = 1,
+				MESSAGE_TYPE_REMOVE_PLAYER = 2,
+				MESSAGE_TYPE_ENABLE_PLAYER_KEY = 3,
+				MESSAGE_TYPE_DISABLE_PLAYER_KEY = 4,
+				MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION = 5,
+			
+			// Run game
+				runUpdate = true,
 			
 			// Socket settings
-			var WEB_SOCKET_SWF_LOCATION = "js/WebSocketMain.swf",
-				socket = new io.Socket("localhost", {port: 8000, transports: ["websocket", "flashsocket"]});
-				
+				WEB_SOCKET_SWF_LOCATION = "js/WebSocketMain.swf",
+				socket = new io.Socket("localhost", {port: 8000, transports: ["websocket", "flashsocket"]}),
+			
+			// Players	
+				localPlayer,
+				remotePlayers = [];
+			
+			// Connect to WebSocket server
 			socket.connect();
 			
 			// EVENTS
 			// connect, connecting, connect_failed, message, close,
 			// disconnect, reconnect, reconnecting, reconnect_failed
 			
-			// Connection successful
+			// WebSocket connection successful
 			socket.on("connect", function(){
 				console.log("Connected");
-				var msg = formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: 123});
+				localPlayer = new Player({id: false, x: 100, y: 100, acc: {x: 0, y: 0}});
+				
+				// Move to message queuing system
+				var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {state: localPlayer.currentState});
 				socket.send(msg);
 			});
 			
-			// Connection failed
+			// WebSocket connection failed
 			socket.on("connect_failed", function() {
 				console.log("Connect failed");
 			});
 			
-			// Disconnection
+			// WebSocket disconnection
 			socket.on("disconnect", function() {
 				console.log("Disconnected");
 			});
 			
-			// Message received
+			// WebSocket message received
 			socket.on("message", function(data){
-				console.log("Message received: ", BISON.decode(data));
+				var msg = BISON.decode(data);
+				//console.log("Message received: ", msg);
+				
+				// Move this to a dedicate message queuing system
+				if (msg.type !== undefined) {
+					switch (msg.type) {
+						case MESSAGE_TYPE_NEW_PLAYER:
+							addRemotePlayer({id: msg.id, state: msg.state});
+							break;
+						case MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE:
+							var player = playerById(msg.id);
+							if (player) {
+								//console.log("Player state: ", player.currentState);
+								// THIS IS BAD – CHANGE TO PREDICTIVE METHOD
+								//player.currentState.pos.x = msg.state.pos.x;
+								//console.log(player.currentState.pos.x);
+								player.currentState.pos = msg.state.pos;
+								player.currentState.acc = msg.state.acc;
+								player.currentState.keys = msg.state.keys;
+							};
+							break;
+						case MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION:
+							if (localPlayer) {
+								localPlayer.currentState.pos = msg.pos;
+							};
+							break;
+					};
+				};
+				
 				//var state = BISON.decode(data);
 				//ctx.clearRect(0, 0, canvas.width, canvas.height);
 				//ctx.fillRect(state.pos.x, 100, 5, 5);
 			});
 			
-			//socket.send("Some data");
+			// Main update loop
+			function update() {
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				
+				// Move draw functionality to another method?
+				if (localPlayer != null) {
+					localPlayer.draw(ctx);
+				};
+				
+				var i, player, playerCount = remotePlayers.length;
+				if (playerCount > 0) {
+					for (i = 0; i < playerCount; i++) {
+						player = remotePlayers[i];
+						//console.log(player.currentState.pos.x);
+						player.draw(ctx);
+					};
+				};
+				
+				// Move to message queuing system
+				if (localPlayer != null && localPlayer.currentState.keys.left) {
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 37});
+					socket.send(msg);
+				} else if (localPlayer != null && !localPlayer.currentState.keys.left) {
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 37});
+					socket.send(msg);
+				};
+				
+				if (localPlayer != null && localPlayer.currentState.keys.up) {
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 38});
+					socket.send(msg);
+				} else if (localPlayer != null && !localPlayer.currentState.keys.up) {
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 38});
+					socket.send(msg);
+				};
+				
+				if (localPlayer != null && localPlayer.currentState.keys.right) {
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 39});
+					socket.send(msg);
+				} else if (localPlayer != null && !localPlayer.currentState.keys.right) {
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 39});
+					socket.send(msg);
+				};
+				
+				if (localPlayer != null && localPlayer.currentState.keys.down) {
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 40});
+					socket.send(msg);
+				} else if (localPlayer != null && !localPlayer.currentState.keys.down) {
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 40});
+					socket.send(msg);
+				};
+				
+				// Schedule next game update
+				if (runUpdate) {
+					setTimeout(update, 1000/60); // Remember, this is however long it take to update PLUS 60ms
+				};
+			};
+			
+			// Start main update loop
+			update();
 		</script>
 	</body>
 </html>
