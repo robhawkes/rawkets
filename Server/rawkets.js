@@ -57,40 +57,46 @@ var Player = function(opts) {
 		
 		// Do stuff depending on what keys are currently pressed down
 		if (currentState.keys.left) {
-			currentState.acc.x -= 30;
+			currentState.acc.x = -1500;
 		} else if (currentState.keys.right) {
-			currentState.acc.x += 30;
+			currentState.acc.x = 1500;
 		} else {
-			if (Math.abs(currentState.acc.x) < 0.5) {
+			if (Math.abs(currentState.acc.x) < 1) {
 				currentState.acc.x = 0;
 			} else {
-				if (currentState.acc.x < 0) {
-					currentState.acc.x += 5;
-				} else {
-					currentState.acc.x -= 5;
-				}
+				currentState.acc.x *= 0.96;
 			}
 		};
 		
 		if (currentState.keys.up) {
-			currentState.acc.y -= 30;
+			currentState.acc.y = -1500;
 		} else if (currentState.keys.down) {
-			currentState.acc.y += 30;
+			currentState.acc.y = 1500;
 		} else {
-			if (Math.abs(currentState.acc.y) < 6) {
+			if (Math.abs(currentState.acc.y) < 1) {
 				currentState.acc.y = 0;
 			} else {
-				if (currentState.acc.y < 0) {
-					currentState.acc.y += 5;
-				} else {
-					currentState.acc.y -= 5;
-				}
+				currentState.acc.y *= 0.96;
 			}
 		};
 		
 		// Verlet integration (http://www.gotoandplay.it/_articles/2005/08/advCharPhysics.php)
 		currentState.pos.x = 2 * currentState.pos.x - previousState.pos.x + currentState.acc.x * dtdt;
 		currentState.pos.y = 2 * currentState.pos.y - previousState.pos.y + currentState.acc.y * dtdt;
+		
+		if (!withinWorldBounds(currentState.pos.x, currentState.pos.y)) {
+			if (currentState.pos.x > worldWidth)
+				currentState.pos.x = worldWidth;
+
+			if (currentState.pos.x < 0)
+				currentState.pos.x = 0;
+
+			if (currentState.pos.y > worldHeight)
+				currentState.pos.y = worldHeight;
+
+			if (currentState.pos.y < 0)
+				currentState.pos.y = 0;
+		};
 	};
 	
 	return {
@@ -113,6 +119,18 @@ function formatMessage(type, args) {
 
 	//return JSON.stringify(msg);
 	return BISON.encode(msg);
+};
+
+// World boundary helper
+function withinWorldBounds(x, y) {
+	if (x > 0 && 
+		x < worldWidth &&
+		y > 0 &&
+		y < worldHeight) {
+		return true;	
+	}
+	
+	return false;
 };
 
 // Message types
@@ -148,6 +166,10 @@ var http = require("http"),
 	/*acceleration = 100/1.0, // Force divided by mass (although, this is acting like velocity here)
 	currentState = {x: 0}, // This would be the game entities state after the most recent physics update
 	previousState = {x: currentState.x}; // This would be the game entities state for the physics update previous to the current state*/
+	
+	// Game world
+	worldWidth = 1000,
+	worldHeight = 1000,
 	
 	// Players
 	players = [],
@@ -201,11 +223,13 @@ socket.on("connection", function(client){
 		// Safely remove player from the game
 		if (player) {
 			// Remove player from the players array
-			players.splice(indexOfByPlayerId(client.id), 1);
+			var id = player.id;
+			players.splice(indexOfByPlayerId(player.id), 1);
+			console.log("Removed player: ", id);
 			console.log("Players connected: ", players.length);
 			
 			// Sync other players
-			client.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: client.id}));
+			client.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: player.id}));
 		};
 	});
 	

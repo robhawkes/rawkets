@@ -17,7 +17,6 @@
 
 		<script src="js/socket.io.min.js"></script>
 		<script src="js/bison.js"></script>
-		<script src="js/rawkets.js"></script>
 		
 		<script type="text/javascript">
 			// TODO
@@ -33,6 +32,8 @@
 			
 			// TESTING - REMOVE THIS
 			var canvas = document.getElementById("canvas");
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;
 			var ctx = canvas.getContext("2d");
 			// TESTING - REMOVE THIS
 			
@@ -85,6 +86,7 @@
 			var Player = function(opts) {
 				// Public variables
 				var id = opts.id,
+					local = opts.local || false,
 					currentState = new PlayerState({x: opts.x, y: opts.y, acc: {x: opts.acc.x, y: opts.acc.y}}),
 					previousState = currentState.clone();
 
@@ -106,8 +108,12 @@
 				};*/
 				
 				var draw = function(ctx) {
+					var pos = (local) ? new Vector({x: canvas.width/2, y: canvas.height/2}) : currentState.pos;
 					//console.log(currentState.pos.x);
-					ctx.fillRect(currentState.pos.x-2, currentState.pos.y-2, 6, 6);
+					ctx.save();
+					ctx.fillStyle = "rgb(255, 255, 255)";
+					ctx.fillRect(pos.x-2, pos.y-2, 6, 6);
+					ctx.restore();
 				};
 
 				return {
@@ -116,6 +122,83 @@
 					draw: draw,
 					currentState: currentState,
 					previousState: previousState
+				};
+			};
+			
+			// Viewport object
+			var Viewport = function(width, height) {
+				var worldWidth = 1000;
+				var worldHeight = 1000;
+
+				var pos = new Vector({x: 500, y: 500}); // Centre of the world
+				var width = width;
+				var height = height;
+				
+				var worldToScreen = function(x, y) {
+					var screenPos = new Vector({x: 0, y: 0});
+
+					screenPos.x = (pos.x - width/2) - x;
+					screenPos.y = (pos.y - height/2) - y;
+
+					screenPos.x *= -1;
+					screenPos.y *= -1;
+
+					return screenPos;
+				};
+				
+				var worldXToScreenX = function(x) {
+					var x = (pos.x - width/2) - x;
+					x *= -1;
+
+					return x;
+				};
+				
+				var worldYToScreenY = function(y) {
+					var y = (pos.y - height/2) - y;
+					y *= -1;
+
+					return y;
+				};
+				
+				var draw = function(ctx) {
+					ctx.strokeStyle = "rgb(200, 200, 200)";
+					ctx.lineWidth = 3;
+
+					var drawPos = new Vector(0, 0);
+					var drawWidth = 0;
+					var drawHeight = 0;
+
+					if (0.0 > (pos.x - width/2)) {
+						drawPos.x = worldXToScreenX(0);
+					} else {
+						drawPos.x = 0;
+					};
+
+					if (0.0 > (pos.y - height/2)) {
+						drawPos.y = worldYToScreenY(0);
+					} else {
+						drawPos.y = 0;
+					};
+
+					if (worldWidth < (pos.x + width/2)) {
+						drawWidth = worldXToScreenX(worldWidth);
+					} else {
+						drawWidth = width;
+					};
+
+					if (worldHeight < (pos.y + height/2)) {
+						drawHeight = worldYToScreenY(worldHeight);
+					} else {
+						drawHeight = height;
+					};
+
+					ctx.strokeRect(drawPos.x-ctx.lineWidth, drawPos.y-ctx.lineWidth, drawWidth+(ctx.lineWidth*2), drawHeight+(ctx.lineWidth*2));
+				};
+				
+				return {
+					pos: pos,
+					worldToScreen: worldToScreen,
+					draw: draw
 				};
 			};
 			
@@ -137,13 +220,19 @@
 			function addRemotePlayer(opts) {
 				var id = opts.id,
 					state = opts.state,
+					localPos,
 					player;
 				
 				player = new Player({id: id, x: 0, y: 0, acc: {x: 0, y: 0}});
-				player.currentState.pos = state.pos;
+				
+				localPos = viewport.worldToScreen(state.pos.x, state.pos.y);
+				
+				player.currentState.pos = localPos.pos;
 				player.currentState.acc = state.acc;
 				player.currentState.keys = state.keys;
+				
 				remotePlayers.push(player);
+				console.log("Add player: ", id);
 			};
 			
 			// Find player by ID
@@ -226,7 +315,11 @@
 			
 			// Socket settings
 				WEB_SOCKET_SWF_LOCATION = "js/WebSocketMain.swf",
-				socket = new io.Socket("localhost", {port: 8000, transports: ["websocket", "flashsocket"]}),
+				socketHost = "194.110.243.147",
+				socket = new io.Socket(socketHost, {port: 8000, transports: ["websocket", "flashsocket"]}),
+				
+			// Game world
+				viewport = new Viewport(canvas.width, canvas.height),
 			
 			// Players	
 				localPlayer,
@@ -242,7 +335,7 @@
 			// WebSocket connection successful
 			socket.on("connect", function(){
 				console.log("Connected");
-				localPlayer = new Player({id: false, x: 100, y: 100, acc: {x: 0, y: 0}});
+				localPlayer = new Player({id: false, local: true, x: 500, y: 500, acc: {x: 0, y: 0}});
 				
 				// Move to message queuing system
 				var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {state: localPlayer.currentState});
@@ -270,21 +363,32 @@
 						case MESSAGE_TYPE_NEW_PLAYER:
 							addRemotePlayer({id: msg.id, state: msg.state});
 							break;
-						case MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE:
+						case MESSAGE_TYPE_REMOVE_PLAYER:
 							var player = playerById(msg.id);
+							if (player) {
+								console.log("Remove player: ", msg.id);
+								remotePlayers.splice(indexOfByPlayerId(msg.id), 1);
+							};
+							break;
+						case MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE:
+							var player = playerById(msg.id),
+								localPos;
 							if (player) {
 								//console.log("Player state: ", player.currentState);
 								// THIS IS BAD – CHANGE TO PREDICTIVE METHOD
 								//player.currentState.pos.x = msg.state.pos.x;
 								//console.log(player.currentState.pos.x);
-								player.currentState.pos = msg.state.pos;
+								var localPos = viewport.worldToScreen(msg.state.pos.x, msg.state.pos.y);
+								player.currentState.pos = localPos;
 								player.currentState.acc = msg.state.acc;
 								player.currentState.keys = msg.state.keys;
 							};
 							break;
 						case MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION:
 							if (localPlayer) {
-								localPlayer.currentState.pos = msg.pos;
+								//localPlayer.currentState.pos = msg.pos;
+								viewport.pos.x = msg.pos.x;
+								viewport.pos.y = msg.pos.y;
 							};
 							break;
 					};
@@ -299,6 +403,8 @@
 			function update() {
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
 				
+				viewport.draw(ctx);
+				
 				// Move draw functionality to another method?
 				if (localPlayer != null) {
 					localPlayer.draw(ctx);
@@ -309,7 +415,9 @@
 					for (i = 0; i < playerCount; i++) {
 						player = remotePlayers[i];
 						//console.log(player.currentState.pos.x);
-						player.draw(ctx);
+						if (player) {
+							player.draw(ctx);
+						};
 					};
 				};
 				

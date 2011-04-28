@@ -1,1 +1,5 @@
 canvas { display: block; }
+
+#canvas {
+	background-color: #000;
+}
