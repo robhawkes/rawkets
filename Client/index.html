@@ -14,6 +14,7 @@
 	
 	<body>
 		<canvas id="canvas" width="400" height="400"></canvas>
+		<p id="ping"></p>
 
 		<script src="js/socket.io.min.js"></script>
 		<script src="js/bison.js"></script>
@@ -35,10 +36,11 @@
 			canvas.width = window.innerWidth;
 			canvas.height = window.innerHeight;
 			var ctx = canvas.getContext("2d");
+			var ping = document.getElementById("ping");
 			// TESTING - REMOVE THIS
 			
 			// Funky Object clone method
-			Object.prototype.clone = function() {
+			/*Object.prototype.clone = function() {
 				var newObj = (this instanceof Array) ? [] : {};
 
 				for (i in this) {
@@ -52,6 +54,89 @@
 				};
 
 				return newObj;
+			};*/
+			function clone(obj) {
+			    if (null == obj || "object" != typeof obj) return obj;
+
+			    // Handle Array
+			    if (obj instanceof Array) {
+			        var copy = [], i, len = obj.length;
+			        for (i = 0; i < len; ++i) {
+			            copy[i] = clone(obj[i]);
+			        }
+			        return copy;
+			    };
+
+			    // Handle Object
+			    if (obj instanceof Object) {
+			        var copy = {};
+			        for (var attr in obj) {
+			            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+			        }
+			        return copy;
+			    };
+
+			    throw new Error("Unable to copy obj! Its type isn't supported.");
+			};
+			
+			// Netgraph
+			var NetGraph = function() {
+				var width = 300,
+					height = 50,
+					maxPing = 200,
+					pings = [];
+					//data = [];
+				
+				var addPing = function(ping) {
+					if (pings.length == 150) {
+						pings.shift(); // Remove first ping
+					};
+					
+					pings.push(ping);
+				};
+				
+				/*var addData = function(value) {
+					if (data.length == 150) {
+						data.shift(); // Remove first ping
+					};
+					
+					data.push(value);
+				};*/
+				
+				var draw = function(ctx) {
+					ctx.save();
+					ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+					ctx.fillRect(0, 0, width, height);
+					
+					ctx.fillStyle = "rgb(255, 255, 255)";
+					ctx.font = "Bold 8px Verdana";
+					ctx.fillText("0ms", width+4, height-2);
+					ctx.fillText(maxPing+"ms", width+4, 10);
+					
+					ctx.strokeStyle = "rgb(255, 255, 255)";
+					ctx.lineWidth = 1;
+					
+					var i, x, y, ping, pingCount = pings.length;
+					if (pingCount > 0) {
+						ctx.beginPath();
+						ctx.moveTo(width-(pingCount*2), height-(pings[0]/(maxPing/height)));
+						for (i = 0; i < pingCount; i++) {
+							ping = pings[i];
+							x = (width-(pingCount*2))+(i*2);
+							y = height-(ping/(maxPing/height));
+
+							ctx.lineTo(x, y);
+						};
+						ctx.stroke();
+					};
+					
+					ctx.restore();
+				};
+				
+				return {
+					addPing: addPing,
+					draw: draw
+				}
 			};
 			
 			// Vector object
@@ -68,17 +153,39 @@
 
 			// Player state object
 			var PlayerState = function(opts) {
-				// Private variables
-				var keys = {left: false, right: false, up: false};
-
 				// Public variables
-				var pos = new Vector({x: opts.x || 0, y: opts.y || 0}),
-					acc = new Vector({x: opts.acc.x || 0, y: opts.acc.y || 0});
+				var currentKeys = {left: false, right: false, up: false, down: false, space: false},
+					previousKeys = clone(currentKeys),
+					activeKeys = clone(currentKeys),
+					pos = new Vector({x: opts.x, y: opts.y}),
+					angle = opts.angle,
+					moving = false,
+					alive = true;
+					
+				var updateKeys = function() {
+					//previousKeys = currentKeys.clone(); // Clone isn't working for some reason
+					previousKeys.left = currentKeys.left;
+					previousKeys.right = currentKeys.right;
+					previousKeys.up = currentKeys.up;
+					previousKeys.down = currentKeys.down;
+					previousKeys.space = currentKeys.space;
+					
+					currentKeys.left = activeKeys.left;
+					currentKeys.right = activeKeys.right;
+					currentKeys.up = activeKeys.up;
+					currentKeys.down = activeKeys.down;
+					currentKeys.space = activeKeys.space;
+				};
 
 				return {
 					pos: pos,
-					acc: acc,
-					keys: keys
+					angle: angle,
+					moving: moving,
+					currentKeys: currentKeys,
+					previousKeys: previousKeys,
+					activeKeys: activeKeys,
+					updateKeys: updateKeys,
+					alive: alive
 				};
 			};
 			
@@ -86,9 +193,9 @@
 			var Player = function(opts) {
 				// Public variables
 				var id = opts.id,
-					local = opts.local || false,
-					currentState = new PlayerState({x: opts.x, y: opts.y, acc: {x: opts.acc.x, y: opts.acc.y}}),
-					previousState = currentState.clone();
+					local = opts.local,
+					currentState = new PlayerState({x: opts.x, y: opts.y, angle: opts.angle}),
+					previousState = clone(currentState);
 
 				// Public methods
 				/*var update = function(dtdt) {
@@ -108,12 +215,36 @@
 				};*/
 				
 				var draw = function(ctx) {
-					var pos = (local) ? new Vector({x: canvas.width/2, y: canvas.height/2}) : currentState.pos;
+					var pos = (local) ? new Vector({x: canvas.width/2, y: canvas.height/2}) : viewport.worldToScreen(currentState.pos.x, currentState.pos.y);
 					//console.log(currentState.pos.x);
-					ctx.save();
-					ctx.fillStyle = "rgb(255, 255, 255)";
-					ctx.fillRect(pos.x-2, pos.y-2, 6, 6);
-					ctx.restore();
+					if (pos) { // TEMPORARY FIX. NOT IDEAL! It seems the pos variable gets screwed up every so often. Due to the check above?
+						ctx.save();
+						ctx.translate(pos.x, pos.y); // ERROR HERE "Uncaught TypeError: Cannot read property 'x' of undefined"
+						ctx.rotate(currentState.angle);
+						
+						var flameHeight;
+						if (currentState.moving) {
+							flameHeight = Math.floor(8+(Math.random()*4));
+							ctx.fillStyle = "orange";
+							ctx.beginPath();
+							ctx.moveTo(-(6+flameHeight), 0);
+							ctx.lineTo(-6, -2);
+							ctx.lineTo(-6, 2);
+							ctx.closePath();
+							ctx.fill();
+						};
+					
+						// Draw rocket
+						ctx.fillStyle = (currentState.alive) ? "rgb(255, 255, 255)" : "rgb(150, 150, 150)";
+						ctx.beginPath();
+						ctx.moveTo(-7, -6);
+						ctx.lineTo(7, 0);
+						ctx.lineTo(-7, 6);
+						ctx.closePath();
+						ctx.fill();
+					
+						ctx.restore();
+					};
 				};
 
 				return {
@@ -122,6 +253,37 @@
 					draw: draw,
 					currentState: currentState,
 					previousState: previousState
+				};
+			};
+			
+			// Bullet state object
+			var BulletState = function(opts) {
+				// Public variables
+				var pos = new Vector({x: opts.x, y: opts.y});
+
+				return {
+					pos: pos
+				};
+			};
+
+			// Bullet object
+			var Bullet = function(opts) {
+				// Public variables
+				var id = opts.id || false,
+					currentState = new BulletState({x: opts.x, y: opts.y});
+
+				// Public methods
+				var draw = function(ctx) {
+					ctx.save();
+					ctx.fillStyle = "rgb(255, 255, 0)";
+					ctx.fillRect(currentState.pos.x-1, currentState.pos.y-1, 2, 2);
+					ctx.restore();
+				};
+
+				return {
+					id: id,
+					currentState: currentState,
+					draw: draw
 				};
 			};
 			
@@ -223,13 +385,13 @@
 					localPos,
 					player;
 				
-				player = new Player({id: id, x: 0, y: 0, acc: {x: 0, y: 0}});
+				player = new Player({id: id, local: false, x: 0, y: 0, angle: 0});
 				
-				localPos = viewport.worldToScreen(state.pos.x, state.pos.y);
+				//localPos = viewport.worldToScreen(state.pos.x, state.pos.y);
 				
-				player.currentState.pos = localPos.pos;
-				player.currentState.acc = state.acc;
-				player.currentState.keys = state.keys;
+				player.currentState.pos = state.pos;
+				player.currentState.angle = state.angle;
+				player.currentState.currentKeys = state.keys;
 				
 				remotePlayers.push(player);
 				console.log("Add player: ", id);
@@ -256,6 +418,27 @@
 				return false;
 			};
 			
+			// Find bullet by ID
+			function bulletById(id) {
+				for (var i = 0; i < bullets.length; i++) {
+					if (bullets[i].id == id)
+						return bullets[i];
+				};
+
+				return false;
+			};
+
+			// Find bullet index by ID
+			function indexOfByBulletId(id) {
+				for (var i = 0; i < bullets.length; i++) {
+					if (bullets[i].id == id) {
+						return i;
+					};
+				};
+
+				return false;
+			};
+			
 			// Event listeners
 			window.addEventListener("keydown", onKeydown, false);
 			window.addEventListener("keyup", onKeyup, false);
@@ -264,17 +447,20 @@
 				var c = e.keyCode;
 				
 				switch (c) {
+					case 32: // Space
+						localPlayer.currentState.activeKeys.space = true;
+						break;
 					case 37: // Left
-						localPlayer.currentState.keys.left = true;
+						localPlayer.currentState.activeKeys.left = true;
 						break;
 					case 38: // Up
-						localPlayer.currentState.keys.up = true;
+						localPlayer.currentState.activeKeys.up = true;
 						break;
 					case 39: // Right
-						localPlayer.currentState.keys.right = true;
+						localPlayer.currentState.activeKeys.right = true;
 						break;
 					case 40: // Down
-						localPlayer.currentState.keys.down = true;
+						localPlayer.currentState.activeKeys.down = true;
 						break;
 				};
 
@@ -285,17 +471,20 @@
 				var c = e.keyCode;
 
 				switch (c) {
+					case 32: // Space
+						localPlayer.currentState.activeKeys.space = false;
+						break;
 					case 37: // Left
-						localPlayer.currentState.keys.left = false;
+						localPlayer.currentState.activeKeys.left = false;
 						break;
 					case 38: // Up
-						localPlayer.currentState.keys.up = false;
+						localPlayer.currentState.activeKeys.up = false;
 						break;
 					case 39: // Right
-						localPlayer.currentState.keys.right = false;
+						localPlayer.currentState.activeKeys.right = false;
 						break;
 					case 40: // Down
-						localPlayer.currentState.keys.down = false;
+						localPlayer.currentState.activeKeys.down = false;
 						break;
 				};
 
@@ -309,6 +498,10 @@
 				MESSAGE_TYPE_ENABLE_PLAYER_KEY = 3,
 				MESSAGE_TYPE_DISABLE_PLAYER_KEY = 4,
 				MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION = 5,
+				MESSAGE_TYPE_PING = 6,
+				MESSAGE_TYPE_NEW_BULLET = 7,
+				MESSAGE_TYPE_UPDATE_BULLET_STATE = 8,
+				MESSAGE_TYPE_REMOVE_BULLET = 9,
 			
 			// Run game
 				runUpdate = true,
@@ -316,14 +509,21 @@
 			// Socket settings
 				WEB_SOCKET_SWF_LOCATION = "js/WebSocketMain.swf",
 				socketHost = "194.110.243.147",
+				//socketHost = "localhost",
 				socket = new io.Socket(socketHost, {port: 8000, transports: ["websocket", "flashsocket"]}),
+				
+			// Netgraph
+				net = new NetGraph(),
 				
 			// Game world
 				viewport = new Viewport(canvas.width, canvas.height),
 			
 			// Players	
 				localPlayer,
-				remotePlayers = [];
+				remotePlayers = [],
+				
+			// Weapons
+				bullets = [];
 			
 			// Connect to WebSocket server
 			socket.connect();
@@ -335,7 +535,7 @@
 			// WebSocket connection successful
 			socket.on("connect", function(){
 				console.log("Connected");
-				localPlayer = new Player({id: false, local: true, x: 500, y: 500, acc: {x: 0, y: 0}});
+				localPlayer = new Player({id: false, local: true, x: 500, y: 500, angle: 0});
 				
 				// Move to message queuing system
 				var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {state: localPlayer.currentState});
@@ -360,6 +560,16 @@
 				// Move this to a dedicate message queuing system
 				if (msg.type !== undefined) {
 					switch (msg.type) {
+						case MESSAGE_TYPE_PING:
+							if (msg.t) {
+								socket.send(formatMessage(MESSAGE_TYPE_PING, {t: msg.t}));
+							};
+
+							if (msg.p) {
+								net.addPing(msg.p);
+								ping.innerHTML = msg.i+" - "+msg.p+"ms";
+							};
+							break;
 						case MESSAGE_TYPE_NEW_PLAYER:
 							addRemotePlayer({id: msg.id, state: msg.state});
 							break;
@@ -378,17 +588,45 @@
 								// THIS IS BAD – CHANGE TO PREDICTIVE METHOD
 								//player.currentState.pos.x = msg.state.pos.x;
 								//console.log(player.currentState.pos.x);
-								var localPos = viewport.worldToScreen(msg.state.pos.x, msg.state.pos.y);
-								player.currentState.pos = localPos;
-								player.currentState.acc = msg.state.acc;
-								player.currentState.keys = msg.state.keys;
+								//localPos = viewport.worldToScreen(msg.state.pos.x, msg.state.pos.y);
+								player.currentState.pos = msg.state.pos;
+								player.currentState.angle = msg.state.angle;
+								player.currentState.moving = msg.state.moving;
+								player.currentState.currentKeys = msg.state.keys;
+								player.currentState.alive = msg.state.alive;
 							};
 							break;
 						case MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION:
 							if (localPlayer) {
-								//localPlayer.currentState.pos = msg.pos;
+								localPlayer.currentState.angle = msg.angle;
+								localPlayer.currentState.moving = msg.moving;
+								localPlayer.currentState.alive = msg.alive;
 								viewport.pos.x = msg.pos.x;
 								viewport.pos.y = msg.pos.y;
+							};
+							break;
+						case MESSAGE_TYPE_NEW_BULLET:
+							var bullet, localpos;
+							localPos = viewport.worldToScreen(msg.x, msg.y);
+							bullet = new Bullet({id: msg.id, x: localPos.x, y: localPos.y});
+							bullets.push(bullet);
+							break;
+						case MESSAGE_TYPE_UPDATE_BULLET_STATE:
+							var bullet, localPos;
+							bullet = bulletById(msg.id);
+							if (bullet) {
+								localPos = viewport.worldToScreen(msg.x, msg.y);
+								bullet.currentState.pos.x = localPos.x;
+								bullet.currentState.pos.y = localPos.y;
+							};
+							break;
+						case MESSAGE_TYPE_REMOVE_BULLET:
+							//console.log("Remove bullet", msg.id);
+							var bullet = bulletById(msg.id);
+							if (bullet) {
+								//console.log("Successful", bullet.id);
+								//bullet.currentState.alive = false;
+								bullets.splice(indexOfByBulletId(msg.id), 1);
 							};
 							break;
 					};
@@ -401,9 +639,23 @@
 			
 			// Main update loop
 			function update() {
+				if (localPlayer != null) {
+					localPlayer.currentState.updateKeys();
+				};
+					
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
 				
 				viewport.draw(ctx);
+				
+				var b, bullet, bulletCount = bullets.length;
+				if (bulletCount > 0) {
+					for (b = 0; b < bulletCount; b++) {
+						bullet = bullets[b];
+						if (bullet) {
+							bullet.draw(ctx);
+						};
+					};
+				};
 				
 				// Move draw functionality to another method?
 				if (localPlayer != null) {
@@ -422,37 +674,49 @@
 				};
 				
 				// Move to message queuing system
-				if (localPlayer != null && localPlayer.currentState.keys.left) {
+				if (localPlayer != null && localPlayer.currentState.currentKeys.left && localPlayer.currentState.currentKeys.left != localPlayer.currentState.previousKeys.left) {
 					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 37});
 					socket.send(msg);
-				} else if (localPlayer != null && !localPlayer.currentState.keys.left) {
+				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.left && localPlayer.currentState.currentKeys.left != localPlayer.currentState.previousKeys.left) {
 					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 37});
 					socket.send(msg);
 				};
 				
-				if (localPlayer != null && localPlayer.currentState.keys.up) {
+				if (localPlayer != null && localPlayer.currentState.currentKeys.up && localPlayer.currentState.currentKeys.up != localPlayer.currentState.previousKeys.up) {
 					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 38});
 					socket.send(msg);
-				} else if (localPlayer != null && !localPlayer.currentState.keys.up) {
+				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.up && localPlayer.currentState.currentKeys.up != localPlayer.currentState.previousKeys.up) {
 					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 38});
 					socket.send(msg);
 				};
 				
-				if (localPlayer != null && localPlayer.currentState.keys.right) {
+				if (localPlayer != null && localPlayer.currentState.currentKeys.right && localPlayer.currentState.currentKeys.right != localPlayer.currentState.previousKeys.right) {
 					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 39});
 					socket.send(msg);
-				} else if (localPlayer != null && !localPlayer.currentState.keys.right) {
+				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.right && localPlayer.currentState.currentKeys.right != localPlayer.currentState.previousKeys.right) {
 					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 39});
 					socket.send(msg);
 				};
 				
-				if (localPlayer != null && localPlayer.currentState.keys.down) {
+				if (localPlayer != null && localPlayer.currentState.currentKeys.down && localPlayer.currentState.currentKeys.down != localPlayer.currentState.previousKeys.down) {
 					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 40});
 					socket.send(msg);
-				} else if (localPlayer != null && !localPlayer.currentState.keys.down) {
+				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.down && localPlayer.currentState.currentKeys.down != localPlayer.currentState.previousKeys.down) {
 					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 40});
 					socket.send(msg);
 				};
+				
+				// Fire weapon
+				if (localPlayer != null && localPlayer.currentState.currentKeys.space && localPlayer.currentState.currentKeys.space != localPlayer.currentState.previousKeys.space) {
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 32});
+					socket.send(msg);
+				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.space && localPlayer.currentState.currentKeys.space != localPlayer.currentState.previousKeys.space) {
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 32});
+					socket.send(msg);
+				};
+				
+				// Draw netgraph
+				net.draw(ctx);
 				
 				// Schedule next game update
 				if (runUpdate) {

@@ -3,3 +3,11 @@ canvas { display: block; }
 #canvas {
 	background-color: #000;
 }
+
+#ping {
+	bottom: 0;
+	color: #fff;
+	left: 0;
+	margin: 20px;
+	position: absolute;
+}
