@@ -56,15 +56,18 @@ var PlayerState = function(opts) {
 	// Public variables
 	var currentKeys = {left: false, right: false, up: false, down: false, space: false},
 		pos = new Vector({x: opts.x, y: opts.y}),
-		thrust = 1500,
-		//acc = new Vector({x: opts.acc.x || 0, y: opts.acc.y || 0}),
+		thrust = 0,
+		maxThrust = 1800,
+		acc = new Vector({x: 0, y: 0}),
 		angle = 0,
 		moving = false,
 		alive = true;
 		
 	return {
 		pos: pos,
+		acc: acc,
 		thrust: thrust,
+		maxThrust: maxThrust,
 		angle: angle,
 		moving: moving,
 		currentKeys: currentKeys,
@@ -110,24 +113,39 @@ var Player = function(opts) {
 		};
 		
 		if (currentState.currentKeys.left) {
-			currentState.angle -= 0.09;
+			currentState.angle -= 0.06;
 		};
 		
 		if (currentState.currentKeys.right) {
-			currentState.angle += 0.09;
+			currentState.angle += 0.06;
 		};
 		
-		var acc = new Vector({x: 0, y: 0});
+		//var acc = new Vector({x: 0, y: 0});
 		currentState.moving = false;
 		if (currentState.currentKeys.up) {
 			currentState.moving = true;
-			acc.x = Math.cos(currentState.angle)*currentState.thrust;
-			acc.y = Math.sin(currentState.angle)*currentState.thrust;
+			
+			currentState.thrust += 50;
+			if (currentState.thrust > currentState.maxThrust) {
+				currentState.thrust = currentState.maxThrust;
+			};
+			
+			currentState.acc.x = Math.cos(currentState.angle)*currentState.thrust;
+			currentState.acc.y = Math.sin(currentState.angle)*currentState.thrust;
+		} else {
+			currentState.thrust = 0;
+			if (Math.abs(currentState.acc.x) > 0.1 || Math.abs(currentState.acc.y) > 0.1) {
+				currentState.acc.x *= 0.96;
+				currentState.acc.y *= 0.96;
+			} else {
+				currentState.acc.x = 0;
+				currentState.acc.y = 0;
+			};
 		};
 		
 		// Verlet integration (http://www.gotoandplay.it/_articles/2005/08/advCharPhysics.php)
-		currentState.pos.x = 2 * currentState.pos.x - previousState.pos.x + acc.x * dtdt;
-		currentState.pos.y = 2 * currentState.pos.y - previousState.pos.y + acc.y * dtdt;
+		currentState.pos.x = 2 * currentState.pos.x - previousState.pos.x + currentState.acc.x * dtdt;
+		currentState.pos.y = 2 * currentState.pos.y - previousState.pos.y + currentState.acc.y * dtdt;
 		
 		if (!withinWorldBounds(currentState.pos.x, currentState.pos.y)) {
 			if (currentState.pos.x > worldWidth)
@@ -441,14 +459,14 @@ function update() {
 	};
 	
 	// Update every single bullet in the game
-	var b, deadBullets = [], deadPlayers = [], bulletCount = bullets.length;
+	var b, alive, deadBullets = [], deadPlayers = [], bulletCount = bullets.length;
 	//console.log(bulletCount);
 	for (b = 0; b < bulletCount; b++) {
 		bullet = bullets[b];
 		
 		if (bullet) {
 			if (bullet.currentState.age > 100) {
-				deadBullets.push(bullet);
+				deadBullets.push({bullet: bullet, index: b});
 				continue;
 			};
 			
@@ -466,7 +484,7 @@ function update() {
 			
 					if (d < 10) {
 						deadPlayers.push(player);
-						deadBullets.push(bullet);
+						deadBullets.push({bullet: bullet, index: b});
 						continue;
 					};
 				};
@@ -490,13 +508,14 @@ function update() {
 	};
 	
 	// Remove dead bullets
-	var db, deadBulletCount = deadBullets.length;
+	var db, bulletIndex, deadBulletCount = deadBullets.length;
 	for (db = 0; db < deadBulletCount; db++) {
-		bullet = deadBullets[db];
+		bullet = deadBullets[db].bullet;
+		bulletIndex = deadBullets[db].index;
 		
 		if (bullet) {
 			socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
-			bullets.splice(db, 1);
+			bullets.splice(bulletIndex, 1);
 			//console.log("Remove bullet", bullets.length);
 		};
 	};
@@ -693,7 +712,7 @@ function bulletById(id) {
 
 	return false;
 };
-
+*/
 // Find bullet index by ID
 function indexOfByBulletId(id) {
 	for (var i = 0; i < bullets.length; i++) {
@@ -704,7 +723,6 @@ function indexOfByBulletId(id) {
 
 	return false;
 };
-*/
 
 // Start main update loop
 update();
