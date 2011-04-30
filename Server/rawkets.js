@@ -17,10 +17,12 @@
 
 function clone(obj) {
     if (null == obj || "object" != typeof obj) return obj;
-
+	
+	var copy;
     // Handle Array
     if (obj instanceof Array) {
-        var copy = [], i, len = obj.length;
+        var i, len = obj.length;
+		copy = [];
         for (i = 0; i < len; ++i) {
             copy[i] = clone(obj[i]);
         }
@@ -29,7 +31,7 @@ function clone(obj) {
 
     // Handle Object
     if (obj instanceof Object) {
-        var copy = {};
+        copy = {};
         for (var attr in obj) {
             if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
         }
@@ -81,7 +83,9 @@ var Player = function(opts) {
 	var id = opts.id || false,
 		currentState = new PlayerState({x: opts.x, y: opts.y}),
 		previousState = clone(currentState),
-		weaponsHot = true;
+		weaponsHot = true,
+		rotationSpeed = 0,
+		maxRotationSpeed = 0.09;
 		
 	//console.log(currentState.pos.x);
 		
@@ -112,12 +116,21 @@ var Player = function(opts) {
 			return;
 		};
 		
+		if (currentState.currentKeys.left || currentState.currentKeys.right) {
+			rotationSpeed += 0.01;
+			if (rotationSpeed > maxRotationSpeed) {
+				rotationSpeed = maxRotationSpeed;
+			};
+		} else {
+			rotationSpeed = 0;
+		};
+		
 		if (currentState.currentKeys.left) {
-			currentState.angle -= 0.06;
+			currentState.angle -= rotationSpeed;
 		};
 		
 		if (currentState.currentKeys.right) {
-			currentState.angle += 0.06;
+			currentState.angle += rotationSpeed;
 		};
 		
 		//var acc = new Vector({x: 0, y: 0});
@@ -465,8 +478,9 @@ function update() {
 		bullet = bullets[b];
 		
 		if (bullet) {
-			if (bullet.currentState.age > 100) {
-				deadBullets.push({bullet: bullet, index: b});
+			if (bullet.currentState.age > 75) {
+				//socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
+				deadBullets.push(bullet);
 				continue;
 			};
 			
@@ -484,7 +498,9 @@ function update() {
 			
 					if (d < 10) {
 						deadPlayers.push(player);
-						deadBullets.push({bullet: bullet, index: b});
+						
+						//socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
+						deadBullets.push(bullet);
 						continue;
 					};
 				};
@@ -510,8 +526,8 @@ function update() {
 	// Remove dead bullets
 	var db, bulletIndex, deadBulletCount = deadBullets.length;
 	for (db = 0; db < deadBulletCount; db++) {
-		bullet = deadBullets[db].bullet;
-		bulletIndex = deadBullets[db].index;
+		bullet = deadBullets[db];
+		bulletIndex = indexOfByBulletId(deadBullets[db].id);
 		
 		if (bullet) {
 			socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
