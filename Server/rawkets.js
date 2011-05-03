@@ -214,7 +214,8 @@ var killPlayer = function(playerId) {
 			
 			var client = socket.clients[self.id];
 			if (client) {
-				client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: self.id, state: self.currentState}));
+				//client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: self.id, state: self.currentState}));
+				client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: self.id, pos: self.currentState.pos, angle: self.currentState.angle, moving: self.currentState.moving, keys: self.currentState.currentKeys, health: self.currentState.health}));
 				client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: self.id, pos: self.currentState.pos, angle: self.currentState.angle, moving: self.currentState.moving, health: self.currentState.health}));
 			};
 		}, 2000);
@@ -528,7 +529,7 @@ function update() {
 					player.previousState.moving != player.currentState.moving ||
 					player.previousState.health != player.currentState.health) {
 					//console.log("Update");
-					client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, state: player.currentState}));
+					client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, keys: player.currentState.currentKeys, health: player.currentState.health}));
 					client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, health: player.currentState.health}));
 				};
 			};
@@ -589,7 +590,8 @@ function update() {
 			
 			client = socket.clients[player.id];
 			if (client) {
-				client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, state: player.currentState}));
+				//client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, state: player.currentState}));
+				client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, keys: player.currentState.currentKeys, health: player.currentState.health}));
 				client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, health: player.currentState.health}));
 			};
 		};

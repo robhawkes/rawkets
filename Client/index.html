@@ -542,7 +542,7 @@
 					muted = false;
 				
 				var play = function(soundName) {
-					if (!muted) {
+					if (!this.muted) {
 						switch (soundName) {
 							case "background":
 								container.playBackground();
@@ -915,11 +915,11 @@
 								player.previousState.currentKeys = player.currentState.keys;
 								player.previousState.health = player.currentState.health;
 								
-								player.currentState.pos = msg.state.pos;
-								player.currentState.angle = msg.state.angle;
-								player.currentState.moving = msg.state.moving;
-								player.currentState.currentKeys = msg.state.keys;
-								player.currentState.health = msg.state.health;
+								player.currentState.pos = msg.pos;
+								player.currentState.angle = msg.angle;
+								player.currentState.moving = msg.moving;
+								player.currentState.currentKeys = msg.keys;
+								player.currentState.health = msg.health;
 								
 								if (player.previousState.health - player.currentState.health > 30 || player.currentState.health <= 0) {
 									sound.play("die");
