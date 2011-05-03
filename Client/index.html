@@ -9,15 +9,31 @@
 		<meta name="description" content="Rawkets is a massively multiplayer game in which you can shoot and interact with other players, in real-time, in space! It uses the latest Web technologies, including HTML5 canvas and WebSockets.">
 		
 		<link rel="stylesheet" href="style/reset.css">
+		<link rel="stylesheet" href="style/rawkets_fonts.css">
 		<link rel="stylesheet" href="style/rawkets.css">
 	</head>
 	
 	<body>
 		<canvas id="canvas" width="400" height="400"></canvas>
-		<p id="ping"></p>
-
-		<script src="js/socket.io.min.js"></script>
-		<script src="js/bison.js"></script>
+		<header id="header">
+			<h1>Rawkets</h1>
+			<nav>
+				<ul>
+					<li><a id="tabGame" class="active" href="#">Game</a></li>
+					<li><a id="tabSettings" href="#">Settings</a></li>
+					<li><a id="tabAbout" href="#">About</a></li>
+				</ul>
+			</nav>
+		</header>
+		<footer id="statistics">
+			<p id="playerCount">0 fighters online</p>
+			<p id="updates"><a href="#">Send me development updates</a></p>
+		</footer>
+		<div id="soundContainer"></div>
+		
+		<script type="text/javascript" src="js/swfobject/swfobject.js"></script>
+		<script type="text/javascript" src="js/socket.io.min.js"></script>
+		<script type="text/javascript" src="js/bison.js"></script>
 		
 		<script type="text/javascript">
 			// TODO
@@ -34,9 +50,9 @@
 			// TESTING - REMOVE THIS
 			var canvas = document.getElementById("canvas");
 			canvas.width = window.innerWidth;
-			canvas.height = window.innerHeight;
+			canvas.height = window.innerHeight-111;
 			var ctx = canvas.getContext("2d");
-			var ping = document.getElementById("ping");
+			var playerCount = document.getElementById("playerCount");
 			// TESTING - REMOVE THIS
 			
 			// Funky Object clone method
@@ -108,10 +124,14 @@
 					ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
 					ctx.fillRect(0, 0, width, height);
 					
-					ctx.fillStyle = "rgb(255, 255, 255)";
+					ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
 					ctx.font = "Bold 8px Verdana";
 					ctx.fillText("0ms", width+4, height-2);
 					ctx.fillText(maxPing+"ms", width+4, 10);
+					
+					var ms = (pings.length > 0) ? pings[pings.length-1] : 0;
+					ctx.fillStyle = "rgb(255, 255, 255)";
+					ctx.fillText(ms+"ms", 4, 10);
 					
 					ctx.strokeStyle = "rgb(255, 255, 255)";
 					ctx.lineWidth = 1;
@@ -160,7 +180,7 @@
 					pos = new Vector({x: opts.x, y: opts.y}),
 					angle = opts.angle,
 					moving = false,
-					alive = true;
+					health = 100;
 					
 				var updateKeys = function() {
 					//previousKeys = currentKeys.clone(); // Clone isn't working for some reason
@@ -185,7 +205,7 @@
 					previousKeys: previousKeys,
 					activeKeys: activeKeys,
 					updateKeys: updateKeys,
-					alive: alive
+					health: health
 				};
 			};
 			
@@ -195,7 +215,8 @@
 				var id = opts.id,
 					local = opts.local,
 					currentState = new PlayerState({x: opts.x, y: opts.y, angle: opts.angle}),
-					previousState = clone(currentState);
+					previousState = clone(currentState),
+					colour = {c: opts.colour};
 
 				// Public methods
 				/*var update = function(dtdt) {
@@ -220,8 +241,40 @@
 					if (pos) { // TEMPORARY FIX. NOT IDEAL! It seems the pos variable gets screwed up every so often. Due to the check above?
 						ctx.save();
 						ctx.translate(pos.x, pos.y); // ERROR HERE "Uncaught TypeError: Cannot read property 'x' of undefined"
+						
+						// Health ring
+						ctx.save();
+						
+						ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+						ctx.lineWidth = 10;
+						ctx.beginPath();
+						ctx.arc(0, 0, 40, 0, Math.PI*2, false);
+						ctx.closePath();
+						ctx.stroke();
+						
+						ctx.rotate(-Math.PI/2);
+						ctx.strokeStyle = "hsla("+120*(currentState.health/100)+", 100%, 50%, 0.1)";
+						ctx.beginPath();
+						ctx.arc(0, 0, 40, 0, -(Math.PI*2)*(currentState.health/100), true);
+						ctx.stroke();
+						
+						ctx.restore();
+						
+						// Rotate canvas for rocket and flame
 						ctx.rotate(currentState.angle);
 						
+						// Draw weapon reticle
+						ctx.save();
+						ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+						ctx.lineWidth = 4;
+						ctx.beginPath();
+						ctx.moveTo(35, 0);
+						ctx.lineTo(45, 0);
+						ctx.closePath();
+						ctx.stroke();
+						ctx.restore();
+						
+						// Draw flame
 						var flameHeight;
 						if (currentState.moving) {
 							flameHeight = Math.floor(8+(Math.random()*4));
@@ -235,13 +288,22 @@
 						};
 					
 						// Draw rocket
-						ctx.fillStyle = (currentState.alive) ? "rgb(255, 255, 255)" : "rgb(150, 150, 150)";
+						ctx.fillStyle = (currentState.health > 0) ? "rgb(255, 255, 255)" : "rgb(150, 150, 150)";
 						ctx.beginPath();
 						ctx.moveTo(-7, -6);
 						ctx.lineTo(7, 0);
 						ctx.lineTo(-7, 6);
 						ctx.closePath();
 						ctx.fill();
+						
+						if (colour.c && currentState.health > 0) {
+							// Draw decal
+							ctx.fillStyle = colour.c;
+							ctx.beginPath();
+							ctx.arc(-3, 0, 2, 0, Math.PI*2, false);
+							ctx.closePath();
+							ctx.fill();
+						};
 					
 						ctx.restore();
 					};
@@ -252,17 +314,22 @@
 					//update: update,
 					draw: draw,
 					currentState: currentState,
-					previousState: previousState
+					previousState: previousState,
+					colour: colour
 				};
 			};
 			
 			// Bullet state object
 			var BulletState = function(opts) {
 				// Public variables
-				var pos = new Vector({x: opts.x, y: opts.y});
+				var pos = new Vector({x: opts.x, y: opts.y}),
+					angle = opts.angle,
+					age = 0;
 
 				return {
-					pos: pos
+					pos: pos,
+					age: age,
+					angle: angle
 				};
 			};
 
@@ -270,37 +337,78 @@
 			var Bullet = function(opts) {
 				// Public variables
 				var id = opts.id,
-					currentState = new BulletState({x: opts.x, y: opts.y});
+					currentState = new BulletState({x: opts.x, y: opts.y, angle: opts.angle});
+					
+				var update = function() {
+					currentState.age++;
+				};
 
 				// Public methods
 				var draw = function(ctx) {
 					ctx.save();
+					ctx.translate(currentState.pos.x, currentState.pos.y);
+					ctx.rotate(currentState.angle);
 					ctx.fillStyle = "rgb(255, 255, 0)";
-					ctx.fillRect(currentState.pos.x-1, currentState.pos.y-1, 2, 2);
+					ctx.fillRect(-6, -1, 6, 2);
 					ctx.restore();
 				};
 
 				return {
 					id: id,
 					currentState: currentState,
+					update: update,
 					draw: draw
 				};
 			};
 			
 			// Viewport object
 			var Viewport = function(width, height) {
-				var worldWidth = 1000;
-				var worldHeight = 1000;
+				var worldWidth = 2000,
+					worldHeight = 2000,
+					dimensions = {width: width, height: height},
+					pos = new Vector({x: worldWidth/2, y: worldHeight/2}), // Centre of the world
+					previousPos = clone(pos),
+					flareLeftLower = [new Image(), false],
+					flareLeftUpper = [new Image(), false],
+					flareRightLower = [new Image(), false],
+					flareRightUpper = [new Image(), false];
+					
+				flareLeftLower[0].src = "style/img/game_flare_left_lower.png";
+				flareLeftLower[0].onload = function() {
+					flareLeftLower[1] = true;
+				};
+				
+				flareLeftUpper[0].src = "style/img/game_flare_left_upper.png";
+				flareLeftUpper[0].onload = function() {
+					flareLeftUpper[1] = true;
+				};
+				
+				flareRightLower[0].src = "style/img/game_flare_right_lower.png";
+				flareRightLower[0].onload = function() {
+					flareRightLower[1] = true;
+				};
+				
+				flareRightUpper[0].src = "style/img/game_flare_right_upper.png";
+				flareRightUpper[0].onload = function() {
+					flareRightUpper[1] = true;
+				};
+				
+				var withinBounds = function(x, y) {
+					if (x > (pos.x - dimensions.width/2)-20 && 
+						x < (pos.x + dimensions.width/2)+20 &&
+						y > (pos.y - dimensions.height/2)-20 &&
+						y < (pos.y + dimensions.height/2)+20) {
+						return true;	
+					};
 
-				var pos = new Vector({x: 500, y: 500}); // Centre of the world
-				var width = width;
-				var height = height;
+					return false;
+				};
 				
 				var worldToScreen = function(x, y) {
 					var screenPos = new Vector({x: 0, y: 0});
 
-					screenPos.x = (pos.x - width/2) - x;
-					screenPos.y = (pos.y - height/2) - y;
+					screenPos.x = (pos.x - dimensions.width/2) - x;
+					screenPos.y = (pos.y - dimensions.height/2) - y;
 
 					screenPos.x *= -1;
 					screenPos.y *= -1;
@@ -309,14 +417,14 @@
 				};
 				
 				var worldXToScreenX = function(x) {
-					var x = (pos.x - width/2) - x;
+					var x = (pos.x - dimensions.width/2) - x;
 					x *= -1;
 
 					return x;
 				};
 				
 				var worldYToScreenY = function(y) {
-					var y = (pos.y - height/2) - y;
+					var y = (pos.y - dimensions.height/2) - y;
 					y *= -1;
 
 					return y;
@@ -326,41 +434,163 @@
 					ctx.strokeStyle = "rgb(200, 200, 200)";
 					ctx.lineWidth = 3;
 
-					var drawPos = new Vector(0, 0);
+					var drawPos = new Vector({x: 0, y: 0});
 					var drawWidth = 0;
 					var drawHeight = 0;
 
-					if (0.0 > (pos.x - width/2)) {
+					if (0 > (pos.x - width/2)) {
 						drawPos.x = worldXToScreenX(0);
 					} else {
 						drawPos.x = 0;
 					};
 
-					if (0.0 > (pos.y - height/2)) {
+					if (0 > (pos.y - height/2)) {
 						drawPos.y = worldYToScreenY(0);
 					} else {
 						drawPos.y = 0;
 					};
 
-					if (worldWidth < (pos.x + width/2)) {
-						drawWidth = worldXToScreenX(worldWidth);
+					if (worldWidth < (pos.x + dimensions.width/2)) {
+						drawWidth = worldXToScreenX(worldWidth)-drawPos.x;
 					} else {
-						drawWidth = width;
+						drawWidth = dimensions.width;
 					};
 
-					if (worldHeight < (pos.y + height/2)) {
-						drawHeight = worldYToScreenY(worldHeight);
+					if (worldHeight < (pos.y + dimensions.height/2)) {
+						drawHeight = worldYToScreenY(worldHeight)-drawPos.y;
 					} else {
-						drawHeight = height;
+						drawHeight = dimensions.height;
 					};
 
 					ctx.strokeRect(drawPos.x-ctx.lineWidth, drawPos.y-ctx.lineWidth, drawWidth+(ctx.lineWidth*2), drawHeight+(ctx.lineWidth*2));
+					
+					// Draw lens flares
+					var flarePos = new Vector({x: 0, y: 0});
+					if (flareLeftLower[1]) {
+						flarePos.x = 0-((pos.x/worldWidth)*294);
+						flarePos.y = dimensions.height-123-((pos.y/worldHeight)*150);
+						ctx.drawImage(flareLeftLower[0], flarePos.x, flarePos.y);
+					};
+					
+					if (flareLeftUpper[1]) {
+						flarePos.x = 0-((pos.x/worldWidth)*379);
+						flarePos.y = 30+((pos.y/worldHeight)*250);
+						ctx.drawImage(flareLeftUpper[0], flarePos.x, flarePos.y);
+					};
+					
+					if (flareRightLower[1]) {
+						flarePos.x = dimensions.width-((pos.x/worldWidth)*380);
+						flarePos.y = dimensions.height-193-((pos.y/worldHeight)*150);
+						ctx.drawImage(flareRightLower[0], flarePos.x, flarePos.y);
+					};
+					
+					if (flareRightUpper[1]) {
+						flarePos.x = dimensions.width-((pos.x/worldWidth)*317);
+						flarePos.y = 10+((pos.y/worldHeight)*150);
+						ctx.drawImage(flareRightUpper[0], flarePos.x, flarePos.y);
+					};
 				};
 				
 				return {
 					pos: pos,
+					dimensions: dimensions,
+					previousPos: previousPos,
+					withinBounds: withinBounds,
 					worldToScreen: worldToScreen,
 					draw: draw
+				};
+			};
+			
+			// Star class
+			var Star = function(x, y) {
+				var pos = new Vector({x: x, y: y}),
+					z = Math.random()*0.3;
+				
+				var update = function(movementDelta) {
+					pos.x -= movementDelta.x*(z+0.3);
+					pos.y -= movementDelta.y*(z+0.3);
+				};
+				
+				var draw = function(ctx) {
+					ctx.fillStyle = "rgba(255, 255, 255, "+(0.4+(z*0.3))+")";
+					ctx.beginPath();
+					ctx.arc(pos.x, pos.y, (z*10), 0, Math.PI*2, false);
+					ctx.closePath();
+					ctx.fill();
+				};
+				
+				return {
+					pos: pos,
+					update: update,
+					draw: draw
+				};
+			};
+			
+			function createStars() {
+				stars = [];
+				starsOriginalWidth = canvas.width;
+				starsOriginalHeight = canvas.height;
+				var s;
+				for (s = 0; s < 20; s++) {
+					stars.push(new Star(Math.random()*canvas.width, Math.random()*canvas.height));
+				};
+			};
+			
+			// Sound class
+			var Sound = function() {
+				var container = document.getElementById("soundContainer"),
+					muted = false;
+				
+				var play = function(soundName) {
+					if (!muted) {
+						switch (soundName) {
+							case "background":
+								container.playBackground();
+								break;
+							case "thrust":
+								container.playThrust();
+								break;
+							case "laser":
+								container.playLaser();
+								break;
+							case "respawn":
+								container.playRespawn();
+								break;
+							case "die":
+								container.playDie();
+								break;
+						};
+					};
+				};
+
+				var stop = function(soundName) {
+					switch (soundName) {
+						case "background":
+							container.stopBackground();
+							break;
+						case "thrust":
+							container.stopThrust();
+							break;
+					};
+				};
+				
+				var mute = function() {
+					stop("background");
+					stop("thrust");
+					this.muted = true;
+				};
+				
+				var unmute = function() {
+					this.muted = false;
+					play("background");
+				};
+				
+				return {
+					play: play,
+					stop: stop,
+					muted: muted,
+					mute: mute,
+					unmute: unmute
 				};
 			};
 			
@@ -382,10 +612,11 @@
 			function addRemotePlayer(opts) {
 				var id = opts.id,
 					state = opts.state,
+					colour = opts.colour,
 					localPos,
 					player;
 				
-				player = new Player({id: id, local: false, x: 0, y: 0, angle: 0});
+				player = new Player({id: id, local: false, x: 0, y: 0, angle: 0, colour: colour});
 				
 				//localPos = viewport.worldToScreen(state.pos.x, state.pos.y);
 				
@@ -395,6 +626,15 @@
 				
 				remotePlayers.push(player);
 				console.log("Add player: ", id);
+			};
+			
+			// Update player count
+			function updatePlayerCount() {
+				var plural = "";
+				if (remotePlayers.length > 0) {
+					plural = "s";
+				};
+				playerCount.innerHTML = (remotePlayers.length+1)+" fighter"+plural+" online";
 			};
 			
 			// Find player by ID
@@ -442,26 +682,37 @@
 			// Event listeners
 			window.addEventListener("keydown", onKeydown, false);
 			window.addEventListener("keyup", onKeyup, false);
+			window.addEventListener("resize", resizeCanvas, false);
 			
 			function onKeydown(e) {
 				var c = e.keyCode;
 				
-				switch (c) {
-					case 32: // Space
-						localPlayer.currentState.activeKeys.space = true;
-						break;
-					case 37: // Left
-						localPlayer.currentState.activeKeys.left = true;
-						break;
-					case 38: // Up
-						localPlayer.currentState.activeKeys.up = true;
-						break;
-					case 39: // Right
-						localPlayer.currentState.activeKeys.right = true;
-						break;
-					case 40: // Down
-						localPlayer.currentState.activeKeys.down = true;
-						break;
+				if (localPlayer) {
+					switch (c) {
+						// Controls
+						case 32: // Space
+							localPlayer.currentState.activeKeys.space = true;
+							break;
+						case 37: // Left
+							localPlayer.currentState.activeKeys.left = true;
+							break;
+						case 38: // Up
+							localPlayer.currentState.activeKeys.up = true;
+							break;
+						case 39: // Right
+							localPlayer.currentState.activeKeys.right = true;
+							break;
+						case 40: // Down
+							localPlayer.currentState.activeKeys.down = true;
+							break;
+						case 83: // S
+							if (sound.muted) {
+								sound.unmute();
+							} else {
+								sound.mute();
+							};
+							break;
+					};
 				};
 
 				//console.log("Key down [code: "+e.keyCode+"]");
@@ -470,25 +721,67 @@
 			function onKeyup(e) {
 				var c = e.keyCode;
 
-				switch (c) {
-					case 32: // Space
-						localPlayer.currentState.activeKeys.space = false;
-						break;
-					case 37: // Left
-						localPlayer.currentState.activeKeys.left = false;
-						break;
-					case 38: // Up
-						localPlayer.currentState.activeKeys.up = false;
-						break;
-					case 39: // Right
-						localPlayer.currentState.activeKeys.right = false;
-						break;
-					case 40: // Down
-						localPlayer.currentState.activeKeys.down = false;
-						break;
+				if (localPlayer) {
+					switch (c) {
+						case 32: // Space
+							localPlayer.currentState.activeKeys.space = false;
+							break;
+						case 37: // Left
+							localPlayer.currentState.activeKeys.left = false;
+							break;
+						case 38: // Up
+							localPlayer.currentState.activeKeys.up = false;
+							break;
+						case 39: // Right
+							localPlayer.currentState.activeKeys.right = false;
+							break;
+						case 40: // Down
+							localPlayer.currentState.activeKeys.down = false;
+							break;
+					};
 				};
 
 				//console.log("Key down [code: "+e.keyCode+"]");
+			};
+			
+			function resizeCanvas(e) {
+				// Horrible passing of game object due to event closure
+				//var self = (e != null) ? e.data.self : this;
+
+				//var height = $(window).height();
+				//var width = $(window).width()
+
+				//self.canvas.attr({height: height, width: width});
+				
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight-111;
+
+				if (viewport != undefined) {
+					viewport.dimensions.width = canvas.width;
+					viewport.dimensions.height = canvas.height;
+				};
+
+				if (stars != undefined) {
+					var xRatio = canvas.width/starsOriginalWidth;
+					var yRatio = canvas.height/starsOriginalHeight;
+
+					var starCount = stars.length,
+						star,
+						s;
+					for (s = 0; s < starCount; s++) {
+						star = stars[s];
+
+						if (star == null) {
+							continue;
+						};
+
+						star.pos.x *= xRatio;
+						star.pos.y *= yRatio;
+					};
+
+					starsOriginalWidth = canvas.width;
+					starsOriginalHeight = canvas.height;
+				};
 			};
 			
 			// Message types
@@ -502,12 +795,13 @@
 				MESSAGE_TYPE_NEW_BULLET = 7,
 				MESSAGE_TYPE_UPDATE_BULLET_STATE = 8,
 				MESSAGE_TYPE_REMOVE_BULLET = 9,
+				MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR = 10,
 			
 			// Run game
 				runUpdate = true,
 			
 			// Socket settings
-				WEB_SOCKET_SWF_LOCATION = "js/WebSocketMain.swf",
+				WEB_SOCKET_SWF_LOCATION = "lib/WebSocketMain.swf",
 				socketHost = "194.110.243.147",
 				//socketHost = "localhost",
 				socket = new io.Socket(socketHost, {port: 8000, transports: ["websocket", "flashsocket"]}),
@@ -517,16 +811,37 @@
 				
 			// Game world
 				viewport = new Viewport(canvas.width, canvas.height),
+				stars = [],
+				starsOriginalWidth = canvas.width,
+				starsOriginalHeight = canvas.height,
 			
 			// Players	
 				localPlayer,
 				remotePlayers = [],
 				
 			// Weapons
-				bullets = [];
+				bullets = [],
+				
+			// Sound setup
+				sound,
+				flashvars = {},
+				params = {allowscriptaccess: "always"};
 			
-			// Connect to WebSocket server
-			socket.connect();
+			swfobject.embedSWF("lib/Sounds.swf", "soundContainer", "0", "0", "9.0.0", "", flashvars, params, "", function(err) {
+				sound = new Sound();
+				
+				// Unneccesary delay to let sound load
+				setTimeout(function() {
+					// Connect to WebSocket server
+					socket.connect();
+					
+					// Play background
+					sound.play("background");
+				}, 1000);
+			});
+			
+			// Set up stars
+			createStars();
 			
 			// EVENTS
 			// connect, connecting, connect_failed, message, close,
@@ -535,11 +850,13 @@
 			// WebSocket connection successful
 			socket.on("connect", function(){
 				console.log("Connected");
-				localPlayer = new Player({id: false, local: true, x: 500, y: 500, angle: 0});
+				localPlayer = new Player({id: false, local: true, x: 1000, y: 1000, angle: 0, colour: false});
 				
 				// Move to message queuing system
 				var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {state: localPlayer.currentState});
 				socket.send(msg);
+				
+				updatePlayerCount();
 			});
 			
 			// WebSocket connection failed
@@ -567,11 +884,12 @@
 
 							if (msg.p) {
 								net.addPing(msg.p);
-								ping.innerHTML = msg.i+" - "+msg.p+"ms";
 							};
 							break;
 						case MESSAGE_TYPE_NEW_PLAYER:
-							addRemotePlayer({id: msg.id, state: msg.state});
+							var colour = (msg.colour) ? msg.colour : false;
+							addRemotePlayer({id: msg.id, state: msg.state, colour: colour});
+							updatePlayerCount();
 							break;
 						case MESSAGE_TYPE_REMOVE_PLAYER:
 							var player = playerById(msg.id);
@@ -579,6 +897,7 @@
 								console.log("Remove player: ", msg.id);
 								remotePlayers.splice(indexOfByPlayerId(msg.id), 1);
 							};
+							updatePlayerCount();
 							break;
 						case MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE:
 							var player = playerById(msg.id),
@@ -589,27 +908,69 @@
 								//player.currentState.pos.x = msg.state.pos.x;
 								//console.log(player.currentState.pos.x);
 								//localPos = viewport.worldToScreen(msg.state.pos.x, msg.state.pos.y);
+								
+								player.previousState.pos = player.currentState.pos;
+								player.previousState.angle = player.currentState.angle;
+								player.previousState.moving = player.currentState.moving;
+								player.previousState.currentKeys = player.currentState.keys;
+								player.previousState.health = player.currentState.health;
+								
 								player.currentState.pos = msg.state.pos;
 								player.currentState.angle = msg.state.angle;
 								player.currentState.moving = msg.state.moving;
 								player.currentState.currentKeys = msg.state.keys;
-								player.currentState.alive = msg.state.alive;
+								player.currentState.health = msg.state.health;
+								
+								if (player.previousState.health - player.currentState.health > 30 || player.currentState.health <= 0) {
+									sound.play("die");
+								};
+								
+								if (player.previousState.health <= 0 && player.currentState.health >= 90) {
+									sound.play("respawn");
+								};
 							};
 							break;
 						case MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION:
 							if (localPlayer) {
+								localPlayer.previousState.angle = localPlayer.currentState.angle;
+								localPlayer.previousState.moving = localPlayer.currentState.moving;
+								localPlayer.previousState.health = localPlayer.currentState.health;
+								
 								localPlayer.currentState.angle = msg.angle;
 								localPlayer.currentState.moving = msg.moving;
-								localPlayer.currentState.alive = msg.alive;
+								localPlayer.currentState.health = msg.health;
+								
+								viewport.previousPos.x = viewport.pos.x;
+								viewport.previousPos.y = viewport.pos.y;
 								viewport.pos.x = msg.pos.x;
 								viewport.pos.y = msg.pos.y;
+								
+								if (localPlayer.previousState.health - localPlayer.currentState.health > 30 || localPlayer.currentState.health <= 0) {
+									sound.play("die");
+								};
+								
+								if (localPlayer.previousState.health <= 0 && localPlayer.currentState.health >= 90) {
+									viewport.previousPos.x = viewport.pos.x;
+									viewport.previousPos.y = viewport.pos.y;
+									
+									// Set up stars
+									createStars();
+									
+									sound.play("respawn");
+								};
+							};
+							break;
+						case MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR:
+							if (localPlayer) {
+								localPlayer.colour.c = msg.colour;
 							};
 							break;
 						case MESSAGE_TYPE_NEW_BULLET:
 							var bullet, localpos;
 							localPos = viewport.worldToScreen(msg.x, msg.y);
-							bullet = new Bullet({id: msg.id, x: localPos.x, y: localPos.y});
+							bullet = new Bullet({id: msg.id, x: localPos.x, y: localPos.y, angle: msg.angle});
 							bullets.push(bullet);
+							sound.play("laser");
 							break;
 						case MESSAGE_TYPE_UPDATE_BULLET_STATE:
 							var bullet, localPos;
@@ -647,19 +1008,56 @@
 				
 				viewport.draw(ctx);
 				
-				var b, bullet, bulletCount = bullets.length;
+				var playerMoveDelta = new Vector({x: viewport.pos.x-viewport.previousPos.x, y: viewport.pos.y-viewport.previousPos.y}),
+				//var playerMoveDelta = new Vector({x: 0, y: 0}),
+					starCount = stars.length,
+					star,
+					s;
+					
+				// This is a resource hog
+				for (s = 0; s < starCount; s++) {
+					star = stars[s];
+
+					if (!star || star == null) {
+						continue;
+					};
+
+					star.update(playerMoveDelta);
+
+					// Wrap stars around screen
+					star.pos.x = (star.pos.x < 0) ? canvas.width : star.pos.x;
+					star.pos.x = (star.pos.x > canvas.width) ? 0 : star.pos.x;
+					star.pos.y = (star.pos.y < 0) ? canvas.height : star.pos.y;
+					star.pos.y = (star.pos.y > canvas.height) ? 0 : star.pos.y;
+					
+					star.draw(ctx);
+				};
+				
+				var b, bullet, deadBullets = [], bulletCount = bullets.length;
 				if (bulletCount > 0) {
 					for (b = 0; b < bulletCount; b++) {
 						bullet = bullets[b];
 						if (bullet) {
-							bullet.draw(ctx);
+							bullet.update();
+							
+							if (bullet.currentState.age < 75) {
+								bullet.draw(ctx);
+							} else {
+								deadBullets.push(bullet);
+							};
 						};
 					};
 				};
 				
-				// Move draw functionality to another method?
-				if (localPlayer != null) {
-					localPlayer.draw(ctx);
+				// Remove dead bullets
+				var db, bulletIndex, deadBulletCount = deadBullets.length;
+				for (db = 0; db < deadBulletCount; db++) {
+					bullet = deadBullets[db];
+					bulletIndex = indexOfByBulletId(deadBullets[db].id);
+
+					if (bullet) {
+						bullets.splice(bulletIndex, 1);
+					};
 				};
 				
 				var i, player, playerCount = remotePlayers.length;
@@ -668,9 +1066,112 @@
 						player = remotePlayers[i];
 						//console.log(player.currentState.pos.x);
 						if (player) {
-							player.draw(ctx);
+							if (viewport.withinBounds(player.currentState.pos.x, player.currentState.pos.y)) {
+								player.draw(ctx);
+							// Player is outside of the viewport
+							} else {
+								// Draw an arrow at the edge of the viewport indicating where the player is
+								var localScreenPos = viewport.worldToScreen(viewport.pos.x, viewport.pos.y);
+								var screenPos = viewport.worldToScreen(player.currentState.pos.x, player.currentState.pos.y);
+
+								var x1 = localScreenPos.x;
+								var y1 = localScreenPos.y;
+								var x2 = screenPos.x;
+								var y2 = screenPos.y;
+								
+								var angle = Math.atan2(y1-y2, x1-x2);
+
+								var x3;
+								var y3;
+								var x4;
+								var y4;
+
+								var px;
+								var py;
+
+								// Check bottom edge
+								if (screenPos.y > canvas.height) {
+									x3 = 0;
+									y3 = canvas.height;
+									x4 = canvas.width;
+									y4 = canvas.height;
+
+									// Can this formula be simplified?
+									px = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+									py = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+									
+									px = px;
+									py -= 10;
+								};
+
+								// Check top edge
+								if (screenPos.y < 0) {
+									x3 = 0;
+									y3 = 0;
+									x4 = canvas.width;
+									y4 = 0;
+
+									px = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+									py = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+
+									px = px;
+									py += 10;
+									//ctx.fillStyle = "rgb(255, 0, 0)";
+									//ctx.fillRect(px-2, py, 4, 4);
+								};
+
+								// Check left edge
+								if (screenPos.x < 0) {
+									x3 = 0;
+									y3 = 0;
+									x4 = 0;
+									y4 = canvas.height;
+
+									px = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+									py = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+
+									px += 10;
+									py = py;
+									//ctx.fillStyle = "rgb(255, 0, 0)";
+									//ctx.fillRect(px, py-2, 4, 4);
+								};
+
+								// Check right edge
+								if (screenPos.x > canvas.width) {
+									x3 = canvas.width;
+									y3 = 0;
+									x4 = canvas.width;
+									y4 = canvas.height;
+
+									px = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+									py = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+									
+									px -= 10;
+									py = py;
+									//ctx.fillStyle = "rgb(255, 0, 0)";
+									//ctx.fillRect(px-4, py-2, 4, 4);
+								};
+								
+								ctx.save();
+								ctx.translate(px, py);
+								ctx.rotate(angle);
+								ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+								//ctx.fillRect(-2, -2, 4, 4);
+								ctx.beginPath();
+								ctx.moveTo(-5, 0);
+								ctx.lineTo(5, 5);
+								ctx.lineTo(5, -5);
+								ctx.closePath();
+								ctx.fill();
+								ctx.restore();
+							};
 						};
 					};
+				};
+				
+				// Move draw functionality to another method?
+				if (localPlayer != null) {
+					localPlayer.draw(ctx);
 				};
 				
 				// Move to message queuing system
@@ -683,9 +1184,11 @@
 				};
 				
 				if (localPlayer != null && localPlayer.currentState.currentKeys.up && localPlayer.currentState.currentKeys.up != localPlayer.currentState.previousKeys.up) {
+					sound.play("thrust");
 					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 38});
 					socket.send(msg);
 				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.up && localPlayer.currentState.currentKeys.up != localPlayer.currentState.previousKeys.up) {
+					sound.stop("thrust");
 					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 38});
 					socket.send(msg);
 				};

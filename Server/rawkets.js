@@ -59,11 +59,12 @@ var PlayerState = function(opts) {
 	var currentKeys = {left: false, right: false, up: false, down: false, space: false},
 		pos = new Vector({x: opts.x, y: opts.y}),
 		thrust = 0,
-		maxThrust = 1800,
+		maxThrust = 2200,
 		acc = new Vector({x: 0, y: 0}),
 		angle = 0,
 		moving = false,
-		alive = true;
+		health = 100;
+		//alive = true;
 		
 	return {
 		pos: pos,
@@ -73,7 +74,7 @@ var PlayerState = function(opts) {
 		angle: angle,
 		moving: moving,
 		currentKeys: currentKeys,
-		alive: alive
+		health: health
 	};
 };
 
@@ -86,6 +87,7 @@ var Player = function(opts) {
 		weaponsHot = true,
 		rotationSpeed = 0,
 		maxRotationSpeed = 0.09;
+		//healthTimer = 123;
 		
 	//console.log(currentState.pos.x);
 		
@@ -96,7 +98,7 @@ var Player = function(opts) {
 		previousState.pos = clone(currentState.pos);
 		previousState.angle = currentState.angle;
 		previousState.moving = currentState.moving;
-		previousState.alive = currentState.alive;
+		previousState.health = currentState.health;
 		//console.log(previousState.pos.x);
 		
 		// Do stuff depending on what keys are currently pressed down
@@ -112,8 +114,14 @@ var Player = function(opts) {
 			}
 		};*/
 		
-		if (!currentState.alive) {
+		if (currentState.health <= 0) {
 			return;
+		};
+		
+		//console.log(healthTimer);
+		
+		if (currentState.health < 100) {
+			currentState.health += 0.25;
 		};
 		
 		if (currentState.currentKeys.left || currentState.currentKeys.right) {
@@ -173,8 +181,11 @@ var Player = function(opts) {
 			if (currentState.pos.y < 0)
 				currentState.pos.y = 0;
 		};
-		
-		//console.log(currentState.pos.x);
+	};
+	
+	var respawn = function() {
+		currentState.pos.x = 50+Math.random()*(worldWidth-100);
+		currentState.pos.y = 50+Math.random()*(worldHeight-100);
 	};
 
 	return {
@@ -182,7 +193,8 @@ var Player = function(opts) {
 		update: update,
 		currentState: currentState,
 		previousState: previousState,
-		weaponsHot: weaponsHot
+		weaponsHot: weaponsHot,
+		respawn: respawn
 	};
 };
 
@@ -191,20 +203,67 @@ var killPlayer = function(playerId) {
 	if (player) {
 		//console.log("Kill player", player.id);
 		player.currentState.moving = false;
-		player.currentState.alive = false;
+		player.currentState.acc.x = 0;
+		player.currentState.acc.y = 0;
+		player.currentState.health = 0;
 		var self = player;
 		setTimeout(function() {
 			//console.log("Revive player", self.id);
-			self.currentState.alive = true;
+			self.respawn();
+			self.currentState.health = 100;
 			
-			var client = socket.clients[player.id];
+			var client = socket.clients[self.id];
 			if (client) {
-				client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, state: player.currentState}));
-				client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, alive: player.currentState.alive}));
+				client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: self.id, state: self.currentState}));
+				client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: self.id, pos: self.currentState.pos, angle: self.currentState.angle, moving: self.currentState.moving, health: self.currentState.health}));
 			};
 		}, 2000);
 	};
 };
+
+var getPlayerColour = function(sessionId) {
+	var client = socket.clients[sessionId],
+		colour = false;
+		
+	if (client) {
+	 	switch (client.request.socket.remoteAddress) {
+			case "213.104.213.216": // John
+				colour = "rgb(255, 255, 0)";
+				//name = "John";
+				break;
+			case "93.97.234.238": // Hannah
+				colour = "rgb(199, 68, 145)";
+				//name = "ErisDS";
+				break;
+			case "87.194.135.193": // Me
+			case "127.0.0.1": // Me
+				colour = "rgb(217, 65, 30)";
+				//name = "Rob";
+				break;
+		};	
+	};
+	
+	return colour;
+};
+
+/*var setHealthTimer = function(playerId) {
+	var player = playerById(playerId);
+	if (player) {
+		//var self = player;
+		setTimeout(function() {
+			var player = playerById(playerId);
+			if (player) {
+				if (player.currentState.health <= 80) {
+					player.currentState.health += 20;
+				} else {
+					player.currentState.health = 100;
+				};
+				console.log(player.healthTimer);
+				player.healthTimer = 123;
+			};
+		}, 2000);
+	};
+};*/
 
 var setBulletTimer = function(playerId) {
 	var player = playerById(playerId);
@@ -303,7 +362,8 @@ var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
 	MESSAGE_TYPE_PING = 6,
 	MESSAGE_TYPE_NEW_BULLET = 7,
 	MESSAGE_TYPE_UPDATE_BULLET_STATE = 8,
-	MESSAGE_TYPE_REMOVE_BULLET = 9;
+	MESSAGE_TYPE_REMOVE_BULLET = 9,
+	MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR = 10;
 
 // Start of main game setup
 var http = require("http"), 
@@ -333,8 +393,8 @@ var http = require("http"),
 	previousState = {x: currentState.x}; // This would be the game entities state for the physics update previous to the current state*/
 	
 	// Game world
-	worldWidth = 1000,
-	worldHeight = 1000,
+	worldWidth = 2000,
+	worldHeight = 2000,
 	
 	// Players
 	players = [],
@@ -374,11 +434,12 @@ socket.on("connection", function(client){
 	//client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, f: player.showFlame, n: player.name, k: player.killCount}));
 	
 	// Sync game state with new player
-	var i, playerCount = players.length;
+	var i, player, colour, playerCount = players.length;
 	if (playerCount > 0) {
 		for (i = 0; i < playerCount; i++) {
 			player = players[i];
-			client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: player.id, state: player.currentState}));
+			colour = getPlayerColour(player.id);
+			client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: player.id, state: player.currentState, colour: colour}));
 		};
 	};
 	 
@@ -435,7 +496,7 @@ function update() {
 			//console.log(player.previousState.pos.x);
 			//console.log(player);
 			
-			if (player.currentState.alive && player.currentState.currentKeys.space) {
+			if (player.currentState.health > 20 && player.currentState.currentKeys.space) {
 				//console.log(player.weaponsHot, player.id);
 				if (player.weaponsHot) {
 					bulletPos = new Vector({x: 0, y: 0});
@@ -450,7 +511,9 @@ function update() {
 					bullet = new Bullet({id: id, playerId: player.id, x: bulletPos.x, y: bulletPos.y, angle: player.currentState.angle});
 					bullets.push(bullet);
 					
-					socket.broadcast(formatMessage(MESSAGE_TYPE_NEW_BULLET, {id: id, x: bullet.currentState.pos.x, y: bullet.currentState.pos.y}));
+					player.currentState.health -= 10;
+					
+					socket.broadcast(formatMessage(MESSAGE_TYPE_NEW_BULLET, {id: id, x: bullet.currentState.pos.x, y: bullet.currentState.pos.y, angle: player.currentState.angle}));
 					
 					setBulletTimer(players[i].id);
 				};
@@ -462,10 +525,11 @@ function update() {
 				if (Math.abs(player.previousState.pos.x - player.currentState.pos.x) > 0.1 || 
 					Math.abs(player.previousState.pos.y - player.currentState.pos.y) > 0.1 || 
 					Math.abs(player.previousState.angle != player.currentState.angle) || 
-					player.previousState.moving != player.currentState.moving) {
+					player.previousState.moving != player.currentState.moving ||
+					player.previousState.health != player.currentState.health) {
 					//console.log("Update");
 					client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, state: player.currentState}));
-					client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, alive: player.currentState.alive}));
+					client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, health: player.currentState.health}));
 				};
 			};
 		};
@@ -490,16 +554,22 @@ function update() {
 			for (var p = 0; p < playerCount; p++) {
 				player = players[p];
 
-				if (player) {
+				if (player && player.currentState.health > 0) {
 					var dx = bullet.currentState.pos.x - player.currentState.pos.x;
 					var dy = bullet.currentState.pos.y - player.currentState.pos.y;
 					var dd = (dx * dx) + (dy * dy);
 					var d = Math.sqrt(dd);
 			
 					if (d < 10) {
-						deadPlayers.push(player);
+						if (player.currentState.health > 0) {
+							player.currentState.health -= 35;
 						
-						//socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
+							if (player.currentState.health <= 0) {
+								deadPlayers.push(player);
+							};
+						
+							socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
+						};
 						deadBullets.push(bullet);
 						continue;
 					};
@@ -518,8 +588,10 @@ function update() {
 			killPlayer(player.id);
 			
 			client = socket.clients[player.id];
-			client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, state: player.currentState}));
-			client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, alive: player.currentState.alive}));
+			if (client) {
+				client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, state: player.currentState}));
+				client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, health: player.currentState.health}));
+			};
 		};
 	};
 	
@@ -594,7 +666,7 @@ function unqueueIncomingMessages(msgQueue) {
 					
 					// Log ping to server after every 10 seconds
 					if ((newTimestamp-serverStart) % 5000 <= 3000) {
-						console.log("PING ["+client.sessionId+"]: "+ping);
+						//console.log("PING ["+client.sessionId+"]: "+ping);
 					};
 					
 					// Request a new ping
@@ -602,11 +674,14 @@ function unqueueIncomingMessages(msgQueue) {
 					break;
 				case MESSAGE_TYPE_NEW_PLAYER:
 					console.log("Adding new player: ", client.sessionId);
-					players.push(new Player({id: client.sessionId, x: msg.state.pos.x, y: msg.state.pos.y}));
+					var colour = getPlayerColour(client.sessionId);
+
+					players.push(new Player({id: client.sessionId, x: worldWidth/2, y: worldWidth/2}));
 					console.log("Players connected: ", players.length);
 					
 					// Move into a queueing system
-					client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: client.sessionId, state: msg.state}));
+					client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: client.sessionId, state: msg.state, colour: colour}));
+					client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR, {colour: colour}));
 					sendPing(client);
 					break;
 				/*case MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE:

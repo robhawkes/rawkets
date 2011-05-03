@@ -1,13 +1,121 @@
-canvas { display: block; }
+body {
+	background: url("img/background.gif") center center;
+	font-family: "TitilliumText22LRegular";
+}
+canvas, footer, header, nav { display: block; }
 
 #canvas {
-	background-color: #000;
+	margin: 42px 0 69px 0;
 }
 
-#ping {
-	bottom: 0;
-	color: #fff;
+#header {
+	background: url("img/top_bar_background.png") repeat-x top center;
+	top: 0;
+	height: 43px;
 	left: 0;
-	margin: 20px;
+	line-height: 43px;
 	position: absolute;
+	width: 100%;	
+}
+
+	#header h1 {
+		background: url("img/rawkets_logo.png") no-repeat;
+		float: left;
+		height: 21px;
+		margin: 11px 20px 0 20px;
+		text-indent: -9999em;
+		width: 86px;
+	}
+	
+	#header nav {
+		float: right;
+		width: 168px;
+	}
+	
+		#header nav ul {
+			margin: 0;
+			padding: 0;
+		}
+		
+		#header nav li {
+			display: block;
+			float: left;
+			height: 42px;
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			text-indent: -9999em;
+		}
+		
+			#header nav li a {
+				display: block;
+			}
+			
+			#header nav li a:hover {
+				background-position: 0 -42px !important;
+			}
+			
+			#header nav li a:active, #header nav li a.active {
+				background-position: 0 -84px !important;
+			}
+		
+		#header #tabGame {
+			background: url("img/top_bar_tab_game.png") no-repeat top center;
+			height: 42px;
+			width: 57px;
+		}
+		
+		#header #tabSettings {
+			background: url("img/top_bar_tab_settings.png") no-repeat top center;
+			height: 42px;
+			width: 57px;
+		}
+		
+		#header #tabAbout {
+			background: url("img/top_bar_tab_about.png") no-repeat top center;
+			height: 42px;
+			width: 54px;
+		}
+
+#statistics {
+	background: url("img/bottom_bar_background.png") repeat-x top center;
+	bottom: 0;
+	color: #c6cddb;
+	font-family: "HelveticaNeue-UltraLight", "Helvetica Neue UltraLight", "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+	font-size: 18px;
+	font-weight: lighter;
+	height: 72px;
+	left: 0;
+	letter-spacing: 0;
+	line-height: 72px;
+	position: absolute;
+	text-shadow: #000 0 -1px 0;
+	width: 100%;
+}
+
+	#playerCount {
+		float: left;
+		margin: 0 20px;
+		width: 30%;
+	}
+
+	#updates {
+		float: right;
+		margin: 0 20px;
+		text-align: right;
+		width: 30%;
+	}
+
+		#updates a {
+			color: #5b6373;
+			text-decoration: none;
+		}
+	
+		#updates a:hover {
+			border-bottom: 1px solid #5b6373;
+		}
+
+#soundContainer {
+	position: absolute;
+	visibility: hidden !important;
 }
