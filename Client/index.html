@@ -100,8 +100,10 @@
 				var width = 300,
 					height = 50,
 					maxPing = 200,
-					pings = [];
-					//data = [];
+					maxData = 40000,
+					pings = [],
+					tmpData = [],
+					data = [];
 				
 				var addPing = function(ping) {
 					if (pings.length == 150) {
@@ -111,13 +113,24 @@
 					pings.push(ping);
 				};
 				
-				/*var addData = function(value) {
+				var addTmpData = function(value) {
+					tmpData.push(value);
+				};
+				
+				var addData = function() {
 					if (data.length == 150) {
-						data.shift(); // Remove first ping
+						data.shift(); // Remove first data
 					};
 					
+					var d, tmpDataCount = tmpData.length, value = 0;
+					for (d = 0; d < tmpDataCount; d++) {
+						value += tmpData[d];
+					};
+					
+					tmpData = [];
+					
 					data.push(value);
-				};*/
+				};
 				
 				var draw = function(ctx) {
 					ctx.save();
@@ -133,19 +146,34 @@
 					ctx.fillStyle = "rgb(255, 255, 255)";
 					ctx.fillText(ms+"ms", 4, 10);
 					
-					ctx.strokeStyle = "rgb(255, 255, 255)";
-					ctx.lineWidth = 1;
+					var d, dx, dy, dat, dataCount = data.length;
+					if (dataCount > 0) {
+						ctx.strokeStyle = "rgb(0, 255, 0)";
+						ctx.lineWidth = 1;
+						ctx.beginPath();
+						ctx.moveTo(width-(dataCount*2), height-(data[0]/(maxData/height)));
+						for (d = 0; d < dataCount; d++) {
+							dat = data[d];
+							dx = (width-(dataCount*2))+(d*2);
+							dy = height-(dat/(maxData/height));
+
+							ctx.lineTo(dx, dy);
+						};
+						ctx.stroke();
+					};
 					
-					var i, x, y, ping, pingCount = pings.length;
+					var p, px, py, ping, pingCount = pings.length;
 					if (pingCount > 0) {
+						ctx.strokeStyle = "rgb(255, 255, 255)";
+						ctx.lineWidth = 1;
 						ctx.beginPath();
 						ctx.moveTo(width-(pingCount*2), height-(pings[0]/(maxPing/height)));
-						for (i = 0; i < pingCount; i++) {
-							ping = pings[i];
-							x = (width-(pingCount*2))+(i*2);
-							y = height-(ping/(maxPing/height));
+						for (p = 0; p < pingCount; p++) {
+							ping = pings[p];
+							px = (width-(pingCount*2))+(p*2);
+							py = height-(ping/(maxPing/height));
 
-							ctx.lineTo(x, y);
+							ctx.lineTo(px, py);
 						};
 						ctx.stroke();
 					};
@@ -155,6 +183,8 @@
 				
 				return {
 					addPing: addPing,
+					addTmpData: addTmpData,
+					addData: addData,
 					draw: draw
 				}
 			};
@@ -298,7 +328,7 @@
 						
 						if (colour.c && currentState.health > 0) {
 							// Draw decal
-							ctx.fillStyle = colour.c;
+							ctx.fillStyle = "rgb("+colour.c+")";
 							ctx.beginPath();
 							ctx.arc(-3, 0, 2, 0, Math.PI*2, false);
 							ctx.closePath();
@@ -754,7 +784,7 @@
 				//self.canvas.attr({height: height, width: width});
 				
 				canvas.width = window.innerWidth;
-				canvas.height = window.innerHeight-111;
+				canvas.height = window.innerHeight-111; // Minus footer and header
 
 				if (viewport != undefined) {
 					viewport.dimensions.width = canvas.width;
@@ -782,6 +812,12 @@
 					starsOriginalWidth = canvas.width;
 					starsOriginalHeight = canvas.height;
 				};
+				
+				var msg = formatMessage(MESSAGE_TYPE_UPDATE_PLAYER_SCREEN, {
+					w: viewport.dimensions.width+50,
+					h: viewport.dimensions.height+50
+				});
+				socket.send(msg);
 			};
 			
 			// Message types
@@ -796,14 +832,15 @@
 				MESSAGE_TYPE_UPDATE_BULLET_STATE = 8,
 				MESSAGE_TYPE_REMOVE_BULLET = 9,
 				MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR = 10,
+				MESSAGE_TYPE_UPDATE_PLAYER_SCREEN = 11,
 			
 			// Run game
 				runUpdate = true,
 			
 			// Socket settings
 				WEB_SOCKET_SWF_LOCATION = "lib/WebSocketMain.swf",
-				socketHost = "194.110.243.147",
-				//socketHost = "localhost",
+				//socketHost = "194.110.243.147",
+				socketHost = "localhost",
 				socket = new io.Socket(socketHost, {port: 8000, transports: ["websocket", "flashsocket"]}),
 				
 			// Netgraph
@@ -836,7 +873,7 @@
 					socket.connect();
 					
 					// Play background
-					sound.play("background");
+					//sound.play("background");
 				}, 1000);
 			});
 			
@@ -853,7 +890,7 @@
 				localPlayer = new Player({id: false, local: true, x: 1000, y: 1000, angle: 0, colour: false});
 				
 				// Move to message queuing system
-				var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {state: localPlayer.currentState});
+				var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {w: viewport.dimensions.width+50, h: viewport.dimensions.height+50, s: localPlayer.currentState});
 				socket.send(msg);
 				
 				updatePlayerCount();
@@ -874,6 +911,8 @@
 				var msg = BISON.decode(data);
 				//console.log("Message received: ", msg);
 				
+				net.addTmpData(data.length);
+				
 				// Move this to a dedicate message queuing system
 				if (msg.type !== undefined) {
 					switch (msg.type) {
@@ -884,11 +923,12 @@
 
 							if (msg.p) {
 								net.addPing(msg.p);
+								net.addData();
 							};
 							break;
 						case MESSAGE_TYPE_NEW_PLAYER:
-							var colour = (msg.colour) ? msg.colour : false;
-							addRemotePlayer({id: msg.id, state: msg.state, colour: colour});
+							var colour = (msg.c) ? msg.c : false;
+							addRemotePlayer({id: msg.id, state: msg.s, colour: colour});
 							updatePlayerCount();
 							break;
 						case MESSAGE_TYPE_REMOVE_PLAYER:
@@ -900,6 +940,7 @@
 							updatePlayerCount();
 							break;
 						case MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE:
+							//console.log(msg);
 							var player = playerById(msg.id),
 								localPos;
 							if (player) {
@@ -909,23 +950,32 @@
 								//console.log(player.currentState.pos.x);
 								//localPos = viewport.worldToScreen(msg.state.pos.x, msg.state.pos.y);
 								
+								// Only update position (must be off screen)
+								if (msg.a == undefined) {
+									player.previousState.pos = player.currentState.pos;
+									player.currentState.pos = msg.p;
+									player.previousState.health = player.currentState.health;
+									player.currentState.health = msg.h;
+									break;
+								};
+								
 								player.previousState.pos = player.currentState.pos;
 								player.previousState.angle = player.currentState.angle;
 								player.previousState.moving = player.currentState.moving;
 								player.previousState.currentKeys = player.currentState.keys;
 								player.previousState.health = player.currentState.health;
 								
-								player.currentState.pos = msg.pos;
-								player.currentState.angle = msg.angle;
-								player.currentState.moving = msg.moving;
-								player.currentState.currentKeys = msg.keys;
-								player.currentState.health = msg.health;
+								player.currentState.pos = msg.p;
+								player.currentState.angle = msg.a;
+								player.currentState.moving = msg.m;
+								player.currentState.currentKeys = msg.k;
+								player.currentState.health = msg.h;
 								
 								if (player.previousState.health - player.currentState.health > 30 || player.currentState.health <= 0) {
 									sound.play("die");
 								};
 								
-								if (player.previousState.health <= 0 && player.currentState.health >= 90) {
+								if (msg.a != undefined && player.previousState.health <= 0 && player.currentState.health >= 90) {
 									sound.play("respawn");
 								};
 							};
@@ -936,14 +986,14 @@
 								localPlayer.previousState.moving = localPlayer.currentState.moving;
 								localPlayer.previousState.health = localPlayer.currentState.health;
 								
-								localPlayer.currentState.angle = msg.angle;
-								localPlayer.currentState.moving = msg.moving;
-								localPlayer.currentState.health = msg.health;
+								localPlayer.currentState.angle = msg.a;
+								localPlayer.currentState.moving = msg.m;
+								localPlayer.currentState.health = msg.h;
 								
 								viewport.previousPos.x = viewport.pos.x;
 								viewport.previousPos.y = viewport.pos.y;
-								viewport.pos.x = msg.pos.x;
-								viewport.pos.y = msg.pos.y;
+								viewport.pos.x = msg.p.x;
+								viewport.pos.y = msg.p.y;
 								
 								if (localPlayer.previousState.health - localPlayer.currentState.health > 30 || localPlayer.currentState.health <= 0) {
 									sound.play("die");
@@ -962,13 +1012,13 @@
 							break;
 						case MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR:
 							if (localPlayer) {
-								localPlayer.colour.c = msg.colour;
+								localPlayer.colour.c = msg.c;
 							};
 							break;
 						case MESSAGE_TYPE_NEW_BULLET:
 							var bullet, localpos;
 							localPos = viewport.worldToScreen(msg.x, msg.y);
-							bullet = new Bullet({id: msg.id, x: localPos.x, y: localPos.y, angle: msg.angle});
+							bullet = new Bullet({id: msg.id, x: localPos.x, y: localPos.y, angle: msg.a});
 							bullets.push(bullet);
 							sound.play("laser");
 							break;
@@ -1176,45 +1226,45 @@
 				
 				// Move to message queuing system
 				if (localPlayer != null && localPlayer.currentState.currentKeys.left && localPlayer.currentState.currentKeys.left != localPlayer.currentState.previousKeys.left) {
-					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 37});
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {k: 37});
 					socket.send(msg);
 				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.left && localPlayer.currentState.currentKeys.left != localPlayer.currentState.previousKeys.left) {
-					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 37});
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {k: 37});
 					socket.send(msg);
 				};
 				
 				if (localPlayer != null && localPlayer.currentState.currentKeys.up && localPlayer.currentState.currentKeys.up != localPlayer.currentState.previousKeys.up) {
 					sound.play("thrust");
-					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 38});
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {k: 38});
 					socket.send(msg);
 				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.up && localPlayer.currentState.currentKeys.up != localPlayer.currentState.previousKeys.up) {
 					sound.stop("thrust");
-					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 38});
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {k: 38});
 					socket.send(msg);
 				};
 				
 				if (localPlayer != null && localPlayer.currentState.currentKeys.right && localPlayer.currentState.currentKeys.right != localPlayer.currentState.previousKeys.right) {
-					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 39});
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {k: 39});
 					socket.send(msg);
 				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.right && localPlayer.currentState.currentKeys.right != localPlayer.currentState.previousKeys.right) {
-					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 39});
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {k: 39});
 					socket.send(msg);
 				};
 				
 				if (localPlayer != null && localPlayer.currentState.currentKeys.down && localPlayer.currentState.currentKeys.down != localPlayer.currentState.previousKeys.down) {
-					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 40});
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {k: 40});
 					socket.send(msg);
 				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.down && localPlayer.currentState.currentKeys.down != localPlayer.currentState.previousKeys.down) {
-					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 40});
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {k: 40});
 					socket.send(msg);
 				};
 				
 				// Fire weapon
 				if (localPlayer != null && localPlayer.currentState.currentKeys.space && localPlayer.currentState.currentKeys.space != localPlayer.currentState.previousKeys.space) {
-					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {key: 32});
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {k: 32});
 					socket.send(msg);
 				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.space && localPlayer.currentState.currentKeys.space != localPlayer.currentState.previousKeys.space) {
-					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {key: 32});
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {k: 32});
 					socket.send(msg);
 				};
 				
