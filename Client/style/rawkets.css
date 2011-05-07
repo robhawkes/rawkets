@@ -1,21 +1,37 @@
 body {
 	background: url("img/background.gif") center center;
+	color: #fff;
 	font-family: "TitilliumText22LRegular";
 }
 canvas, footer, header, nav { display: block; }
+
+h1 {
+	font-family: "TitilliumText22LXBold";
+	font-size: 30px;
+	text-shadow: rgba(0, 0, 0, 0.2) 0 1px 2px;
+}
+
+p {
+	margin: 20px 0;
+}
 
 #canvas {
 	margin: 42px 0 69px 0;
 }
 
+#overlay {
+	background-color: rgba(0, 0, 0, 0.5);
+	height: 100%;
+	left: 0;
+	position: absolute;
+	top: 0;
+	width: 100%;
+}
+
 #header {
 	background: url("img/top_bar_background.png") repeat-x top center;
-	top: 0;
 	height: 43px;
-	left: 0;
 	line-height: 43px;
-	position: absolute;
-	width: 100%;	
 }
 
 	#header h1 {
@@ -46,6 +62,52 @@ canvas, footer, header, nav { display: block; }
 			padding: 0;
 			text-indent: -9999em;
 		}
+		
+			#header nav li a {
+				position: relative;
+				text-decoration: none;
+			}
+		
+			#header nav span.label {
+				background-color: #272a33;
+				border: 2px solid #aab4be;
+				border-radius: 5px;
+				-moz-border-radius: 5px;
+				-webkit-border-radius: 5px;
+				box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+				-moz-box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+				-webkit-box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+				color: #f9fbff;
+				display: none;
+				font-family: "TitilliumText22LBold";
+				font-size: 12px;
+				line-height: 1em;
+				padding: 6px 8px 5px;
+				position: absolute;
+				right: 0;
+				text-align: center;
+				text-decoration: none;
+				text-shadow: rgba(104, 192, 202, 0.05) 0 0 5px;
+				top: 53px;
+				width: 40px;
+			}
+			
+			#header nav span.anchor {
+				background: url("img/top_bar_tab_anchor.png") no-repeat top center;
+				display: block !important;
+				height: 9px;
+				left: 50%;
+				margin: -9px 0 0 -6px;
+				position: absolute;
+				top: 0;
+				width: 12px;
+			}
+			
+			#header nav span.right {
+				left: auto !important;
+				margin: -9px 0 0 0 !important;
+				right: 10px !important;
+			}
 		
 			#header nav li a {
 				display: block;
@@ -89,7 +151,7 @@ canvas, footer, header, nav { display: block; }
 	letter-spacing: 0;
 	line-height: 72px;
 	position: absolute;
-	text-shadow: #000 0 -1px 0;
+	text-shadow: rgba(0, 0, 0, 0.5) 0 -1px 0;
 	width: 100%;
 }
 
@@ -114,6 +176,47 @@ canvas, footer, header, nav { display: block; }
 		#updates a:hover {
 			border-bottom: 1px solid #5b6373;
 		}
+		
+#intro {
+	color: #fff;
+	font-size: 24px;
+	line-height: 1.3em;
+	margin: 100px auto 0 auto;
+	text-shadow: rgba(0, 0, 0, 0.2) 0 1px 2px;
+	width: 400px;
+}
+
+	#join {
+		background-color: #252932;
+		border: 2px solid #a6c0d0;
+		border-radius: 5px;
+		-moz-border-radius: 5px;
+		-webkit-border-radius: 5px;
+		box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+		-moz-box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+		-webkit-box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+		color: #6dcaff;
+		display: block;
+		font-family: "TitilliumText22LBold";
+		font-size: 14px;
+		line-height: 1em;
+		padding: 7px 12px 6px;
+		text-align: center;
+		text-decoration: none;
+		text-shadow: rgba(104, 192, 202, 0.05) 0 0 5px;
+		width: 90px;
+	}
+	
+		#join:active {
+			padding-top: 8px;
+			padding-bottom: 5px;
+		}
+		
+#settings, #about {
+	display: none;
+	margin: 100px auto 0 auto;
+	width: 400px;
+}
 
 #soundContainer {
 	position: absolute;

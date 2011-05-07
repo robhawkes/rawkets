@@ -201,6 +201,11 @@ var Player = function(opts) {
 	
 	var sendUpdate = function() {
 		var client = socket.clients[id];
+		
+		if (!client) {
+			return;
+		};
+		
 		var msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {
 			id: id, 
 			p: currentState.pos, 

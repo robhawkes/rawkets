@@ -15,22 +15,43 @@
 	
 	<body>
 		<canvas id="canvas" width="400" height="400"></canvas>
-		<header id="header">
-			<h1>Rawkets</h1>
-			<nav>
-				<ul>
-					<li><a id="tabGame" class="active" href="#">Game</a></li>
-					<li><a id="tabSettings" href="#">Settings</a></li>
-					<li><a id="tabAbout" href="#">About</a></li>
-				</ul>
-			</nav>
-		</header>
-		<footer id="statistics">
-			<p id="playerCount">0 fighters online</p>
-			<p id="updates"><a href="#">Send me development updates</a></p>
-		</footer>
+		<div id="overlay">
+			<header id="header">
+				<h1>Rawkets</h1>
+				<nav>
+					<ul id="tabs">
+						<li><a id="tabGame" class="active" href="#"><span class="label">Game</span></a></li>
+						<li><a id="tabSettings" href="#"><span class="label">Settings</span></a></li>
+						<li><a id="tabAbout" href="#"><span class="label">About</span></a></li>
+					</ul>
+				</nav>
+			</header>
+		
+			<section id="intro">
+				<p>A massively multiplayer game built using HTML5 canvas and WebSockets</p>
+				<p><a id="join" href="#">Join the battle</a></p>
+			</section>
+			
+			<section id="settings">
+				<h1>Settings</h1>
+				<p>Change your settings here…</p>
+			</section>
+			
+			<section id="about">
+				<h1>About Rawkets</h1>
+				<p>Rawkets is…</p>
+			</section>
+		
+			<footer id="statistics">
+				<p id="playerCount">0 fighters online</p>
+				<p id="updates"><a href="#">Send me development updates</a></p>
+			</footer>
+		</div>
+		
 		<div id="soundContainer"></div>
 		
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+		<script type="text/javascript" src="js/jquery.xcolor.js"></script>
 		<script type="text/javascript" src="js/swfobject/swfobject.js"></script>
 		<script type="text/javascript" src="js/socket.io.min.js"></script>
 		<script type="text/javascript" src="js/bison.js"></script>
@@ -39,13 +60,57 @@
 			// TODO
 			// Add ability to have default options for game objects and functions
 			
+			// Only using jQuery for website UI, not core game logic
+			$("#tabs a").css({textIndent: 0}).each(function() {
+				var span = $(this).find("span");
+				var spanWidth = span.outerWidth();
+				var tabWidth = $(this).outerWidth();
+				var tabEdge = $(this).offset().left+tabWidth;
+				var overEdge = (tabEdge+(spanWidth/2) < window.innerWidth) ? false : true;
+				var offset = (!overEdge) ? Math.floor((tabWidth/2)-(spanWidth/2)) : 10;
+				span.css({right: offset});
+				
+				var anchor = $("<span class='anchor'></span>");
+				var anchorClass = (overEdge) ? "right" : "";
+				anchor.addClass(anchorClass);
+				span.append(anchor);
+			}).mouseover(function() {
+				var span = $(this).find("span");
+				//var offset = span.
+				span.toggle();
+			}).mouseout(function() {
+				var span = $(this).find("span");
+				span.toggle();
+			});
 			
-			// Not using jQuery until I work out if I need it for the core game logic
-			/*
-			var canvas = document.getElementById("canvas");
-			var game = r.game;
-			game.init(canvas, window.innerWidth, window.innerHeight);
-			*/
+			$("#join").click(function() {
+				$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0)"});
+				$("#intro").stop().fadeOut();
+				connect();
+			});
+			
+			$("#tabGame").click(function() {
+				$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0)"});
+				$("#intro, #settings, #about").hide();
+				$("#tabSettings, #tabAbout").removeClass("active");
+				$(this).addClass("active");
+			});
+			
+			$("#tabSettings").click(function() {
+				$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0.5)"});
+				$("#intro, #about").hide();
+				$("#tabSettings, #tabGame").removeClass("active");
+				$(this).addClass("active");
+				$("#settings").fadeIn();
+			});
+			
+			$("#tabAbout").click(function() {
+				$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0.5)"});
+				$("#intro, #settings").hide();
+				$("#tabGame, #tabSettings").removeClass("active");
+				$(this).addClass("active");
+				$("#about").fadeIn();
+			});
 			
 			// TESTING - REMOVE THIS
 			var canvas = document.getElementById("canvas");
@@ -100,7 +165,7 @@
 				var width = 300,
 					height = 50,
 					maxPing = 200,
-					maxData = 40000,
+					maxData = 60000,
 					pings = [],
 					tmpData = [],
 					data = [];
@@ -461,8 +526,8 @@
 				};
 				
 				var draw = function(ctx) {
-					ctx.strokeStyle = "rgb(200, 200, 200)";
-					ctx.lineWidth = 3;
+					ctx.strokeStyle = "rgba(200, 200, 200, 0.2)";
+					ctx.lineWidth = 20;
 
 					var drawPos = new Vector({x: 0, y: 0});
 					var drawWidth = 0;
@@ -569,7 +634,7 @@
 			// Sound class
 			var Sound = function() {
 				var container = document.getElementById("soundContainer"),
-					muted = false;
+					muted = true;
 				
 				var play = function(soundName) {
 					if (!this.muted) {
@@ -594,13 +659,15 @@
 				};
 
 				var stop = function(soundName) {
-					switch (soundName) {
-						case "background":
-							container.stopBackground();
-							break;
-						case "thrust":
-							container.stopThrust();
-							break;
+					if (!this.muted) {
+						switch (soundName) {
+							case "background":
+								container.stopBackground();
+								break;
+							case "thrust":
+								container.stopThrust();
+								break;
+						};
 					};
 				};
 				
@@ -820,6 +887,12 @@
 				socket.send(msg);
 			};
 			
+			// Connect to game
+			function connect() {
+				// Connect to WebSocket server
+				socket.connect();
+			};
+			
 			// Message types
 			var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
 				MESSAGE_TYPE_NEW_PLAYER = 1,
@@ -869,12 +942,9 @@
 				
 				// Unneccesary delay to let sound load
 				setTimeout(function() {
-					// Connect to WebSocket server
-					socket.connect();
-					
 					// Play background
-					//sound.play("background");
-				}, 1000);
+					sound.play("background");
+				}, 2000);
 			});
 			
 			// Set up stars
@@ -888,31 +958,31 @@
 			socket.on("connect", function(){
 				console.log("Connected");
 				localPlayer = new Player({id: false, local: true, x: 1000, y: 1000, angle: 0, colour: false});
-				
+			
 				// Move to message queuing system
 				var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {w: viewport.dimensions.width+50, h: viewport.dimensions.height+50, s: localPlayer.currentState});
 				socket.send(msg);
-				
+			
 				updatePlayerCount();
 			});
-			
+		
 			// WebSocket connection failed
 			socket.on("connect_failed", function() {
 				console.log("Connect failed");
 			});
-			
+		
 			// WebSocket disconnection
 			socket.on("disconnect", function() {
 				console.log("Disconnected");
 			});
-			
+		
 			// WebSocket message received
 			socket.on("message", function(data){
 				var msg = BISON.decode(data);
 				//console.log("Message received: ", msg);
-				
+			
 				net.addTmpData(data.length);
-				
+			
 				// Move this to a dedicate message queuing system
 				if (msg.type !== undefined) {
 					switch (msg.type) {
@@ -949,7 +1019,7 @@
 								//player.currentState.pos.x = msg.state.pos.x;
 								//console.log(player.currentState.pos.x);
 								//localPos = viewport.worldToScreen(msg.state.pos.x, msg.state.pos.y);
-								
+							
 								// Only update position (must be off screen)
 								if (msg.a == undefined) {
 									player.previousState.pos = player.currentState.pos;
@@ -958,23 +1028,23 @@
 									player.currentState.health = msg.h;
 									break;
 								};
-								
+							
 								player.previousState.pos = player.currentState.pos;
 								player.previousState.angle = player.currentState.angle;
 								player.previousState.moving = player.currentState.moving;
 								player.previousState.currentKeys = player.currentState.keys;
 								player.previousState.health = player.currentState.health;
-								
+							
 								player.currentState.pos = msg.p;
 								player.currentState.angle = msg.a;
 								player.currentState.moving = msg.m;
 								player.currentState.currentKeys = msg.k;
 								player.currentState.health = msg.h;
-								
+							
 								if (player.previousState.health - player.currentState.health > 30 || player.currentState.health <= 0) {
 									sound.play("die");
 								};
-								
+							
 								if (msg.a != undefined && player.previousState.health <= 0 && player.currentState.health >= 90) {
 									sound.play("respawn");
 								};
@@ -985,27 +1055,27 @@
 								localPlayer.previousState.angle = localPlayer.currentState.angle;
 								localPlayer.previousState.moving = localPlayer.currentState.moving;
 								localPlayer.previousState.health = localPlayer.currentState.health;
-								
+							
 								localPlayer.currentState.angle = msg.a;
 								localPlayer.currentState.moving = msg.m;
 								localPlayer.currentState.health = msg.h;
-								
+							
 								viewport.previousPos.x = viewport.pos.x;
 								viewport.previousPos.y = viewport.pos.y;
 								viewport.pos.x = msg.p.x;
 								viewport.pos.y = msg.p.y;
-								
+							
 								if (localPlayer.previousState.health - localPlayer.currentState.health > 30 || localPlayer.currentState.health <= 0) {
 									sound.play("die");
 								};
-								
+							
 								if (localPlayer.previousState.health <= 0 && localPlayer.currentState.health >= 90) {
 									viewport.previousPos.x = viewport.pos.x;
 									viewport.previousPos.y = viewport.pos.y;
-									
+								
 									// Set up stars
 									createStars();
-									
+								
 									sound.play("respawn");
 								};
 							};
@@ -1042,7 +1112,7 @@
 							break;
 					};
 				};
-				
+			
 				//var state = BISON.decode(data);
 				//ctx.clearRect(0, 0, canvas.width, canvas.height);
 				//ctx.fillRect(state.pos.x, 100, 5, 5);
