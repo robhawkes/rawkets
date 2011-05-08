@@ -81,6 +81,7 @@ var PlayerState = function(opts) {
 var Player = function(opts) {
 	// Public variables
 	var id = opts.id || false,
+		username = opts.username,
 		currentState = new PlayerState({x: opts.x, y: opts.y}),
 		previousState = clone(currentState),
 		weaponsHot = true,
@@ -199,30 +200,40 @@ var Player = function(opts) {
 		return false;
 	};
 	
-	var sendUpdate = function() {
+	var sendUpdate = function(killedById) {
 		var client = socket.clients[id];
 		
 		if (!client) {
 			return;
 		};
 		
-		var msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {
-			id: id, 
-			p: currentState.pos, 
-			a: currentState.angle, 
-			m: currentState.moving, 
-			k: currentState.currentKeys, 
-			h: currentState.health
-		});
+		var pos = new Vector({x: Math.floor(currentState.pos.x), y: Math.floor(currentState.pos.y)});
+		
+		var rawMsg = {id: id};
+		if (currentState.pos.x != previousState.pos.x || currentState.pos.y != previousState.pos.y) {
+			rawMsg.p = currentState.pos;
+		};
+		if (currentState.angle != previousState.angle) {
+			rawMsg.a = currentState.angle;
+		};
+		if (currentState.moving != previousState.moving) {
+			rawMsg.m = currentState.moving;
+		};
+		if (currentState.health != previousState.health) {
+			rawMsg.h = currentState.health;
+		};
+		
+		var msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, rawMsg);
 		//console.log(BISON.decode(msg));
 		msgOutQueue.push({client: client, msg: msg});
 		//client.broadcast(msg);
 		
-		client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: id, p: currentState.pos, a: currentState.angle, m: currentState.moving, h: currentState.health}));
+		client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, rawMsg));
 	};
 
 	return {
 		id: id, // Should probably be made read-only
+		username: username,
 		update: update,
 		currentState: currentState,
 		previousState: previousState,
@@ -234,14 +245,21 @@ var Player = function(opts) {
 	};
 };
 
-var killPlayer = function(playerId) {
+var killPlayer = function(playerId, killedByPlayerId) {
 	var player = playerById(playerId);
+	var killedById = (killedByPlayerId) ? killedByPlayerId : false;
 	if (player) {
 		//console.log("Kill player", player.id);
 		player.currentState.moving = false;
 		player.currentState.acc.x = 0;
 		player.currentState.acc.y = 0;
 		player.currentState.health = 0;
+		
+		if (killedById) {
+			var client = socket.clients[player.id];
+			client.send(formatMessage(MESSAGE_TYPE_KILLED_BY, {id: killedById}));
+		};
+		
 		var self = player;
 		setTimeout(function() {
 			//console.log("Revive player", self.id);
@@ -360,11 +378,11 @@ var Bullet = function(opts) {
 
 // Message formatter helper
 function formatMessage(type, args) {
-	var msg = {type: type};
+	var msg = {z: type};
 
 	for (var arg in args) {
 		// Don't overwrite the message type
-		if (arg != "type")
+		if (arg != "z")
 			msg[arg] = args[arg];
 	};
 
@@ -404,7 +422,8 @@ var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
 	MESSAGE_TYPE_UPDATE_BULLET_STATE = 8,
 	MESSAGE_TYPE_REMOVE_BULLET = 9,
 	MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR = 10,
-	MESSAGE_TYPE_UPDATE_PLAYER_SCREEN = 11;
+	MESSAGE_TYPE_UPDATE_PLAYER_SCREEN = 11,
+	MESSAGE_TYPE_KILLED_BY = 12;
 
 // Start of main game setup
 var http = require("http"), 
@@ -468,21 +487,7 @@ socket.on("connection", function(client){
 	
 	// Add new player to the game
 	console.log("New player has connected: ", client.sessionId);
-	//players.push(new Player({id: client.sessionId, y: 200, acc: {x: 100}}));
 	//console.log("Players connected: ", players.length);
-	
-	// Send new player to existing players
-	//client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {i: client.id, x: player.x, y: player.y, a: player.angle, c: player.colour, f: player.showFlame, n: player.name, k: player.killCount}));
-	
-	// Sync game state with new player
-	var i, player, colour, playerCount = players.length;
-	if (playerCount > 0) {
-		for (i = 0; i < playerCount; i++) {
-			player = players[i];
-			colour = getPlayerColour(player.id);
-			client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: player.id, s: player.currentState, c: colour}));
-		};
-	};
 	 
 	// Client disconnected
 	client.on("disconnect", function(){
@@ -554,7 +559,7 @@ function update() {
 					
 					player.currentState.health -= 10;
 					
-					socket.broadcast(formatMessage(MESSAGE_TYPE_NEW_BULLET, {id: id, x: bullet.currentState.pos.x, y: bullet.currentState.pos.y, a: player.currentState.angle}));
+					socket.broadcast(formatMessage(MESSAGE_TYPE_NEW_BULLET, {id: id, x: Math.floor(bullet.currentState.pos.x), y: Math.floor(bullet.currentState.pos.y), a: player.currentState.angle}));
 					
 					setBulletTimer(players[i].id);
 				};
@@ -569,7 +574,6 @@ function update() {
 					player.previousState.moving != player.currentState.moving ||
 					player.previousState.health != player.currentState.health) {
 					//console.log("Update");
-					
 					/*msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {
 						id: player.id, 
 						pos: player.currentState.pos, 
@@ -590,7 +594,7 @@ function update() {
 	};
 	
 	// Update every single bullet in the game
-	var b, alive, deadBullets = [], deadPlayers = [], bulletCount = bullets.length;
+	var b, bulletsToUpdate = [], alive, deadBullets = [], deadPlayers = [], bulletCount = bullets.length;
 	//console.log(bulletCount);
 	for (b = 0; b < bulletCount; b++) {
 		bullet = bullets[b];
@@ -623,9 +627,9 @@ function update() {
 							player.currentState.health -= 35;
 						
 							if (player.currentState.health <= 0) {
-								deadPlayers.push(player);
+								deadPlayers.push({player: player, bulletPlayerId: bullet.playerId});
 							};
-						
+							
 							socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
 						};
 						deadBullets.push(bullet);
@@ -633,23 +637,27 @@ function update() {
 					};
 				};
 			};
-			
-			//socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_BULLET_STATE, {id: bullet.id, x: bullet.currentState.pos.x, y: bullet.currentState.pos.y}));
-			msg = formatMessage(MESSAGE_TYPE_UPDATE_BULLET_STATE, {
+			bulletsToUpdate.push({
 				id: bullet.id, 
-				x: bullet.currentState.pos.x,
-				y: bullet.currentState.pos.y
+				x: Math.floor(bullet.currentState.pos.x),
+				y: Math.floor(bullet.currentState.pos.y)
 			});
-			msgOutQueue.push({client: client, msg: msg});
+			//socket.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_BULLET_STATE, {id: bullet.id, x: bullet.currentState.pos.x, y: bullet.currentState.pos.y}));
 		};
 	};
 	
-	var dp, deadPlayerCount = deadPlayers.length;
+	if (bulletsToUpdate.length > 0) {
+		msg = formatMessage(MESSAGE_TYPE_UPDATE_BULLET_STATE, {b: bulletsToUpdate});
+		msgOutQueue.push({client: client, msg: msg});
+	};
+	
+	var dp, bulletPlayerId, deadPlayerCount = deadPlayers.length;
 	for (dp = 0; dp < deadPlayerCount; dp++) {
-		player = deadPlayers[dp];
+		player = deadPlayers[dp].player;
+		bulletPlayerId = deadPlayers[dp].bulletPlayerId;
 		
 		if (player) {
-			killPlayer(player.id);
+			killPlayer(player.id, bulletPlayerId);
 			
 			client = socket.clients[player.id];
 			if (client) {
@@ -718,9 +726,9 @@ function unqueueIncomingMessages(msgQueue) {
 		msg = BISON.decode(data.msg);
 		
 		// Only deal with messages using the correct protocol
-		if (msg !== undefined && msg.type !== undefined) {
-			var player;
-			switch (msg.type) {
+		if (msg !== undefined && msg.z !== undefined) {
+			var player, colour;
+			switch (msg.z) {
 				case MESSAGE_TYPE_PING:
 					player = players[indexOfByPlayerId(client.sessionId)];
 					
@@ -750,13 +758,29 @@ function unqueueIncomingMessages(msgQueue) {
 					break;
 				case MESSAGE_TYPE_NEW_PLAYER:
 					console.log("Adding new player: ", client.sessionId);
-					var colour = getPlayerColour(client.sessionId);
+					colour = getPlayerColour(client.sessionId);
 					
-					players.push(new Player({id: client.sessionId, x: worldWidth/2, y: worldWidth/2, w: msg.w, h: msg.h}));
+					var username = msg.u;
+					if (username == "" || !username.match(/^[\d\w]*$/)) {
+						console.log("Halted addition of player: dodgy username");
+						return;
+					};
+					
+					// Sync game state with new player
+					var i, playerCount = players.length;
+					if (playerCount > 0) {
+						for (i = 0; i < playerCount; i++) {
+							player = players[i];
+							playerColour = getPlayerColour(player.id);
+							client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: player.id, s: player.currentState, c: playerColour, u: player.username}));
+						};
+					};
+					
+					players.push(new Player({id: client.sessionId, x: worldWidth/2, y: worldWidth/2, w: msg.w, h: msg.h, username: username}));
 					console.log("Players connected: ", players.length);
 					
 					// Move into a queueing system
-					client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: client.sessionId, s: msg.s, c: colour}));
+					client.broadcast(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: client.sessionId, s: msg.s, c: colour, u: username}));
 					client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR, {c: colour}));
 					sendPing(client);
 					break;
@@ -848,9 +872,9 @@ function unqueueOutgoingMessages(msgQueue) {
 		msg = BISON.decode(data.msg);
 		
 		// Only deal with messages using the correct protocol
-		if (msg.type !== undefined) {
+		if (msg.z !== undefined) {
 			var p, player, playerClient, excudedSessionIds, playerCount;
-			switch (msg.type) {
+			switch (msg.z) {
 				case MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE:
 					// Only broadcast this in full to players that will see this in their screen
  					// Otherwise send a cut down version that only news new coordinates (for off-screen markers)
@@ -863,14 +887,17 @@ function unqueueOutgoingMessages(msgQueue) {
 							continue;
 						};
 						
-						if (!player.withinScreen(msg.p)) {
+						if (!player.withinScreen(player.currentState.pos)) {
 							//excudedSessionIds.push(player.id);
 							// Only send position data
-							data.msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {
-								id: msg.id, 
-								p: msg.p, // pos
-								h: msg.h // health
-							});
+							var rawMsg = {id: id};
+							if (msg.pos.x != undefined) {
+								rawMsg.p = msg.p;
+							};
+							if (msg.h != undefined) {
+								rawMsg.h = msg.h;
+							};
+							data.msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, rawMsg);
 						} else {
 							// Send full state update
 							/*data.msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {
@@ -894,16 +921,20 @@ function unqueueOutgoingMessages(msgQueue) {
 					excudedSessionIds = [];
 					playerCount = players.length;
 					
-					var bulletPos = new Vector({x: msg.x, y: msg.y});
-					for (p = 0; p < playerCount; p++) {
-						player = players[p];
+					var b, bulletCount = msg.b.length;
+					for (b = 0; b > bulletCount; b++) {
+						var bulletPos = new Vector({x: msg.x, y: msg.y});
+						for (p = 0; p < playerCount; p++) {
+							player = players[p];
 						
-						if (!player.withinScreen(bulletPos)) {
-							excudedSessionIds.push(player.id);
+							//if (!player.withinScreen(bulletPos)) {
+							//	excudedSessionIds.push(player.id);
+							//};
 						};
 					};
 					//console.log(excudedSessionIds);
-					socket.broadcast(data.msg, excudedSessionIds);
+					//socket.broadcast(data.msg, excudedSessionIds);
+					socket.broadcast(data.msg);
 					break;
 			};
 		};

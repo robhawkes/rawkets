@@ -29,7 +29,12 @@
 		
 			<section id="intro">
 				<p>A massively multiplayer game built using HTML5 canvas and WebSockets</p>
-				<p><a id="join" href="#">Join the battle</a></p>
+				<p>
+					<form id="play" action="">
+						<input type="text" id="username" tabindex="1" placeholder="Username">
+						<input type="submit" id="join" value="Join the battle">
+					</form>
+				</p>
 			</section>
 			
 			<section id="settings">
@@ -43,6 +48,7 @@
 			</section>
 		
 			<footer id="statistics">
+				<p id="killedBy"></p>
 				<p id="playerCount">0 fighters online</p>
 				<p id="updates"><a href="#">Send me development updates</a></p>
 			</footer>
@@ -83,10 +89,16 @@
 				span.toggle();
 			});
 			
-			$("#join").click(function() {
-				$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0)"});
-				$("#intro").stop().fadeOut();
-				connect();
+			//$("#username").focus();
+			$("#play").submit(function(e) {
+				e.preventDefault();
+				var username = $("#username").val();
+				//console.log(username, username.match(/^[\d\w]*$/));
+				if (username != "" && username.match(/^[\d\w]*$/)) {
+					$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0)"});
+					$("#intro").stop().fadeOut();
+					connect(username);
+				};
 			});
 			
 			$("#tabGame").click(function() {
@@ -118,6 +130,7 @@
 			canvas.height = window.innerHeight-111;
 			var ctx = canvas.getContext("2d");
 			var playerCount = document.getElementById("playerCount");
+			var killedBy = document.getElementById("killedBy");
 			// TESTING - REMOVE THIS
 			
 			// Funky Object clone method
@@ -168,7 +181,9 @@
 					maxData = 60000,
 					pings = [],
 					tmpData = [],
-					data = [];
+					data = [],
+					packetsPerSecond = 0,
+					bytesPerSecond = 0; // This is actuallt characters per second, not bytes
 				
 				var addPing = function(ping) {
 					if (pings.length == 150) {
@@ -192,6 +207,8 @@
 						value += tmpData[d];
 					};
 					
+					packetsPerSecond = tmpData.length;
+					bytesPerSecond = value;
 					tmpData = [];
 					
 					data.push(value);
@@ -210,6 +227,9 @@
 					var ms = (pings.length > 0) ? pings[pings.length-1] : 0;
 					ctx.fillStyle = "rgb(255, 255, 255)";
 					ctx.fillText(ms+"ms", 4, 10);
+					
+					ctx.fillText(packetsPerSecond+" p/s", 4, 25);
+					ctx.fillText(bytesPerSecond+" b/s", 4, 40);
 					
 					var d, dx, dy, dat, dataCount = data.length;
 					if (dataCount > 0) {
@@ -308,6 +328,7 @@
 			var Player = function(opts) {
 				// Public variables
 				var id = opts.id,
+					username = opts.username,
 					local = opts.local,
 					currentState = new PlayerState({x: opts.x, y: opts.y, angle: opts.angle}),
 					previousState = clone(currentState),
@@ -354,6 +375,12 @@
 						ctx.stroke();
 						
 						ctx.restore();
+						
+						if (username) {
+							ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+							ctx.font = "Bold 10px Verdana";
+							ctx.fillText(username, 15, 3);
+						};
 						
 						// Rotate canvas for rocket and flame
 						ctx.rotate(currentState.angle);
@@ -406,6 +433,7 @@
 
 				return {
 					id: id, // Should probably be made read-only
+					username: username,
 					//update: update,
 					draw: draw,
 					currentState: currentState,
@@ -693,11 +721,11 @@
 			
 			// Message formatter helper
 			function formatMessage(type, args) {
-				var msg = {type: type};
+				var msg = {z: type};
 
 				for (var arg in args) {
 					// Don't overwrite the message type
-					if (arg != "type")
+					if (arg != "z")
 						msg[arg] = args[arg];
 				};
 
@@ -708,18 +736,19 @@
 			// Add remote player
 			function addRemotePlayer(opts) {
 				var id = opts.id,
+					username = opts.username,
 					state = opts.state,
 					colour = opts.colour,
 					localPos,
 					player;
 				
-				player = new Player({id: id, local: false, x: 0, y: 0, angle: 0, colour: colour});
+				player = new Player({id: id, local: false, x: 0, y: 0, angle: 0, colour: colour, username: username});
 				
 				//localPos = viewport.worldToScreen(state.pos.x, state.pos.y);
 				
 				player.currentState.pos = state.pos;
 				player.currentState.angle = state.angle;
-				player.currentState.currentKeys = state.keys;
+				//player.currentState.currentKeys = state.keys;
 				
 				remotePlayers.push(player);
 				console.log("Add player: ", id);
@@ -888,9 +917,12 @@
 			};
 			
 			// Connect to game
-			function connect() {
-				// Connect to WebSocket server
-				socket.connect();
+			function connect(username) {
+				if (username.match(/^[\d\w]*$/)) {
+					localPlayerUsername = username;
+					// Connect to WebSocket server
+					socket.connect();
+				};
 			};
 			
 			// Message types
@@ -906,6 +938,7 @@
 				MESSAGE_TYPE_REMOVE_BULLET = 9,
 				MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR = 10,
 				MESSAGE_TYPE_UPDATE_PLAYER_SCREEN = 11,
+				MESSAGE_TYPE_KILLED_BY = 12,
 			
 			// Run game
 				runUpdate = true,
@@ -927,6 +960,7 @@
 			
 			// Players	
 				localPlayer,
+				localPlayerUsername,
 				remotePlayers = [],
 				
 			// Weapons
@@ -957,10 +991,9 @@
 			// WebSocket connection successful
 			socket.on("connect", function(){
 				console.log("Connected");
-				localPlayer = new Player({id: false, local: true, x: 1000, y: 1000, angle: 0, colour: false});
-			
+				localPlayer = new Player({id: false, local: true, x: 1000, y: 1000, angle: 0, colour: false, username: localPlayerUsername});
 				// Move to message queuing system
-				var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {w: viewport.dimensions.width+50, h: viewport.dimensions.height+50, s: localPlayer.currentState});
+				var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {u: localPlayerUsername, w: viewport.dimensions.width+50, h: viewport.dimensions.height+50, s: localPlayer.currentState});
 				socket.send(msg);
 			
 				updatePlayerCount();
@@ -984,8 +1017,8 @@
 				net.addTmpData(data.length);
 			
 				// Move this to a dedicate message queuing system
-				if (msg.type !== undefined) {
-					switch (msg.type) {
+				if (msg.z !== undefined) {
+					switch (msg.z) {
 						case MESSAGE_TYPE_PING:
 							if (msg.t) {
 								socket.send(formatMessage(MESSAGE_TYPE_PING, {t: msg.t}));
@@ -998,7 +1031,7 @@
 							break;
 						case MESSAGE_TYPE_NEW_PLAYER:
 							var colour = (msg.c) ? msg.c : false;
-							addRemotePlayer({id: msg.id, state: msg.s, colour: colour});
+							addRemotePlayer({id: msg.id, state: msg.s, colour: colour, username: msg.u});
 							updatePlayerCount();
 							break;
 						case MESSAGE_TYPE_REMOVE_PLAYER:
@@ -1022,24 +1055,35 @@
 							
 								// Only update position (must be off screen)
 								if (msg.a == undefined) {
-									player.previousState.pos = player.currentState.pos;
-									player.currentState.pos = msg.p;
-									player.previousState.health = player.currentState.health;
-									player.currentState.health = msg.h;
+									if (msg.p != undefined) {
+										player.previousState.pos = player.currentState.pos;
+										player.currentState.pos = msg.p;
+									};
+									if (msg.h != undefined) {
+										player.previousState.health = player.currentState.health;
+										player.currentState.health = msg.h;
+									};
 									break;
 								};
 							
 								player.previousState.pos = player.currentState.pos;
 								player.previousState.angle = player.currentState.angle;
 								player.previousState.moving = player.currentState.moving;
-								player.previousState.currentKeys = player.currentState.keys;
+								//player.previousState.currentKeys = player.currentState.keys;
 								player.previousState.health = player.currentState.health;
-							
-								player.currentState.pos = msg.p;
-								player.currentState.angle = msg.a;
-								player.currentState.moving = msg.m;
-								player.currentState.currentKeys = msg.k;
-								player.currentState.health = msg.h;
+								
+								if (msg.p != undefined) {
+									player.currentState.pos = msg.p;
+								};
+								if (msg.a != undefined) {
+									player.currentState.angle = msg.a;
+								};
+								if (msg.m != undefined) {
+									player.currentState.moving = msg.m;
+								};
+								if (msg.h != undefined) {
+									player.currentState.health = msg.h;
+								};
 							
 								if (player.previousState.health - player.currentState.health > 30 || player.currentState.health <= 0) {
 									sound.play("die");
@@ -1055,15 +1099,23 @@
 								localPlayer.previousState.angle = localPlayer.currentState.angle;
 								localPlayer.previousState.moving = localPlayer.currentState.moving;
 								localPlayer.previousState.health = localPlayer.currentState.health;
-							
-								localPlayer.currentState.angle = msg.a;
-								localPlayer.currentState.moving = msg.m;
-								localPlayer.currentState.health = msg.h;
+								
+								if (msg.a != undefined) {
+									localPlayer.currentState.angle = msg.a;
+								};
+								if (msg.m != undefined) {
+									localPlayer.currentState.moving = msg.m;
+								};
+								if (msg.h != undefined) {
+									localPlayer.currentState.health = msg.h;
+								};
 							
 								viewport.previousPos.x = viewport.pos.x;
 								viewport.previousPos.y = viewport.pos.y;
-								viewport.pos.x = msg.p.x;
-								viewport.pos.y = msg.p.y;
+								if (msg.p != undefined) {
+									viewport.pos.x = msg.p.x;
+									viewport.pos.y = msg.p.y;
+								};
 							
 								if (localPlayer.previousState.health - localPlayer.currentState.health > 30 || localPlayer.currentState.health <= 0) {
 									sound.play("die");
@@ -1093,12 +1145,19 @@
 							sound.play("laser");
 							break;
 						case MESSAGE_TYPE_UPDATE_BULLET_STATE:
-							var bullet, localPos;
-							bullet = bulletById(msg.id);
-							if (bullet) {
-								localPos = viewport.worldToScreen(msg.x, msg.y);
-								bullet.currentState.pos.x = localPos.x;
-								bullet.currentState.pos.y = localPos.y;
+							var incBullets = msg.b, bullet, localPos, b, bulletCount = bullets.length;
+
+							for (b = 0; b < bulletCount; b++) {
+								if (incBullets[b] == undefined) {
+									continue;
+								};
+								
+								bullet = bulletById(incBullets[b].id);
+								if (bullet) {
+									localPos = viewport.worldToScreen(incBullets[b].x, incBullets[b].y);
+									bullet.currentState.pos.x = localPos.x;
+									bullet.currentState.pos.y = localPos.y;
+								};
 							};
 							break;
 						case MESSAGE_TYPE_REMOVE_BULLET:
@@ -1108,6 +1167,15 @@
 								//console.log("Successful", bullet.id);
 								//bullet.currentState.alive = false;
 								bullets.splice(indexOfByBulletId(msg.id), 1);
+							};
+							break;
+						case MESSAGE_TYPE_KILLED_BY:
+							var player = playerById(msg.id);
+							if (player) {
+								killedBy.innerHTML = player.username+" just killed you";
+								setTimeout(function() {
+									killedBy.innerHTML = "";
+								}, 5000);
 							};
 							break;
 					};
@@ -1141,14 +1209,17 @@
 					if (!star || star == null) {
 						continue;
 					};
+					
+					if (Math.abs(playerMoveDelta.x) > 0.5 || Math.abs(playerMoveDelta.y) > 0.5) {
+						//console.log(Math.abs(playerMoveDelta.x), Math.abs(playerMoveDelta.y));
+						star.update(playerMoveDelta);
 
-					star.update(playerMoveDelta);
-
-					// Wrap stars around screen
-					star.pos.x = (star.pos.x < 0) ? canvas.width : star.pos.x;
-					star.pos.x = (star.pos.x > canvas.width) ? 0 : star.pos.x;
-					star.pos.y = (star.pos.y < 0) ? canvas.height : star.pos.y;
-					star.pos.y = (star.pos.y > canvas.height) ? 0 : star.pos.y;
+						// Wrap stars around screen
+						star.pos.x = (star.pos.x < 0) ? canvas.width : star.pos.x;
+						star.pos.x = (star.pos.x > canvas.width) ? 0 : star.pos.x;
+						star.pos.y = (star.pos.y < 0) ? canvas.height : star.pos.y;
+						star.pos.y = (star.pos.y > canvas.height) ? 0 : star.pos.y;
+					};
 					
 					star.draw(ctx);
 				};

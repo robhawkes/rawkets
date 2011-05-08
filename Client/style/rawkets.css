@@ -15,6 +15,49 @@ p {
 	margin: 20px 0;
 }
 
+form {
+	margin: 0;
+	padding: 0;
+}
+	
+	input {
+		background-color: #fff;
+		border: 2px solid #a6c0d0;
+		border-radius: 5px;
+		-moz-border-radius: 5px;
+		-webkit-border-radius: 5px;
+		box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+		-moz-box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+		-webkit-box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+		color: #252932;
+		display: block;
+		float: left;
+		font-family: "TitilliumText22LRegular";
+		font-size: 14px;
+		line-height: 1em;
+		margin: 0 10px 0 0;
+		padding: 8px 5px 6px 5px;
+		width: 200px;
+	}
+	
+	input[type="submit"] {
+		background-color: #252932;
+		-moz-box-sizing: border-box;
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+		color: #6dcaff;
+		font-family: "TitilliumText22LBold";
+		line-height: auto;
+		padding: 8px 12px 6px;
+		text-align: center;
+		text-shadow: rgba(104, 192, 202, 0.05) 0 0 5px;
+		width: auto;
+	}
+	
+	input[type="submit"]:active {
+		
+	}
+
 #canvas {
 	margin: 42px 0 69px 0;
 }
@@ -154,6 +197,15 @@ p {
 	text-shadow: rgba(0, 0, 0, 0.5) 0 -1px 0;
 	width: 100%;
 }
+	
+	#killedBy {
+		color: rgba(172, 181, 198, 0.5);
+		left: 0;
+		margin: -60px 0 0 20px;
+		position: absolute;
+		text-shadow: none;
+		top: 0;
+	}
 
 	#playerCount {
 		float: left;
@@ -187,30 +239,8 @@ p {
 }
 
 	#join {
-		background-color: #252932;
-		border: 2px solid #a6c0d0;
-		border-radius: 5px;
-		-moz-border-radius: 5px;
-		-webkit-border-radius: 5px;
-		box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
-		-moz-box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
-		-webkit-box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
-		color: #6dcaff;
-		display: block;
-		font-family: "TitilliumText22LBold";
-		font-size: 14px;
-		line-height: 1em;
-		padding: 7px 12px 6px;
-		text-align: center;
-		text-decoration: none;
-		text-shadow: rgba(104, 192, 202, 0.05) 0 0 5px;
-		width: 90px;
+
 	}
-	
-		#join:active {
-			padding-top: 8px;
-			padding-bottom: 5px;
-		}
 		
 #settings, #about {
 	display: none;
