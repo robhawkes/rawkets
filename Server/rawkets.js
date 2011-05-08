@@ -63,7 +63,8 @@ var PlayerState = function(opts) {
 		acc = new Vector({x: 0, y: 0}),
 		angle = 0,
 		moving = false,
-		health = 100;
+		health = 100,
+		score = 0;
 		
 	return {
 		pos: pos,
@@ -73,7 +74,8 @@ var PlayerState = function(opts) {
 		angle: angle,
 		moving: moving,
 		currentKeys: currentKeys,
-		health: health
+		health: health,
+		score: score
 	};
 };
 
@@ -423,7 +425,8 @@ var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
 	MESSAGE_TYPE_REMOVE_BULLET = 9,
 	MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR = 10,
 	MESSAGE_TYPE_UPDATE_PLAYER_SCREEN = 11,
-	MESSAGE_TYPE_KILLED_BY = 12;
+	MESSAGE_TYPE_KILLED_BY = 12,
+	MESSAGE_TYPE_UPDATE_SCORE = 13;
 
 // Start of main game setup
 var http = require("http"), 
@@ -651,7 +654,7 @@ function update() {
 		msgOutQueue.push({client: client, msg: msg});
 	};
 	
-	var dp, bulletPlayerId, deadPlayerCount = deadPlayers.length;
+	var dp, bulletPlayerId, bulletPlayer, bulletClient, deadPlayerCount = deadPlayers.length;
 	for (dp = 0; dp < deadPlayerCount; dp++) {
 		player = deadPlayers[dp].player;
 		bulletPlayerId = deadPlayers[dp].bulletPlayerId;
@@ -659,21 +662,15 @@ function update() {
 		if (player) {
 			killPlayer(player.id, bulletPlayerId);
 			
+			bulletPlayer = playerById(bulletPlayerId);
+			bulletClient = socket.clients[bulletPlayerId];
+			if (bulletPlayer && bulletClient) {
+				bulletPlayer.currentState.score++;
+				bulletClient.send(formatMessage(MESSAGE_TYPE_UPDATE_SCORE, {s: bulletPlayer.currentState.score}));
+			};
+			
 			client = socket.clients[player.id];
 			if (client) {
-				//client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, state: player.currentState}));
-				//client.broadcast(formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, keys: player.currentState.currentKeys, health: player.currentState.health}));
-				/*msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {
-					id: player.id, 
-					pos: player.currentState.pos, 
-					angle: player.currentState.angle, 
-					moving: player.currentState.moving, 
-					keys: player.currentState.currentKeys, 
-					health: player.currentState.health
-				});
-				msgOutQueue.push({client: client, msg: msg});
-				
-				client.send(formatMessage(MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_POSITION, {id: player.id, pos: player.currentState.pos, angle: player.currentState.angle, moving: player.currentState.moving, health: player.currentState.health}));*/
 				player.sendUpdate();
 			};
 		};

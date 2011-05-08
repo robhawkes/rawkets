@@ -49,6 +49,7 @@
 		
 			<footer id="statistics">
 				<p id="killedBy"></p>
+				<p id="score">0</p>
 				<p id="playerCount">0 fighters online</p>
 				<p id="updates"><a href="#">Send me development updates</a></p>
 			</footer>
@@ -129,6 +130,7 @@
 			canvas.width = window.innerWidth;
 			canvas.height = window.innerHeight-111;
 			var ctx = canvas.getContext("2d");
+			var score = document.getElementById("score");
 			var playerCount = document.getElementById("playerCount");
 			var killedBy = document.getElementById("killedBy");
 			// TESTING - REMOVE THIS
@@ -939,6 +941,7 @@
 				MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR = 10,
 				MESSAGE_TYPE_UPDATE_PLAYER_SCREEN = 11,
 				MESSAGE_TYPE_KILLED_BY = 12,
+				MESSAGE_TYPE_UPDATE_SCORE = 13,
 			
 			// Run game
 				runUpdate = true,
@@ -1177,6 +1180,9 @@
 									killedBy.innerHTML = "";
 								}, 5000);
 							};
+							break;
+						case MESSAGE_TYPE_UPDATE_SCORE:
+							score.innerHTML = msg.s;
 							break;
 					};
 				};

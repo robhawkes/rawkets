@@ -192,30 +192,58 @@ form {
 	height: 72px;
 	left: 0;
 	letter-spacing: 0;
-	line-height: 72px;
 	position: absolute;
 	text-shadow: rgba(0, 0, 0, 0.5) 0 -1px 0;
 	width: 100%;
 }
-	
+
 	#killedBy {
 		color: rgba(172, 181, 198, 0.5);
+		font-size: 16px;
 		left: 0;
-		margin: -60px 0 0 20px;
+		margin: -35px 0 0 20px;
 		position: absolute;
 		text-shadow: none;
 		top: 0;
 	}
+	
+	#score {
+		background: url("img/bottom_bar_score_background.gif") repeat-x top center;
+		border: 2px solid #aab4be;
+		border-radius: 5px;
+		-moz-border-radius: 5px;
+		-webkit-border-radius: 5px;
+		box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+		-moz-box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+		-webkit-box-shadow: rgba(0, 0, 0, 0.3) 0 1px 2px;
+		color: #65c5f6;
+		float: left;
+		font-family: "TitilliumText22LBold";
+		font-size: 24px;
+		height: 39px;
+		line-height: 42px;
+		margin: 16px 0 0 20px;
+		padding: 0 10px;
+		text-align: right;
+		text-shadow: rgba(95, 186, 245, 0.4) 0 0 5px;
+		width: 55px;
+	}
 
 	#playerCount {
 		float: left;
+		height: 72px;
+		line-height: 76px;
 		margin: 0 0 0 20px;
-		width: 45%;
+		overflow: hidden;
+		width: 200px;
 	}
 
 	#updates {
 		float: right;
+		height: 72px;
+		line-height: 76px;
 		margin: 0 20px 0 0px;
+		overflow: hidden;
 		text-align: right;
 		width: 45%;
 	}
