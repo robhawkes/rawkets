@@ -2,6 +2,7 @@ body {
 	background: url("img/background.gif") center center;
 	color: #fff;
 	font-family: "TitilliumText22LRegular";
+	font-size: 14px;
 }
 canvas, footer, header, nav { display: block; }
 
@@ -19,6 +20,12 @@ form {
 	margin: 0;
 	padding: 0;
 }
+
+	form #usernameError {
+		clear: both;
+		font-size: 14px;
+		padding: 10px 0;
+	}
 	
 	input {
 		background-color: #fff;

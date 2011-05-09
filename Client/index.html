@@ -33,6 +33,7 @@
 					<form id="play" action="">
 						<input type="text" id="username" tabindex="1" placeholder="Username">
 						<input type="submit" id="join" value="Join the battle">
+						<p id="usernameError"></p>
 					</form>
 				</p>
 			</section>
@@ -96,9 +97,13 @@
 				var username = $("#username").val();
 				//console.log(username, username.match(/^[\d\w]*$/));
 				if (username != "" && username.match(/^[\d\w]*$/)) {
-					$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0)"});
-					$("#intro").stop().fadeOut();
-					connect(username);
+					if (username.length > 15) {
+						$("#usernameError").html("Please keep your username 15 characters or less");
+						return;
+					}
+					checkUsername(username);
+				} else {
+					$("#usernameError").html("Please only use letters and numbers in your username");
 				};
 			});
 			
@@ -130,6 +135,7 @@
 			canvas.width = window.innerWidth;
 			canvas.height = window.innerHeight-111;
 			var ctx = canvas.getContext("2d");
+			var usernameError = document.getElementById("usernameError");
 			var score = document.getElementById("score");
 			var playerCount = document.getElementById("playerCount");
 			var killedBy = document.getElementById("killedBy");
@@ -919,11 +925,23 @@
 			};
 			
 			// Connect to game
-			function connect(username) {
-				if (username.match(/^[\d\w]*$/)) {
-					localPlayerUsername = username;
-					// Connect to WebSocket server
-					socket.connect();
+			function connect() {
+				// Connect to WebSocket server
+				socket.connect();
+			};
+			
+			// Check username on server
+			function checkUsername(username) {
+				if (socket) {
+					if (username.match(/^[\d\w]*$/)) {
+						if (username.length > 15) {
+							return;
+						}
+						localPlayerUsername = username;
+						
+						var msg = formatMessage(MESSAGE_TYPE_CHECK_USERNAME, {u: localPlayerUsername});
+						socket.send(msg);
+					};
 				};
 			};
 			
@@ -942,6 +960,7 @@
 				MESSAGE_TYPE_UPDATE_PLAYER_SCREEN = 11,
 				MESSAGE_TYPE_KILLED_BY = 12,
 				MESSAGE_TYPE_UPDATE_SCORE = 13,
+				MESSAGE_TYPE_CHECK_USERNAME = 14,
 			
 			// Run game
 				runUpdate = true,
@@ -994,12 +1013,6 @@
 			// WebSocket connection successful
 			socket.on("connect", function(){
 				console.log("Connected");
-				localPlayer = new Player({id: false, local: true, x: 1000, y: 1000, angle: 0, colour: false, username: localPlayerUsername});
-				// Move to message queuing system
-				var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {u: localPlayerUsername, w: viewport.dimensions.width+50, h: viewport.dimensions.height+50, s: localPlayer.currentState});
-				socket.send(msg);
-			
-				updatePlayerCount();
 			});
 		
 			// WebSocket connection failed
@@ -1031,6 +1044,33 @@
 								net.addPing(msg.p);
 								net.addData();
 							};
+							break;
+						case MESSAGE_TYPE_CHECK_USERNAME:
+							if (msg.c != 1) {
+								switch (msg.r) {
+									case 1:
+										$("#usernameError").html("This username is in use, please choose another");
+										break;
+									case 2:
+										$("#usernameError").html("Please only use letters and numbers in your username");
+										break;
+									case 3:
+										$("#usernameError").html("Please keep your username 15 characters or less");
+										break;
+								};
+								return;
+							};
+							
+							// Is it a good idea to intermingle jQuery with the raw game JavaScript? It sure beats creating my own animation tools
+							$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0)"});
+							$("#intro").stop().fadeOut();
+
+							localPlayer = new Player({id: false, local: true, x: 1000, y: 1000, angle: 0, colour: false, username: localPlayerUsername});
+							// Move to message queuing system
+							var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {u: localPlayerUsername, w: viewport.dimensions.width+50, h: viewport.dimensions.height+50, s: localPlayer.currentState});
+							socket.send(msg);
+
+							updatePlayerCount();
 							break;
 						case MESSAGE_TYPE_NEW_PLAYER:
 							var colour = (msg.c) ? msg.c : false;
@@ -1423,6 +1463,9 @@
 					setTimeout(update, 1000/60); // Remember, this is however long it take to update PLUS 60ms
 				};
 			};
+			
+			// Connect to server
+			connect();
 			
 			// Start main update loop
 			update();

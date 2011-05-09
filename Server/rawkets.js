@@ -412,6 +412,20 @@ function sendPing(client) {
 	}, 1000);
 };
 
+// Check username
+function checkUsernameExists(username) {
+	var p, player, playerCount = players.length;
+	for (p = 0; p < playerCount; p++) {
+		player = players[p];
+		if (player) {
+			if (player.username == username) {
+				return true;
+			};
+		};
+	};
+	return false;
+};
+
 // Message types
 var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
 	MESSAGE_TYPE_NEW_PLAYER = 1,
@@ -426,7 +440,8 @@ var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
 	MESSAGE_TYPE_UPDATE_LOCAL_PLAYER_COLOUR = 10,
 	MESSAGE_TYPE_UPDATE_PLAYER_SCREEN = 11,
 	MESSAGE_TYPE_KILLED_BY = 12,
-	MESSAGE_TYPE_UPDATE_SCORE = 13;
+	MESSAGE_TYPE_UPDATE_SCORE = 13,
+	MESSAGE_TYPE_CHECK_USERNAME = 14;
 
 // Start of main game setup
 var http = require("http"), 
@@ -715,7 +730,7 @@ function unqueueIncomingMessages(msgQueue) {
 	//msgOutQueue = []; // Doesn't seem to act as a reference to the original array
 	
 	// Do stuff with message queue
-	var data, client, msg;
+	var data, client, msg, username;
 	while (msgs.length > 0) {
 		// Grab and remove the oldest message in the array
 		data = msgs.shift();
@@ -753,11 +768,30 @@ function unqueueIncomingMessages(msgQueue) {
 					// Request a new ping
 					sendPing(client);
 					break;
+				case MESSAGE_TYPE_CHECK_USERNAME:
+					var code = 0, response = 0, rawMsg;
+					username = msg.u;
+					if (username == "" || !username.match(/^[\d\w]*$/)) {
+						code = 0;
+						response = 2;
+					} else if (username.length > 15) {
+						code = 0;
+						response = 3;
+					} else if (checkUsernameExists(username)) {
+						code = 0;
+						response = 1;
+					} else {
+						code = 1; // Valid and available username
+					};
+					
+					rawMsg = (code == 1) ? {c: code} : {c: code, r: response};
+					client.send(formatMessage(MESSAGE_TYPE_CHECK_USERNAME, rawMsg));
+					break;
 				case MESSAGE_TYPE_NEW_PLAYER:
 					console.log("Adding new player: ", client.sessionId);
 					colour = getPlayerColour(client.sessionId);
 					
-					var username = msg.u;
+					username = msg.u;
 					if (username == "" || !username.match(/^[\d\w]*$/)) {
 						console.log("Halted addition of player: dodgy username");
 						return;
@@ -880,35 +914,37 @@ function unqueueOutgoingMessages(msgQueue) {
 					for (p = 0; p < playerCount; p++) {
 						player = players[p];
 						
-						if (player.id == msg.id) {
-							continue;
-						};
-						
-						if (!player.withinScreen(player.currentState.pos)) {
-							//excudedSessionIds.push(player.id);
-							// Only send position data
-							var rawMsg = {id: id};
-							if (msg.pos.x != undefined) {
-								rawMsg.p = msg.p;
+						if (player) {
+							if (player.id == msg.id) {
+								continue;
 							};
-							if (msg.h != undefined) {
-								rawMsg.h = msg.h;
-							};
-							data.msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, rawMsg);
-						} else {
-							// Send full state update
-							/*data.msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {
-								id: player.id, 
-								pos: player.currentState.pos, 
-								angle: player.currentState.angle, 
-								moving: player.currentState.moving, 
-								keys: player.currentState.currentKeys, 
-								health: player.currentState.health
-							});*/
-						};
 						
-						playerClient = socket.clients[player.id];
-						playerClient.send(data.msg);
+							if (!player.withinScreen(player.currentState.pos)) {
+								//excudedSessionIds.push(player.id);
+								// Only send position data
+								var rawMsg = {id: id};
+								if (msg.pos.x != undefined) {
+									rawMsg.p = msg.p;
+								};
+								if (msg.h != undefined) {
+									rawMsg.h = msg.h;
+								};
+								data.msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, rawMsg);
+							} else {
+								// Send full state update
+								/*data.msg = formatMessage(MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE, {
+									id: player.id, 
+									pos: player.currentState.pos, 
+									angle: player.currentState.angle, 
+									moving: player.currentState.moving, 
+									keys: player.currentState.currentKeys, 
+									health: player.currentState.health
+								});*/
+							};
+						
+							playerClient = socket.clients[player.id];
+							playerClient.send(data.msg);
+						};
 					};
 					//console.log(excudedSessionIds);
 					//socket.broadcast(data.msg, excudedSessionIds);
