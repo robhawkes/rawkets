@@ -84,6 +84,7 @@ var Player = function(opts) {
 	// Public variables
 	var id = opts.id || false,
 		username = opts.username,
+		idleAge = 0,
 		currentState = new PlayerState({x: opts.x, y: opts.y}),
 		previousState = clone(currentState),
 		weaponsHot = true,
@@ -144,8 +145,9 @@ var Player = function(opts) {
 			currentState.angle += rotationSpeed;
 		};
 		
+		
+		//currentState.moving = false;
 		//var acc = new Vector({x: 0, y: 0});
-		currentState.moving = false;
 		if (currentState.currentKeys.up) {
 			currentState.moving = true;
 			
@@ -157,6 +159,7 @@ var Player = function(opts) {
 			currentState.acc.x = Math.cos(currentState.angle)*currentState.thrust;
 			currentState.acc.y = Math.sin(currentState.angle)*currentState.thrust;
 		} else {
+			currentState.moving = false;
 			currentState.thrust = 0;
 			if (Math.abs(currentState.acc.x) > 0.1 || Math.abs(currentState.acc.y) > 0.1) {
 				currentState.acc.x *= 0.96;
@@ -236,6 +239,7 @@ var Player = function(opts) {
 	return {
 		id: id, // Should probably be made read-only
 		username: username,
+		idleAge: idleAge,
 		update: update,
 		currentState: currentState,
 		previousState: previousState,
@@ -426,6 +430,17 @@ function checkUsernameExists(username) {
 	return false;
 };
 
+// Benchmarks for server
+function startBenchmarkTimer() {
+	if (runUpdate) {
+		setInterval(function() {
+			if (updateTime != undefined) {
+				console.log("Update time: ", updateTime);
+			};
+		}, 5000);
+	};
+};
+
 // Message types
 var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
 	MESSAGE_TYPE_NEW_PLAYER = 1,
@@ -441,7 +456,9 @@ var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
 	MESSAGE_TYPE_UPDATE_PLAYER_SCREEN = 11,
 	MESSAGE_TYPE_KILLED_BY = 12,
 	MESSAGE_TYPE_UPDATE_SCORE = 13,
-	MESSAGE_TYPE_CHECK_USERNAME = 14;
+	MESSAGE_TYPE_CHECK_USERNAME = 14,
+	MESSAGE_TYPE_CHAT = 15;
+	//MESSAGE_TYPE_CHECK_IN = 16;
 
 // Start of main game setup
 var http = require("http"), 
@@ -453,6 +470,9 @@ var http = require("http"),
 	// Run game
 	runUpdate = true,
 	serverStart = new Date().getTime(),
+	updateStart,
+	updateEnd,
+	updateTime,
 	
 	// Fixed physics update
 	t = 0,
@@ -522,7 +542,7 @@ socket.on("connection", function(client){
 			console.log("Players connected: ", players.length);
 			
 			// Sync other players
-			client.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: player.id}));
+			socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: player.id}), [player.id]);
 		};
 	});
 	
@@ -538,6 +558,8 @@ socket.on("connection", function(client){
 
 // Main update loop
 function update() {
+	updateStart = new Date().getTime();
+	
 	// Clear outgoing messages queue
 	//msgOutQueue = [];
 	
@@ -550,11 +572,16 @@ function update() {
 	//updatePhysics();
 	
 	// Update every single player in the game
-	var i, player, bullet, bulletPos, timestamp, client, msg, playerCount = players.length;
+	var i, player, bullet, bulletPos, timestamp, client, msg, removedPlayers = [], playerCount = players.length;
 	for (i = 0; i < playerCount; i++) {
 		player = players[i];
 		
 		if (player) {
+			if (++player.idleAge > 600) { // 10 seconds without ping
+				removedPlayers.push(player);
+				continue;
+			};
+			
 			player.update(dtdt);
 			
 			//console.log(player.previousState.pos.x);
@@ -611,8 +638,25 @@ function update() {
 		};
 	};
 	
+	// Remove idle players
+	var rp, playerIndex, removedPlayerCount = removedPlayers.length;
+	for (rp = 0; rp < removedPlayerCount; rp++) {
+		player = players[rp];
+		playerIndex = indexOfByPlayerId(player.id);
+		
+		if (player) {
+			players.splice(playerIndex, 1);
+			console.log("Removed player: ", player.id);
+			console.log("Players connected: ", players.length);
+			
+			// Sync other players
+			socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: player.id}), [player.id]);
+		};	
+	};
+	
 	// Update every single bullet in the game
 	var b, bulletsToUpdate = [], alive, deadBullets = [], deadPlayers = [], bulletCount = bullets.length;
+	playerCount = players.length;
 	//console.log(bulletCount);
 	for (b = 0; b < bulletCount; b++) {
 		bullet = bullets[b];
@@ -710,8 +754,11 @@ function update() {
 	// Deal with queued outgoing messages
 	unqueueOutgoingMessages(msgOutQueue);
 	
+	updateEnd = new Date().getTime();
+	updateTime = updateEnd-updateStart;
+	
 	// Schedule next game update
-	if (runUpdate) {
+	if (runUpdate) {;
 		setTimeout(update, 1000/60); // Remember, this is however long it take to update PLUS 60ms
 	};
 };
@@ -748,7 +795,8 @@ function unqueueIncomingMessages(msgQueue) {
 						break;
 					};
 					
-					player.age = 0; // Player is active
+					player.idleAge = 0; // Player is active
+					//socket.broadcast(formatMessage(MESSAGE_TYPE_CHECK_IN, {id: player.id}), [player.id]);
 					
 					var newTimestamp = new Date().getTime();
 					//console.log("Round trip: "+(newTimestamp-data.ts)+"ms", client.sessionId);
@@ -876,6 +924,18 @@ function unqueueIncomingMessages(msgQueue) {
 						player.screen.y = msg.h;
 					};
 					break;
+				case MESSAGE_TYPE_CHAT:
+					if (msg.m) {
+						var chatMsg;
+						if (msg.m.length > 60) {
+							chatMsg = msg.m.slice(0, 60);
+							chatMsg += "...";
+						} else {
+							chatMsg = msg.m;
+						};
+						socket.broadcast(formatMessage(MESSAGE_TYPE_CHAT, {id: client.sessionId, m: chatMsg}));
+					};
+					break;
 			};
 		};
 	};
@@ -943,7 +1003,9 @@ function unqueueOutgoingMessages(msgQueue) {
 							};
 						
 							playerClient = socket.clients[player.id];
-							playerClient.send(data.msg);
+							if (playerClient) {
+								playerClient.send(data.msg);
+							};
 						};
 					};
 					//console.log(excudedSessionIds);
@@ -1022,3 +1084,4 @@ function indexOfByBulletId(id) {
 
 // Start main update loop
 update();
+//startBenchmarkTimer();

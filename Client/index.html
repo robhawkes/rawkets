@@ -3,7 +3,7 @@
 <html lang="en">
 
 	<head>
-		<title>Rawkets | A massively multiplayer game built using HTML5 canvas and WebSockets</title>
+		<title>Rawkets | A multiplayer game built using HTML5 canvas and WebSockets</title>
 		
 		<meta charset="utf-8">
 		<meta name="description" content="Rawkets is a massively multiplayer game in which you can shoot and interact with other players, in real-time, in space! It uses the latest Web technologies, including HTML5 canvas and WebSockets.">
@@ -26,9 +26,11 @@
 					</ul>
 				</nav>
 			</header>
+			
+			<section id="chat"><ol></ol></section>
 		
 			<section id="intro">
-				<p>A massively multiplayer game built using HTML5 canvas and WebSockets</p>
+				<p>A multiplayer space shooter built using HTML5 canvas and WebSockets</p>
 				<p>
 					<form id="play" action="">
 						<input type="text" id="username" tabindex="1" placeholder="Username">
@@ -40,19 +42,27 @@
 			
 			<section id="settings">
 				<h1>Settings</h1>
-				<p>Change your settings here…</p>
+				<p>You'll soon be able to control a variety of features in the game.</p>
 			</section>
 			
 			<section id="about">
 				<h1>About Rawkets</h1>
-				<p>Rawkets is…</p>
+				<p>Part experiment, part game; Rawkets is a multiplayer space shooter built using some of the latest Web technologies. It's fun, addictive, and a challenge to master. The game is in active development, so expect regular updates with awesome new features. This is just the beginning!</p>
+				
+				<h2>Built using open Web technologies</h2>
+				<p>Rawkets has been specifically created with open Web technologies, like WebSockets, Node, and HTML5 canvas. The purpose of creating the game has been to learn about these technologies, and to see just how possible it is to create fun multiplayer experience within the browser.</p>
+				
+				<h2>Created by Rob Hawkes</h2>
+				<p>Rob thrives on solving problems through code. He's addicted to visual programming, and can't get enough of HTML5 canvas. Most of his waking life is spent working on crazy projects involving all sorts of new and exciting technologies, both on-line and off. Aside from his practical work, Rob has written a book called "<a href="http://rawkes.com/foundationcanvas">Foundation HTML5 Canvas</a>", which is all about making games with canvas. He is a <a href="http://rawkes.com/blog/2011/03/25/becoming-a-mozilla-technical-evangelist">Technical Evangelist</a> for Mozilla.</p>
+				
+				<p>Visit <a href="http://rawkes.com">Rob's website</a>, or <a href="http://twitter.com/robhawkes">follow him</a> on Twitter.</a>
 			</section>
 		
 			<footer id="statistics">
 				<p id="killedBy"></p>
 				<p id="score">0</p>
 				<p id="playerCount">0 fighters online</p>
-				<p id="updates"><a href="#">Send me development updates</a></p>
+				<p id="updates"><a href="http://twitter.com/rawkets">Send me development updates</a></p>
 			</footer>
 		</div>
 		
@@ -107,14 +117,20 @@
 				};
 			});
 			
-			$("#tabGame").click(function() {
+			$("#tabGame").click(function(e) {
+				e.preventDefault();
 				$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0)"});
-				$("#intro, #settings, #about").hide();
+				$("#settings, #about").hide();
+				if(!localPlayer) {
+					$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0.5)"});
+					$("#intro").fadeIn();
+				};
 				$("#tabSettings, #tabAbout").removeClass("active");
 				$(this).addClass("active");
 			});
 			
-			$("#tabSettings").click(function() {
+			$("#tabSettings").click(function(e) {
+				e.preventDefault();
 				$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0.5)"});
 				$("#intro, #about").hide();
 				$("#tabSettings, #tabGame").removeClass("active");
@@ -122,7 +138,8 @@
 				$("#settings").fadeIn();
 			});
 			
-			$("#tabAbout").click(function() {
+			$("#tabAbout").click(function(e) {
+				e.preventDefault();
 				$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0.5)"});
 				$("#intro, #settings").hide();
 				$("#tabGame, #tabSettings").removeClass("active");
@@ -337,6 +354,7 @@
 				// Public variables
 				var id = opts.id,
 					username = opts.username,
+					idleAge = 0,
 					local = opts.local,
 					currentState = new PlayerState({x: opts.x, y: opts.y, angle: opts.angle}),
 					previousState = clone(currentState),
@@ -442,6 +460,7 @@
 				return {
 					id: id, // Should probably be made read-only
 					username: username,
+					idleAge: idleAge,
 					//update: update,
 					draw: draw,
 					currentState: currentState,
@@ -670,7 +689,7 @@
 			// Sound class
 			var Sound = function() {
 				var container = document.getElementById("soundContainer"),
-					muted = true;
+					muted = false;
 				
 				var play = function(soundName) {
 					if (!this.muted) {
@@ -743,6 +762,10 @@
 			
 			// Add remote player
 			function addRemotePlayer(opts) {
+				if (playerById(opts.id)) {
+					return;
+				};
+				
 				var id = opts.id,
 					username = opts.username,
 					state = opts.state,
@@ -816,6 +839,7 @@
 			// Event listeners
 			window.addEventListener("keydown", onKeydown, false);
 			window.addEventListener("keyup", onKeyup, false);
+			window.addEventListener("keypress", onKeypress, false);
 			window.addEventListener("resize", resizeCanvas, false);
 			
 			function onKeydown(e) {
@@ -825,6 +849,9 @@
 					switch (c) {
 						// Controls
 						case 32: // Space
+							if (chatMode) {
+								return;
+							};
 							localPlayer.currentState.activeKeys.space = true;
 							break;
 						case 37: // Left
@@ -840,6 +867,9 @@
 							localPlayer.currentState.activeKeys.down = true;
 							break;
 						case 83: // S
+							if (chatMode) {
+								return;
+							};
 							if (sound.muted) {
 								sound.unmute();
 							} else {
@@ -857,7 +887,28 @@
 
 				if (localPlayer) {
 					switch (c) {
+						case 13: // Enter
+							if (chatMode) {
+								if (chatMessage.length < 1) {
+									return;
+								};
+								// Send message
+								//console.log(chatMessage);
+								var msg;
+								if (chatMessage.length > 60) {
+									msg = chatMessage.slice(0, 60);
+									msg += "...";
+								} else {
+									msg = chatMessage;
+								};
+								socket.send(formatMessage(MESSAGE_TYPE_CHAT, {m: msg}));
+								chatMode = false;
+							};
+							break;
 						case 32: // Space
+							if (chatMode) {
+								return;
+							};
 							localPlayer.currentState.activeKeys.space = false;
 							break;
 						case 37: // Left
@@ -872,10 +923,26 @@
 						case 40: // Down
 							localPlayer.currentState.activeKeys.down = false;
 							break;
+						case 84: // T
+							if (chatMode) {
+								return;
+							};
+							chatMessage = "";
+							chatMode = true;
+							break;
 					};
 				};
 
 				//console.log("Key down [code: "+e.keyCode+"]");
+			};
+			
+			function onKeypress(e) {
+				var c = e.keyCode;
+				
+				if (chatMode && c != 13) {
+					chatMessage += String.fromCharCode(c);
+					return;
+				};
 			};
 			
 			function resizeCanvas(e) {
@@ -961,6 +1028,8 @@
 				MESSAGE_TYPE_KILLED_BY = 12,
 				MESSAGE_TYPE_UPDATE_SCORE = 13,
 				MESSAGE_TYPE_CHECK_USERNAME = 14,
+				MESSAGE_TYPE_CHAT = 15,
+				//MESSAGE_TYPE_CHECK_IN = 16,
 			
 			// Run game
 				runUpdate = true,
@@ -988,6 +1057,11 @@
 			// Weapons
 				bullets = [],
 				
+			// Chat
+				chatMode = false,
+				chatMessage,
+				chatMessages = [],
+				
 			// Sound setup
 				sound,
 				flashvars = {},
@@ -995,12 +1069,6 @@
 			
 			swfobject.embedSWF("lib/Sounds.swf", "soundContainer", "0", "0", "9.0.0", "", flashvars, params, "", function(err) {
 				sound = new Sound();
-				
-				// Unneccesary delay to let sound load
-				setTimeout(function() {
-					// Play background
-					sound.play("background");
-				}, 2000);
 			});
 			
 			// Set up stars
@@ -1061,6 +1129,8 @@
 								return;
 							};
 							
+							sound.play("background");
+							
 							// Is it a good idea to intermingle jQuery with the raw game JavaScript? It sure beats creating my own animation tools
 							$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0)"});
 							$("#intro").stop().fadeOut();
@@ -1072,6 +1142,11 @@
 
 							updatePlayerCount();
 							break;
+					};
+				};
+					
+				if (msg.z !== undefined && localPlayer != undefined) {	
+					switch (msg.z) {
 						case MESSAGE_TYPE_NEW_PLAYER:
 							var colour = (msg.c) ? msg.c : false;
 							addRemotePlayer({id: msg.id, state: msg.s, colour: colour, username: msg.u});
@@ -1087,9 +1162,9 @@
 							break;
 						case MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE:
 							//console.log(msg);
-							var player = playerById(msg.id),
-								localPos;
+							var player = playerById(msg.id);
 							if (player) {
+								//player.idleAge = 0;
 								//console.log("Player state: ", player.currentState);
 								// THIS IS BAD – CHANGE TO PREDICTIVE METHOD
 								//player.currentState.pos.x = msg.state.pos.x;
@@ -1224,6 +1299,37 @@
 						case MESSAGE_TYPE_UPDATE_SCORE:
 							score.innerHTML = msg.s;
 							break;
+						case MESSAGE_TYPE_CHAT:
+							if (msg.m) {
+								var player, chat = $("#chat ol");
+								player = playerById(msg.id) || localPlayer;
+								if (player) {
+									if (chatMessages.length > 9) {
+										chatMessages.shift();
+										chat.find("li").first().fadeOut(500, function() {
+											$(this).remove();
+										});
+									};
+									//console.log(msg.m);
+									chatMessages.push(msg.m);
+								
+									//var c, chatHTML, chatMessageCount = chatMessages.length;
+									//chat.fadeOut();
+									//for (c = 0; c < chatMessageCount; c++) {
+									//	chatHTML = $("<li>"+chatMessages[c]+"</li>\n");
+									//};
+									//chat.fadeIn();
+									var chatHTML = $("<li><span>"+player.username+":</span> "+msg.m+"</li>\n").hide();
+									chatHTML.appendTo(chat).fadeIn();
+								};
+							};
+							break;
+						/*case MESSAGE_TYPE_CHECK_IN:
+							var player = playerById(msg.id);
+							if (player) {
+								player.idleAge = 0;
+							};
+							break;*/
 					};
 				};
 			
@@ -1297,12 +1403,17 @@
 					};
 				};
 				
-				var i, player, playerCount = remotePlayers.length;
+				var i, player, removedPlayers = [], playerCount = remotePlayers.length;
 				if (playerCount > 0) {
 					for (i = 0; i < playerCount; i++) {
 						player = remotePlayers[i];
 						//console.log(player.currentState.pos.x);
 						if (player) {
+							/*if (++player.idleAge > 600) {
+								removedPlayers.push(player);
+								continue;
+							};*/
+							
 							if (viewport.withinBounds(player.currentState.pos.x, player.currentState.pos.y)) {
 								player.draw(ctx);
 							// Player is outside of the viewport
@@ -1405,6 +1516,19 @@
 						};
 					};
 				};
+				
+				/*// Remove idle players
+				var rp, playerIndex, removedPlayerCount = removedPlayers.length;
+				for (rp = 0; rp < removedPlayerCount; rp++) {
+					player = remotePlayers[rp];
+					playerIndex = indexOfByPlayerId(player.id);
+
+					if (player) {
+						remotePlayers.splice(playerIndex, 1);
+						updatePlayerCount();
+						console.log("Removed idle player: ", player.id);
+					};	
+				};*/
 				
 				// Move draw functionality to another method?
 				if (localPlayer != null) {

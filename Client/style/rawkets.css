@@ -2,15 +2,38 @@ body {
 	background: url("img/background.gif") center center;
 	color: #fff;
 	font-family: "TitilliumText22LRegular";
-	font-size: 14px;
+	font-size: 16px;
+	line-height: 1.4em;
+	overflow: hidden;
 }
 canvas, footer, header, nav { display: block; }
 
 h1 {
+	color: #65c5f6;
 	font-family: "TitilliumText22LXBold";
 	font-size: 30px;
-	text-shadow: rgba(0, 0, 0, 0.2) 0 1px 2px;
+	margin: 0 0 -5px 0;
+	/*text-shadow: rgba(0, 0, 0, 0.2) 0 1px 2px;*/
+	text-shadow: rgba(95, 186, 245, 0.4) 0 0 5px;
 }
+
+h2 {
+	color: #65c5f6;
+	font-family: "TitilliumText22LRegular";
+	font-size: 24px;
+	margin: 40px 0 -5px 0;
+	/*text-shadow: rgba(0, 0, 0, 0.2) 0 1px 2px;*/
+	text-shadow: rgba(95, 186, 245, 0.4) 0 0 5px;
+}
+
+a {
+	color: #65c5f6;
+	text-decoration: none;
+}
+
+	a:hover {
+		text-decoration: underline;
+	}
 
 p {
 	margin: 20px 0;
@@ -53,6 +76,7 @@ form {
 		-webkit-box-sizing: border-box;
 		box-sizing: border-box;
 		color: #6dcaff;
+		cursor: pointer;
 		font-family: "TitilliumText22LBold";
 		line-height: auto;
 		padding: 8px 12px 6px;
@@ -264,6 +288,27 @@ form {
 			border-bottom: 1px solid #5b6373;
 		}
 		
+#chat {
+	font-size: 11px;
+	margin: 0 20px 0 0;
+	position: absolute;
+	right: 0;
+	text-align: right;
+	top: 100px;
+};
+
+	#chat ol, #chat li {
+		margin: 0;
+		padding: 0;
+	}
+	
+	#chat span {
+		color: #65c5f6;
+		font-family: "TitilliumText22LBold";
+		padding-right: 10px;
+		text-shadow: rgba(95, 186, 245, 0.4) 0 0 5px;
+	}
+		
 #intro {
 	color: #fff;
 	font-size: 24px;
@@ -279,8 +324,8 @@ form {
 		
 #settings, #about {
 	display: none;
-	margin: 100px auto 0 auto;
-	width: 400px;
+	margin: 80px auto 100px auto;
+	width: 700px;
 }
 
 #soundContainer {
