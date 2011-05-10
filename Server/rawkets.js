@@ -156,14 +156,16 @@ var Player = function(opts) {
 				currentState.thrust = currentState.maxThrust;
 			};
 			
+			// Change this so it takes into consideration the previous acceleration
+			// At the moment this stops you dead if you coast a little, then change direction
 			currentState.acc.x = Math.cos(currentState.angle)*currentState.thrust;
 			currentState.acc.y = Math.sin(currentState.angle)*currentState.thrust;
 		} else {
 			currentState.moving = false;
 			currentState.thrust = 0;
 			if (Math.abs(currentState.acc.x) > 0.1 || Math.abs(currentState.acc.y) > 0.1) {
-				currentState.acc.x *= 0.97;
-				currentState.acc.y *= 0.97;
+				currentState.acc.x *= 0.99;
+				currentState.acc.y *= 0.99;
 			} else {
 				currentState.acc.x = 0;
 				currentState.acc.y = 0;
