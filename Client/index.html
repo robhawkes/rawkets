@@ -79,9 +79,6 @@
 		<script type="text/javascript" src="js/bison.js"></script>
 		
 		<script type="text/javascript">
-			// TODO
-			// Add ability to have default options for game objects and functions
-			
 			// Only using jQuery for website UI, not core game logic
 			$("#tabs a").css({textIndent: 0}).each(function() {
 				var span = $(this).find("span");
@@ -105,7 +102,6 @@
 				span.toggle();
 			});
 			
-			//$("#username").focus();
 			$("#play").submit(function(e) {
 				e.preventDefault();
 				var username = $("#username").val();
@@ -151,7 +147,7 @@
 				$("#about").fadeIn();
 			});
 			
-			// TESTING - REMOVE THIS
+			// DOM elements
 			var canvas = document.getElementById("canvas");
 			canvas.width = window.innerWidth;
 			canvas.height = window.innerHeight-111;
@@ -160,24 +156,8 @@
 			var score = document.getElementById("score");
 			var playerCount = document.getElementById("playerCount");
 			var killedBy = document.getElementById("killedBy");
-			// TESTING - REMOVE THIS
 			
-			// Funky Object clone method
-			/*Object.prototype.clone = function() {
-				var newObj = (this instanceof Array) ? [] : {};
-
-				for (i in this) {
-					if (i == "clone") continue;
-
-					if (this[i] && typeof this[i] == "object") {
-						newObj[i] = this[i].clone();
-					} else {
-						newObj[i] = this[i];
-					};
-				};
-
-				return newObj;
-			};*/
+			// Clone function
 			function clone(obj) {
 			    if (null == obj || "object" != typeof obj) return obj;
 
@@ -327,7 +307,6 @@
 					health = 100;
 					
 				var updateKeys = function() {
-					//previousKeys = currentKeys.clone(); // Clone isn't working for some reason
 					previousKeys.left = currentKeys.left;
 					previousKeys.right = currentKeys.right;
 					previousKeys.up = currentKeys.up;
@@ -363,30 +342,12 @@
 					currentState = new PlayerState({x: opts.x, y: opts.y, angle: opts.angle}),
 					previousState = clone(currentState),
 					colour = {c: opts.colour};
-
-				// Public methods
-				/*var update = function(dtdt) {
-					// Update previous state
-					previousState = currentState.clone();
-
-					// Do stuff depending on what keys are currently pressed down
-					if (currentState.keys.up) {
-						currentState.acc.x += 10;
-					} else {
-						currentState.acc.x = 0;
-					};
-
-					// Verlet integration (http://www.gotoandplay.it/_articles/2005/08/advCharPhysics.php)
-					currentState.pos.x = 2 * currentState.pos.x - previousState.pos.x + currentState.acc.x * dtdt;
-					currentState.pos.y = 2 * currentState.pos.y - previousState.pos.y + currentState.acc.y * dtdt;
-				};*/
 				
 				var draw = function(ctx) {
 					var pos = (local) ? new Vector({x: canvas.width/2, y: canvas.height/2}) : viewport.worldToScreen(currentState.pos.x, currentState.pos.y);
-					//console.log(currentState.pos.x);
-					if (pos) { // TEMPORARY FIX. NOT IDEAL! It seems the pos variable gets screwed up every so often. Due to the check above?
+					if (pos) {
 						ctx.save();
-						ctx.translate(pos.x, pos.y); // ERROR HERE "Uncaught TypeError: Cannot read property 'x' of undefined"
+						ctx.translate(pos.x, pos.y);
 						
 						// Health ring
 						ctx.save();
@@ -462,10 +423,9 @@
 				};
 
 				return {
-					id: id, // Should probably be made read-only
+					id: id,
 					username: username,
 					idleAge: idleAge,
-					//update: update,
 					draw: draw,
 					currentState: currentState,
 					previousState: previousState,
@@ -779,11 +739,8 @@
 				
 				player = new Player({id: id, local: false, x: 0, y: 0, angle: 0, colour: colour, username: username});
 				
-				//localPos = viewport.worldToScreen(state.pos.x, state.pos.y);
-				
 				player.currentState.pos = state.pos;
 				player.currentState.angle = state.angle;
-				//player.currentState.currentKeys = state.keys;
 				
 				remotePlayers.push(player);
 				console.log("Add player: ", id);
@@ -975,14 +932,6 @@
 			};
 			
 			function resizeCanvas(e) {
-				// Horrible passing of game object due to event closure
-				//var self = (e != null) ? e.data.self : this;
-
-				//var height = $(window).height();
-				//var width = $(window).width()
-
-				//self.canvas.attr({height: height, width: width});
-				
 				canvas.width = window.innerWidth;
 				canvas.height = window.innerHeight-111; // Minus footer and header
 
@@ -1192,14 +1141,7 @@
 						case MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE:
 							//console.log(msg);
 							var player = playerById(msg.id);
-							if (player) {
-								//player.idleAge = 0;
-								//console.log("Player state: ", player.currentState);
-								// THIS IS BAD – CHANGE TO PREDICTIVE METHOD
-								//player.currentState.pos.x = msg.state.pos.x;
-								//console.log(player.currentState.pos.x);
-								//localPos = viewport.worldToScreen(msg.state.pos.x, msg.state.pos.y);
-							
+							if (player) {							
 								// Only update position (must be off screen)
 								if (msg.a == undefined) {
 									if (msg.p != undefined) {
@@ -1216,7 +1158,6 @@
 								player.previousState.pos = player.currentState.pos;
 								player.previousState.angle = player.currentState.angle;
 								player.previousState.moving = player.currentState.moving;
-								//player.previousState.currentKeys = player.currentState.keys;
 								player.previousState.health = player.currentState.health;
 								
 								if (msg.p != undefined) {
@@ -1311,8 +1252,6 @@
 							//console.log("Remove bullet", msg.id);
 							var bullet = bulletById(msg.id);
 							if (bullet) {
-								//console.log("Successful", bullet.id);
-								//bullet.currentState.alive = false;
 								bullets.splice(indexOfByBulletId(msg.id), 1);
 							};
 							break;
@@ -1348,32 +1287,14 @@
 										});
 									};
 									
-									//console.log(msg.m);
 									chatMessages.push(msg.m);
-								
-									//var c, chatHTML, chatMessageCount = chatMessages.length;
-									//chat.fadeOut();
-									//for (c = 0; c < chatMessageCount; c++) {
-									//	chatHTML = $("<li>"+chatMessages[c]+"</li>\n");
-									//};
-									//chat.fadeIn();
 									var chatHTML = $("<li><span>"+player.username+":</span> "+msg.m+"</li>\n").hide();
 									chatHTML.appendTo(chat).fadeIn();
 								};
 							};
 							break;
-						/*case MESSAGE_TYPE_CHECK_IN:
-							var player = playerById(msg.id);
-							if (player) {
-								player.idleAge = 0;
-							};
-							break;*/
 					};
 				};
-			
-				//var state = BISON.decode(data);
-				//ctx.clearRect(0, 0, canvas.width, canvas.height);
-				//ctx.fillRect(state.pos.x, 100, 5, 5);
 			});
 			
 			// Main update loop
@@ -1387,12 +1308,10 @@
 				viewport.draw(ctx);
 				
 				var playerMoveDelta = new Vector({x: viewport.pos.x-viewport.previousPos.x, y: viewport.pos.y-viewport.previousPos.y}),
-				//var playerMoveDelta = new Vector({x: 0, y: 0}),
 					starCount = stars.length,
 					star,
 					s;
 					
-				// This is a resource hog
 				for (s = 0; s < starCount; s++) {
 					star = stars[s];
 
@@ -1401,7 +1320,6 @@
 					};
 					
 					if (Math.abs(playerMoveDelta.x) > 0.5 || Math.abs(playerMoveDelta.y) > 0.5) {
-						//console.log(Math.abs(playerMoveDelta.x), Math.abs(playerMoveDelta.y));
 						star.update(playerMoveDelta);
 
 						// Wrap stars around screen
@@ -1445,13 +1363,7 @@
 				if (playerCount > 0) {
 					for (i = 0; i < playerCount; i++) {
 						player = remotePlayers[i];
-						//console.log(player.currentState.pos.x);
 						if (player) {
-							/*if (++player.idleAge > 600) {
-								removedPlayers.push(player);
-								continue;
-							};*/
-							
 							if (viewport.withinBounds(player.currentState.pos.x, player.currentState.pos.y)) {
 								player.draw(ctx);
 							// Player is outside of the viewport
@@ -1502,8 +1414,6 @@
 
 									px = px;
 									py += 10;
-									//ctx.fillStyle = "rgb(255, 0, 0)";
-									//ctx.fillRect(px-2, py, 4, 4);
 								};
 
 								// Check left edge
@@ -1518,8 +1428,6 @@
 
 									px += 10;
 									py = py;
-									//ctx.fillStyle = "rgb(255, 0, 0)";
-									//ctx.fillRect(px, py-2, 4, 4);
 								};
 
 								// Check right edge
@@ -1534,15 +1442,12 @@
 									
 									px -= 10;
 									py = py;
-									//ctx.fillStyle = "rgb(255, 0, 0)";
-									//ctx.fillRect(px-4, py-2, 4, 4);
 								};
 								
 								ctx.save();
 								ctx.translate(px, py);
 								ctx.rotate(angle);
 								ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-								//ctx.fillRect(-2, -2, 4, 4);
 								ctx.beginPath();
 								ctx.moveTo(-5, 0);
 								ctx.lineTo(5, 5);
@@ -1554,20 +1459,7 @@
 						};
 					};
 				};
-				
-				/*// Remove idle players
-				var rp, playerIndex, removedPlayerCount = removedPlayers.length;
-				for (rp = 0; rp < removedPlayerCount; rp++) {
-					player = remotePlayers[rp];
-					playerIndex = indexOfByPlayerId(player.id);
 
-					if (player) {
-						remotePlayers.splice(playerIndex, 1);
-						updatePlayerCount();
-						console.log("Removed idle player: ", player.id);
-					};	
-				};*/
-				
 				// Move draw functionality to another method?
 				if (localPlayer != null) {
 					localPlayer.draw(ctx);
