@@ -30,7 +30,7 @@
 			<section id="chat">
 				<ol id="chatDisplay"></ol>
 				<!-- Should probably be a form input -->
-				<p id="chatInput"></p>
+				<div id="chatInput"><p></p><span id="chatLimit"></span></div>
 			</section>
 		
 			<section id="intro">
@@ -899,8 +899,9 @@
 						case 8: // Backspace
 							if (chatMode) {
 								e.preventDefault();
-								chatMessage = chatMessage.slice(0, chatMessage.length-1);
-								$("#chatInput").html(chatMessage);
+								chatMessage = chatMessage.slice(0, -1);
+								$("#chatInput p").html(chatMessage);
+								$("#chatLimit").html(60-chatMessage.length);
 								return false;
 							};
 							break;
@@ -920,7 +921,13 @@
 								};
 								socket.send(formatMessage(MESSAGE_TYPE_CHAT, {m: msg}));
 								chatMode = false;
-								$("#chatInput").html("").hide();
+								$("#chatInput").hide().find("p").html("");
+							};
+							break;
+						case 27: // Escape
+							if (chatMode) {
+								chatMode = false;
+								$("#chatInput").hide().find("p").html("");
 							};
 							break;
 						case 32: // Space
@@ -946,7 +953,8 @@
 								return;
 							};
 							chatMessage = "";
-							$("#chatInput").html(chatMessage).show();
+							$("#chatLimit").html(60);
+							$("#chatInput").show().find("p").html(chatMessage);
 							chatMode = true;
 							break;
 					};
@@ -958,9 +966,10 @@
 			function onKeypress(e) {
 				var c = e.keyCode || e.charCode;
 				
-				if (chatMode && c != 13) {
+				if (chatMode && c != 13 && c != 8) {
 					chatMessage += (chatMessage.length < 60) ? String.fromCharCode(c) : "";
-					$("#chatInput").html(chatMessage);
+					$("#chatInput p").first().html(chatMessage);
+					$("#chatLimit").html(60-chatMessage.length);
 					return;
 				};
 			};

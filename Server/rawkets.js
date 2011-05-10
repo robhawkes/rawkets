@@ -550,8 +550,10 @@ socket.on("connection", function(client){
 	
 	// Client sent a message
 	client.on("message", function(msg){
-		// Add message to queue
-		msgInQueue.push({client: client, msg: msg});
+		if (msg) {
+			// Add message to queue
+			msgInQueue.push({client: client, msg: msg});
+		};
 		
 		//console.log(BISON.decode(msg));
 		//client.send(msg);
@@ -579,7 +581,7 @@ function update() {
 		player = players[i];
 		
 		if (player) {
-			if (++player.idleAge > 600) { // 10 seconds without ping
+			if (++player.idleAge > 1800) { // 30 seconds without ping
 				removedPlayers.push(player);
 				continue;
 			};
@@ -783,6 +785,11 @@ function unqueueIncomingMessages(msgQueue) {
 	while (msgs.length > 0) {
 		// Grab and remove the oldest message in the array
 		data = msgs.shift();
+		
+		if (!data.msg || !data.client) {
+			continue;
+		};
+		
 		client = data.client;
 		msg = BISON.decode(data.msg);
 		

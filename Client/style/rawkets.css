@@ -305,14 +305,21 @@ form {
 	}
 
 	#chatDisplay li {
-		margin: 0;
-		padding: 0;
+		background: rgba(18, 20, 26, 0.3);
+		border-radius: 5px;
+		-moz-border-radius: 5px;
+		-webkit-border-radius: 5px;
+		clear: both;
+		float: right;
+		line-height: 1em;
+		margin: 0 0 5px 0;
+		padding: 6px 6px 3px 6px;
 	}
 	
 	#chatDisplay span {
 		color: #65c5f6;
 		font-family: "TitilliumText22LBold";
-		padding-right: 10px;
+		padding-right: 5px;
 		text-shadow: rgba(95, 186, 245, 0.4) 0 0 5px;
 	}
 	
@@ -324,12 +331,26 @@ form {
 		font-size: 30px;
 		height: 80px;
 		left: 0;
-		line-height: 80px;
+		line-height: 85px;
 		margin: 0;
 		position: absolute;
 		text-align: center;
 		top: 42px;
 		width: 100%;
+	}
+	
+	#chatInput p {
+		margin: 0;
+		padding: 0;
+	}
+	
+	#chatLimit {
+		color: #5b6373;
+		font-family: "TitilliumText22LThin";
+		margin: 0 40px;
+		position: absolute;
+		right: 0;
+		top: 0;
 	}
 		
 #intro {
