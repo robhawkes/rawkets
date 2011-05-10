@@ -59,7 +59,7 @@ var PlayerState = function(opts) {
 	var currentKeys = {left: false, right: false, up: false, down: false, space: false},
 		pos = new Vector({x: opts.x, y: opts.y}),
 		thrust = 0,
-		maxThrust = 2200,
+		maxThrust = 2800,
 		acc = new Vector({x: 0, y: 0}),
 		angle = 0,
 		moving = false,
@@ -162,8 +162,8 @@ var Player = function(opts) {
 			currentState.moving = false;
 			currentState.thrust = 0;
 			if (Math.abs(currentState.acc.x) > 0.1 || Math.abs(currentState.acc.y) > 0.1) {
-				currentState.acc.x *= 0.96;
-				currentState.acc.y *= 0.96;
+				currentState.acc.x *= 0.97;
+				currentState.acc.y *= 0.97;
 			} else {
 				currentState.acc.x = 0;
 				currentState.acc.y = 0;

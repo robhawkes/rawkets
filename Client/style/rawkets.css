@@ -289,24 +289,47 @@ form {
 		}
 		
 #chat {
-	font-size: 11px;
-	margin: 0 20px 0 0;
 	position: absolute;
-	right: 0;
-	text-align: right;
-	top: 100px;
-};
+	top: 0;
+	width: 100%;
+}
 
-	#chat ol, #chat li {
+	#chatDisplay {
+		font-size: 11px;
+		margin: 0 20px 0 0;
+		padding: 0;
+		position: absolute;
+		right: 0;
+		text-align: right;
+		top: 100px;
+	}
+
+	#chatDisplay li {
 		margin: 0;
 		padding: 0;
 	}
 	
-	#chat span {
+	#chatDisplay span {
 		color: #65c5f6;
 		font-family: "TitilliumText22LBold";
 		padding-right: 10px;
 		text-shadow: rgba(95, 186, 245, 0.4) 0 0 5px;
+	}
+	
+	#chatInput {
+		background: rgba(0, 0, 0, 0.5);
+		color: #fff;
+		display: none;
+		font-family: "TitilliumText22LRegular";
+		font-size: 30px;
+		height: 80px;
+		left: 0;
+		line-height: 80px;
+		margin: 0;
+		position: absolute;
+		text-align: center;
+		top: 42px;
+		width: 100%;
 	}
 		
 #intro {

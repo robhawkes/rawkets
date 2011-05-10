@@ -27,7 +27,11 @@
 				</nav>
 			</header>
 			
-			<section id="chat"><ol></ol></section>
+			<section id="chat">
+				<ol id="chatDisplay"></ol>
+				<!-- Should probably be a form input -->
+				<p id="chatInput"></p>
+			</section>
 		
 			<section id="intro">
 				<p>A multiplayer space shooter built using HTML5 canvas and WebSockets</p>
@@ -848,6 +852,11 @@
 				if (localPlayer) {
 					switch (c) {
 						// Controls
+						case 8: // Backspace
+							if (chatMode) {
+								e.preventDefault();
+							};
+							break;
 						case 32: // Space
 							if (chatMode) {
 								return;
@@ -887,6 +896,14 @@
 
 				if (localPlayer) {
 					switch (c) {
+						case 8: // Backspace
+							if (chatMode) {
+								e.preventDefault();
+								chatMessage = chatMessage.slice(0, chatMessage.length-1);
+								$("#chatInput").html(chatMessage);
+								return false;
+							};
+							break;
 						case 13: // Enter
 							if (chatMode) {
 								if (chatMessage.length < 1) {
@@ -903,6 +920,7 @@
 								};
 								socket.send(formatMessage(MESSAGE_TYPE_CHAT, {m: msg}));
 								chatMode = false;
+								$("#chatInput").html("").hide();
 							};
 							break;
 						case 32: // Space
@@ -928,6 +946,7 @@
 								return;
 							};
 							chatMessage = "";
+							$("#chatInput").html(chatMessage).show();
 							chatMode = true;
 							break;
 					};
@@ -937,10 +956,11 @@
 			};
 			
 			function onKeypress(e) {
-				var c = e.keyCode;
+				var c = e.keyCode || e.charCode;
 				
 				if (chatMode && c != 13) {
-					chatMessage += String.fromCharCode(c);
+					chatMessage += (chatMessage.length < 60) ? String.fromCharCode(c) : "";
+					$("#chatInput").html(chatMessage);
 					return;
 				};
 			};
@@ -1301,15 +1321,24 @@
 							break;
 						case MESSAGE_TYPE_CHAT:
 							if (msg.m) {
-								var player, chat = $("#chat ol");
-								player = playerById(msg.id) || localPlayer;
+								var player, chat = $("#chatDisplay");
+								player = playerById(msg.id);
+								
+								if (!player) {
+									player = (msg.id == socket.transport.sessionid) ? localPlayer : false;
+								};
+								
 								if (player) {
 									if (chatMessages.length > 9) {
 										chatMessages.shift();
+									};
+									
+									if (chat.find("li").size() > 9) {
 										chat.find("li").first().fadeOut(500, function() {
 											$(this).remove();
 										});
 									};
+									
 									//console.log(msg.m);
 									chatMessages.push(msg.m);
 								
