@@ -683,7 +683,12 @@ function unqueueIncomingMessages(msgQueue) {
 		};
 		
 		client = data.client;
-		msg = BISON.decode(data.msg);
+		try {
+			msg = BISON.decode(data.msg);
+		} catch (err) {
+			console.log("Dodgy message: ", data.msg);
+			continue;
+		};
 		
 		// Only deal with messages using the correct protocol
 		if (msg !== undefined && msg.z !== undefined) {
