@@ -541,9 +541,9 @@ function update() {
 	var rp, playerIndex, removedPlayerCount = removedPlayers.length;
 	for (rp = 0; rp < removedPlayerCount; rp++) {
 		player = players[rp];
-		playerIndex = indexOfByPlayerId(player.id);
 		
 		if (player) {
+			playerIndex = indexOfByPlayerId(player.id);
 			players.splice(playerIndex, 1);
 			console.log("Removed player: ", player.id);
 			console.log("Players connected: ", players.length);
