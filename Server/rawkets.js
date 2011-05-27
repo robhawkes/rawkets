@@ -40,7 +40,7 @@ var Vector = function(opts) {
 // Player state object
 var PlayerState = function(opts) {
 	// Public variables
-	var currentKeys = {left: false, right: false, up: false, down: false, space: false},
+	var currentKeys = {left: false, right: false, up: false, down: false, space: false, mine: false},
 		pos = new Vector({x: opts.x, y: opts.y}),
 		thrust = 0,
 		maxThrust = 2800,
@@ -71,7 +71,9 @@ var Player = function(opts) {
 		idleAge = 0,
 		currentState = new PlayerState({x: opts.x, y: opts.y}),
 		previousState = clone(currentState),
-		weaponsHot = true,
+		weaponsHotBullet = true,
+		weaponsHotMine = true,
+		mineCount = 0,
 		rotationSpeed = 0,
 		maxRotationSpeed = 0.09,
 		screen = new Vector({x: opts.w, y: opts.h});
@@ -205,7 +207,9 @@ var Player = function(opts) {
 		update: update,
 		currentState: currentState,
 		previousState: previousState,
-		weaponsHot: weaponsHot,
+		weaponsHotBullet: weaponsHotBullet,
+		weaponsHotMine: weaponsHotMine,
+		mineCount: mineCount,
 		respawn: respawn,
 		screen: screen,
 		withinScreen: withinScreen,
@@ -266,12 +270,24 @@ var getPlayerColour = function(sessionId) {
 var setBulletTimer = function(playerId) {
 	var player = playerById(playerId);
 	if (player) {
-		player.weaponsHot = false;
+		player.weaponsHotBullet = false;
 		var self = player;
 		setTimeout(function() {
 			//console.log("Weapons hot", self.id);
-			self.weaponsHot = true;
+			self.weaponsHotBullet = true;
 		}, 350);
+	};
+};
+
+var setMineTimer = function(playerId) {
+	var player = playerById(playerId);
+	if (player) {
+		player.weaponsHotMine = false;
+		var self = player;
+		setTimeout(function() {
+			//console.log("Weapons hot", self.id);
+			self.weaponsHotMine = true;
+		}, 600);
 	};
 };
 
@@ -279,7 +295,7 @@ var setBulletTimer = function(playerId) {
 var BulletState = function(opts) {
 	// Public variables
 	var pos = new Vector({x: opts.x, y: opts.y}),
-		vel = 6000,
+		vel = 8000,
 		acc = new Vector({x: Math.cos(opts.angle)*vel, y:Math.sin(opts.angle)*vel}),
 		age = 0;
 		
@@ -308,6 +324,46 @@ var Bullet = function(opts) {
 		
 		currentState.pos.x = 2 * currentState.pos.x - previousState.pos.x + currentState.acc.x * dtdt;
 		currentState.pos.y = 2 * currentState.pos.y - previousState.pos.y + currentState.acc.y * dtdt;
+	};
+	
+	return {
+		id: id,
+		playerId: playerId,
+		currentState: currentState,
+		update: update
+	};
+};
+
+// Mine state object
+var MineState = function(opts) {
+	// Public variables
+	var pos = new Vector({x: opts.x, y: opts.y}),
+		age = 0;
+		
+	return {
+		pos: pos,
+		age: age
+	};
+};
+
+// Mine object
+var Mine = function(opts) {
+	// Public variables
+	var id = opts.id || false,
+		playerId = opts.playerId || false,
+		currentState = new MineState({x: opts.x, y: opts.y}),
+		previousState = clone(currentState);
+		
+	// Public methods
+	var update = function() {
+		// Update previous state
+		previousState.pos = clone(currentState.pos);
+		previousState.age = currentState.age;
+		
+		currentState.age++;
+		
+		//currentState.pos.x = 2 * currentState.pos.x - previousState.pos.x + currentState.acc.x * dtdt;
+		//currentState.pos.y = 2 * currentState.pos.y - previousState.pos.y + currentState.acc.y * dtdt;
 	};
 	
 	return {
@@ -392,7 +448,9 @@ var MESSAGE_TYPE_UPDATE_REMOTE_PLAYER_STATE = 0,
 	MESSAGE_TYPE_KILLED_BY = 12,
 	MESSAGE_TYPE_UPDATE_SCORE = 13,
 	MESSAGE_TYPE_CHECK_USERNAME = 14,
-	MESSAGE_TYPE_CHAT = 15;
+	MESSAGE_TYPE_CHAT = 15,
+	MESSAGE_TYPE_NEW_MINE = 16,
+	MESSAGE_TYPE_REMOVE_MINE = 17;
 
 // Start of main game setup
 var http = require("http"), 
@@ -421,7 +479,8 @@ var http = require("http"),
 	players = [],
 	
 	// Weapons
-	bullets = [], // Add this into the player object?
+	bullets = [],
+	mines = [],
 	
 	// Communication
 	msgInQueue = [], // Incoming messages
@@ -490,7 +549,7 @@ function update() {
 	msgInQueue = [];
 	
 	// Update every single player in the game
-	var i, player, bullet, bulletPos, timestamp, client, msg, removedPlayers = [], playerCount = players.length;
+	var i, player, bullet, bulletPos, mine, minePos, timestamp, id, client, msg, removedPlayers = [], playerCount = players.length;
 	for (i = 0; i < playerCount; i++) {
 		player = players[i];
 		
@@ -502,15 +561,15 @@ function update() {
 			
 			player.update(dtdt);
 			
-			if (player.currentState.health > 20 && player.currentState.currentKeys.space) {
-				if (player.weaponsHot) {
+			if (player.currentState.health > 20) {
+				if (player.currentState.currentKeys.space && player.weaponsHotBullet) {
 					bulletPos = new Vector({x: 0, y: 0});
 					timestamp = new Date().getTime();
 
 					bulletPos.x = player.currentState.pos.x+(Math.cos(player.currentState.angle)*7);
 					bulletPos.y = player.currentState.pos.y+(Math.sin(player.currentState.angle)*7);
 					
-					var id = timestamp+player.id.toString()+(Math.round(Math.random()*99));
+					id = timestamp+player.id.toString()+(Math.round(Math.random()*99));
 					
 					bullet = new Bullet({id: id, playerId: player.id, x: bulletPos.x, y: bulletPos.y, a: player.currentState.angle});
 					bullets.push(bullet);
@@ -520,6 +579,25 @@ function update() {
 					socket.broadcast(formatMessage(MESSAGE_TYPE_NEW_BULLET, {id: id, x: Math.floor(bullet.currentState.pos.x), y: Math.floor(bullet.currentState.pos.y), a: player.currentState.angle}));
 					
 					setBulletTimer(players[i].id);
+				};
+				
+				if (player.currentState.currentKeys.mine && player.weaponsHotMine && player.mineCount < 3) {
+					minePos = new Vector({x: 0, y: 0});
+					timestamp = new Date().getTime();
+
+					minePos.x = player.currentState.pos.x;
+					minePos.y = player.currentState.pos.y;
+					
+					id = timestamp+player.id.toString()+(Math.round(Math.random()*99));
+					
+					mine = new Mine({id: id, playerId: player.id, x: minePos.x, y: minePos.y});
+					mines.push(mine);
+					
+					player.mineCount++;
+					
+					socket.broadcast(formatMessage(MESSAGE_TYPE_NEW_MINE, {id: id, x: Math.floor(mine.currentState.pos.x), y: Math.floor(mine.currentState.pos.y)}));
+					
+					setMineTimer(players[i].id); 
 				};
 			};
 		
@@ -553,8 +631,8 @@ function update() {
 		};	
 	};
 	
-	// Update every single bullet in the game
-	var b, bulletsToUpdate = [], alive, deadBullets = [], deadPlayers = [], bulletCount = bullets.length;
+	// Update every single weapon in the game
+	var b, bulletsToUpdate = [], deadBullets = [], bulletCount = bullets.length, m, deadMines = [], mineCount = mines.length, alive, deadBulletPlayers = [], deadMinePlayers = [], p, dx, dy, dd, d;
 	playerCount = players.length;
 	for (b = 0; b < bulletCount; b++) {
 		bullet = bullets[b];
@@ -568,7 +646,7 @@ function update() {
 			bullet.update(dtdt);
 			
 			// Check for kills
-			for (var p = 0; p < playerCount; p++) {
+			for (p = 0; p < playerCount; p++) {
 				player = players[p];
 				
 				if (player.id == bullet.playerId) {
@@ -576,17 +654,17 @@ function update() {
 				};
 				
 				if (player && player.currentState.health > 0) {
-					var dx = bullet.currentState.pos.x - player.currentState.pos.x;
-					var dy = bullet.currentState.pos.y - player.currentState.pos.y;
-					var dd = (dx * dx) + (dy * dy);
-					var d = Math.sqrt(dd);
+					dx = bullet.currentState.pos.x - player.currentState.pos.x;
+					dy = bullet.currentState.pos.y - player.currentState.pos.y;
+					dd = (dx * dx) + (dy * dy);
+					d = Math.sqrt(dd);
 			
 					if (d < 10) {
 						if (player.currentState.health > 0) {
 							player.currentState.health -= 35;
 						
 							if (player.currentState.health <= 0) {
-								deadPlayers.push({player: player, bulletPlayerId: bullet.playerId});
+								deadBulletPlayers.push({player: player, bulletPlayerId: bullet.playerId});
 							};
 							
 							socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
@@ -609,10 +687,10 @@ function update() {
 		msgOutQueue.push({client: client, msg: msg});
 	};
 	
-	var dp, bulletPlayerId, bulletPlayer, bulletClient, deadPlayerCount = deadPlayers.length;
-	for (dp = 0; dp < deadPlayerCount; dp++) {
-		player = deadPlayers[dp].player;
-		bulletPlayerId = deadPlayers[dp].bulletPlayerId;
+	var dpb, bulletPlayerId, bulletPlayer, bulletClient, deadBulletPlayerCount = deadBulletPlayers.length;
+	for (dpb = 0; dpb < deadBulletPlayerCount; dpb++) {
+		player = deadBulletPlayers[dp].player;
+		bulletPlayerId = deadBulletPlayers[dp].bulletPlayerId;
 		
 		if (player) {
 			killPlayer(player.id, bulletPlayerId);
@@ -641,6 +719,101 @@ function update() {
 			socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
 			bullets.splice(bulletIndex, 1);
 			//console.log("Remove bullet", bullets.length);
+		};
+	};
+	
+	// Mines
+	for (m = 0; m < mineCount; m++) {
+		mine = mines[m];
+		
+		if (mine) {
+			if (mine.currentState.age > 1500) {
+				deadMines.push(mine);
+				continue;
+			};
+			
+			mine.update();
+			
+			// Check for kills
+			for (p = 0; p < playerCount; p++) {
+				player = players[p];
+				
+				if (player.id == mine.playerId) {
+					continue;
+				};
+				
+				if (player && player.currentState.health > 0) {
+					dx = mine.currentState.pos.x - player.currentState.pos.x;
+					dy = mine.currentState.pos.y - player.currentState.pos.y;
+					dd = (dx * dx) + (dy * dy);
+					d = Math.sqrt(dd);
+			
+					if (d < 30) {
+						if (player.currentState.health > 0) {
+							player.currentState.health -= 90;
+						
+							if (player.currentState.health <= 0) {
+								deadMinePlayers.push({player: player, minePlayerId: mine.playerId});
+							};
+							
+							socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_MINE, {id: mine.id}));
+						};
+						deadMines.push(mine);
+						continue;
+					};
+				};
+			};
+			/*minesToUpdate.push({
+				id: mine.id, 
+				x: Math.floor(mine.currentState.pos.x),
+				y: Math.floor(mine.currentState.pos.y)
+			});*/
+		};
+	};
+	
+	/*
+	if (minesToUpdate.length > 0) {
+		msg = formatMessage(MESSAGE_TYPE_UPDATE_MINE_STATE, {b: bulletsToUpdate});
+		msgOutQueue.push({client: client, msg: msg});
+	};
+	*/
+	
+	var dpm, minePlayerId, minePlayer, mineClient, deadMinePlayerCount = deadMinePlayers.length;
+	for (dpm = 0; dpm < deadMinePlayerCount; dpm++) {
+		player = deadMinePlayers[dpm].player;
+		minePlayerId = deadMinePlayers[dpm].minePlayerId;
+		
+		if (player) {
+			killPlayer(player.id, minePlayerId);
+			
+			minePlayer = playerById(minePlayerId);
+			mineClient = socket.clients[minePlayerId];
+			if (minePlayer && mineClient) {
+				minePlayer.currentState.score++;
+				mineClient.send(formatMessage(MESSAGE_TYPE_UPDATE_SCORE, {s: minePlayer.currentState.score}));
+			};
+			
+			client = socket.clients[player.id];
+			if (client) {
+				player.sendUpdate();
+			};
+		};
+	};
+	
+	// Remove dead mines
+	var dm, mineIndex, deadMineCount = deadMines.length;
+	for (dm = 0; dm < deadMineCount; dm++) {
+		mine = deadMines[dm];
+		mineIndex = indexOfByMineId(deadMines[dm].id);
+		
+		if (mine) {
+			socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_MINE, {id: mine.id}));
+			mines.splice(mineIndex, 1);
+			
+			var minePlayer = playerById(mine.playerId);
+			if (minePlayer) {
+				minePlayer.mineCount--;
+			};
 		};
 	};
 	
@@ -785,6 +958,9 @@ function unqueueIncomingMessages(msgQueue) {
 							case 40: // Down
 								player.currentState.currentKeys.down = true;
 								break;
+							case 77: // m
+								player.currentState.currentKeys.mine = true;
+								break;
 						};
 					};
 					break;
@@ -807,6 +983,9 @@ function unqueueIncomingMessages(msgQueue) {
 								break;
 							case 40: // Down
 								player.currentState.currentKeys.down = false;
+								break;
+							case 77: // m
+								player.currentState.currentKeys.mine = false;
 								break;
 						};
 					};
@@ -940,6 +1119,17 @@ function indexOfByPlayerId(id) {
 function indexOfByBulletId(id) {
 	for (var i = 0; i < bullets.length; i++) {
 		if (bullets[i].id == id) {
+			return i;
+		};
+	};
+
+	return false;
+};
+
+// Find mine index by ID
+function indexOfByMineId(id) {
+	for (var i = 0; i < mines.length; i++) {
+		if (mines[i].id == id) {
 			return i;
 		};
 	};

@@ -298,7 +298,7 @@
 			// Player state object
 			var PlayerState = function(opts) {
 				// Public variables
-				var currentKeys = {left: false, right: false, up: false, down: false, space: false},
+				var currentKeys = {left: false, right: false, up: false, down: false, space: false, mine: false},
 					previousKeys = clone(currentKeys),
 					activeKeys = clone(currentKeys),
 					pos = new Vector({x: opts.x, y: opts.y}),
@@ -312,12 +312,14 @@
 					previousKeys.up = currentKeys.up;
 					previousKeys.down = currentKeys.down;
 					previousKeys.space = currentKeys.space;
+					previousKeys.mine = currentKeys.mine;
 					
 					currentKeys.left = activeKeys.left;
 					currentKeys.right = activeKeys.right;
 					currentKeys.up = activeKeys.up;
 					currentKeys.down = activeKeys.down;
 					currentKeys.space = activeKeys.space;
+					currentKeys.mine = activeKeys.mine;
 				};
 
 				return {
@@ -464,6 +466,59 @@
 					ctx.rotate(currentState.angle);
 					ctx.fillStyle = "rgb(255, 255, 0)";
 					ctx.fillRect(-6, -1, 6, 2);
+					ctx.restore();
+				};
+
+				return {
+					id: id,
+					currentState: currentState,
+					update: update,
+					draw: draw
+				};
+			};
+			
+			// Mine state object
+			var MineState = function(opts) {
+				// Public variables
+				var pos = new Vector({x: opts.x, y: opts.y}),
+					age = 0;
+
+				return {
+					pos: pos,
+					age: age
+				};
+			};
+
+			// Mine object
+			var Mine = function(opts) {
+				// Public variables
+				var id = opts.id,
+					currentState = new MineState({x: opts.x, y: opts.y});
+					
+				var update = function() {
+					currentState.age++;
+				};
+
+				// Public methods
+				var draw = function(ctx) {
+					var localPos = viewport.worldToScreen(currentState.pos.x, currentState.pos.y);
+					ctx.save();
+					ctx.translate(localPos.x, localPos.y);
+					
+					// Damage radius
+					ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
+					ctx.beginPath();
+					ctx.arc(0, 0, 30, 0, Math.PI*2, false);
+					ctx.closePath();
+					ctx.fill();
+					
+					// Mine
+					ctx.fillStyle = "rgb(255, 0, 0)";
+					ctx.beginPath();
+					ctx.arc(0, 0, 5, 0, Math.PI*2, false);
+					ctx.closePath();
+					ctx.fill();
+					
 					ctx.restore();
 				};
 
@@ -797,6 +852,27 @@
 				return false;
 			};
 			
+			// Find mine by ID
+			function mineById(id) {
+				for (var i = 0; i < mines.length; i++) {
+					if (mines[i].id == id)
+						return mines[i];
+				};
+
+				return false;
+			};
+
+			// Find mine index by ID
+			function indexOfByMineId(id) {
+				for (var i = 0; i < mines.length; i++) {
+					if (mines[i].id == id) {
+						return i;
+					};
+				};
+
+				return false;
+			};
+			
 			// Event listeners
 			window.addEventListener("keydown", onKeydown, false);
 			window.addEventListener("keyup", onKeyup, false);
@@ -831,6 +907,9 @@
 							break;
 						case 40: // Down
 							localPlayer.currentState.activeKeys.down = true;
+							break;
+						case 77: // M
+							localPlayer.currentState.activeKeys.mine = true;
 							break;
 						case 83: // S
 							if (chatMode) {
@@ -904,6 +983,9 @@
 							break;
 						case 40: // Down
 							localPlayer.currentState.activeKeys.down = false;
+							break;
+						case 77: // M
+							localPlayer.currentState.activeKeys.mine = false;
 							break;
 						case 84: // T
 							if (chatMode) {
@@ -1007,6 +1089,8 @@
 				MESSAGE_TYPE_UPDATE_SCORE = 13,
 				MESSAGE_TYPE_CHECK_USERNAME = 14,
 				MESSAGE_TYPE_CHAT = 15,
+				MESSAGE_TYPE_NEW_MINE = 16,
+				MESSAGE_TYPE_REMOVE_MINE = 17,
 				//MESSAGE_TYPE_CHECK_IN = 16,
 			
 			// Run game
@@ -1035,6 +1119,7 @@
 				
 			// Weapons
 				bullets = [],
+				mines = [],
 				
 			// Chat
 				chatMode = false,
@@ -1256,6 +1341,20 @@
 								bullets.splice(indexOfByBulletId(msg.id), 1);
 							};
 							break;
+						case MESSAGE_TYPE_NEW_MINE:
+							var mine;
+							//localPos = viewport.worldToScreen(msg.x, msg.y);
+							mine = new Mine({id: msg.id, x: msg.x, y: msg.y});
+							mines.push(mine);
+							//sound.play("mine");
+							break;
+						case MESSAGE_TYPE_REMOVE_MINE:
+							//console.log("Remove bullet", msg.id);
+							var mine = mineById(msg.id);
+							if (mine) {
+								mines.splice(indexOfByMineId(msg.id), 1);
+							};
+							break;
 						case MESSAGE_TYPE_KILLED_BY:
 							var player = playerById(msg.id);
 							if (player) {
@@ -1357,6 +1456,33 @@
 
 					if (bullet) {
 						bullets.splice(bulletIndex, 1);
+					};
+				};
+				
+				var m, mine, deadMines = [], mineCount = mines.length;
+				if (mineCount > 0) {
+					for (m = 0; m < mineCount; m++) {
+						mine = mines[m];
+						if (mine) {
+							mine.update();
+							
+							if (mine.currentState.age < 750) {
+								mine.draw(ctx);
+							} else {
+								deadMines.push(mine);
+							};
+						};
+					};
+				};
+				
+				// Remove dead mines
+				var dm, mineIndex, deadMineCount = deadMines.length;
+				for (dm = 0; dm < deadMineCount; dm++) {
+					mine = deadMines[dm];
+					mineIndex = indexOfByMineId(deadMines[dm].id);
+
+					if (mine) {
+						mines.splice(mineIndex, 1);
 					};
 				};
 				
@@ -1507,6 +1633,15 @@
 					socket.send(msg);
 				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.space && localPlayer.currentState.currentKeys.space != localPlayer.currentState.previousKeys.space) {
 					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {k: 32});
+					socket.send(msg);
+				};
+				
+				// Fire mine
+				if (localPlayer != null && localPlayer.currentState.currentKeys.mine && localPlayer.currentState.currentKeys.mine != localPlayer.currentState.previousKeys.mine) {
+					var msg = formatMessage(MESSAGE_TYPE_ENABLE_PLAYER_KEY, {k: 77});
+					socket.send(msg);
+				} else if (localPlayer != null && !localPlayer.currentState.currentKeys.mine && localPlayer.currentState.currentKeys.mine != localPlayer.currentState.previousKeys.mine) {
+					var msg = formatMessage(MESSAGE_TYPE_DISABLE_PLAYER_KEY, {k: 77});
 					socket.send(msg);
 				};
 				
