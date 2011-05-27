@@ -667,7 +667,7 @@ function update() {
 								deadBulletPlayers.push({player: player, bulletPlayerId: bullet.playerId});
 							};
 							
-							socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
+							//socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_BULLET, {id: bullet.id}));
 						};
 						deadBullets.push(bullet);
 						continue;
@@ -689,8 +689,8 @@ function update() {
 	
 	var dpb, bulletPlayerId, bulletPlayer, bulletClient, deadBulletPlayerCount = deadBulletPlayers.length;
 	for (dpb = 0; dpb < deadBulletPlayerCount; dpb++) {
-		player = deadBulletPlayers[dp].player;
-		bulletPlayerId = deadBulletPlayers[dp].bulletPlayerId;
+		player = deadBulletPlayers[dpb].player;
+		bulletPlayerId = deadBulletPlayers[dpb].bulletPlayerId;
 		
 		if (player) {
 			killPlayer(player.id, bulletPlayerId);
@@ -756,7 +756,7 @@ function update() {
 								deadMinePlayers.push({player: player, minePlayerId: mine.playerId});
 							};
 							
-							socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_MINE, {id: mine.id}));
+							//socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_MINE, {id: mine.id}));
 						};
 						deadMines.push(mine);
 						continue;
@@ -810,7 +810,7 @@ function update() {
 			socket.broadcast(formatMessage(MESSAGE_TYPE_REMOVE_MINE, {id: mine.id}));
 			mines.splice(mineIndex, 1);
 			
-			var minePlayer = playerById(mine.playerId);
+			minePlayer = playerById(mine.playerId);
 			if (minePlayer) {
 				minePlayer.mineCount--;
 			};

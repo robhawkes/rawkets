@@ -909,6 +909,9 @@
 							localPlayer.currentState.activeKeys.down = true;
 							break;
 						case 77: // M
+							if (chatMode) {
+								return;
+							};
 							localPlayer.currentState.activeKeys.mine = true;
 							break;
 						case 83: // S
@@ -985,6 +988,9 @@
 							localPlayer.currentState.activeKeys.down = false;
 							break;
 						case 77: // M
+							if (chatMode) {
+								return;
+							};
 							localPlayer.currentState.activeKeys.mine = false;
 							break;
 						case 84: // T
@@ -1466,7 +1472,7 @@
 						if (mine) {
 							mine.update();
 							
-							if (mine.currentState.age < 750) {
+							if (mine.currentState.age < 1500) {
 								mine.draw(ctx);
 							} else {
 								deadMines.push(mine);
