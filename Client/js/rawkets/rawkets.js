@@ -1,7 +1,7 @@
 (function() {
 	// Set up rawkets namespace
-	var rawkets = rawkets || {};
-	var r = rawkets;
+	var rawkets = rawkets || {},
+ 		r = rawkets;
 	
 	// Namespace helper function taken from [JavaScript Patterns](http://www.amazon.co.uk/JavaScript-Patterns-Stoyan-Stefanov/dp/0596806752/) book.
 	rawkets.namespace = function(namespace_str) {
@@ -25,27 +25,8 @@
 		
 		return parent;
 	};
-	
-	// Global event dispatcher to decouple objects and events
-	// Based on the Obsersver pattern from http://stackoverflow.com/questions/4458712/custom-events-observer-pattern
-	r.namespace("events.Dispatcher");
-	rawkets.events.Dispatcher = {
-		handlers : {},
-		listen: function (event, handler) {
-			if (typeof(r.events.Dispatcher.handlers[event]) == "undefined")
-				r.events.Dispatcher.handlers[event] = []; 
-		
-			r.events.Dispatcher.handlers[event].push(handler);
-		},
-		fire: function (eventName, data) {
-			if (r.events.Dispatcher.handlers[eventName]) {
-				for (var i = 0; i < r.events.Dispatcher.handlers[eventName].length; i++) {
-					r.events.Dispatcher.handlers[eventName][i](data);
-				};
-			};
-		}
-	};
-	
+
+	/*
 	r.namespace("input");
 	rawkets.input = (function() {
 		// Dependencies
@@ -311,6 +292,7 @@
 			init: init
 		};
 	})();
+	*/
 	
 	// Expose rawkets to the global object
 	window.rawkets = window.r = rawkets;
