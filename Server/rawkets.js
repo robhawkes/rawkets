@@ -351,14 +351,14 @@ var Mine = function(opts) {
 	// Public variables
 	var id = opts.id || false,
 		playerId = opts.playerId || false,
-		currentState = new MineState({x: opts.x, y: opts.y}),
-		previousState = clone(currentState);
+		currentState = new MineState({x: opts.x, y: opts.y});
+		//previousState = clone(currentState);
 		
 	// Public methods
 	var update = function() {
 		// Update previous state
-		previousState.pos = clone(currentState.pos);
-		previousState.age = currentState.age;
+		//previousState.pos = clone(currentState.pos);
+		//previousState.age = currentState.age;
 		
 		currentState.age++;
 		
@@ -595,7 +595,7 @@ function update() {
 					
 					player.mineCount++;
 					
-					socket.broadcast(formatMessage(MESSAGE_TYPE_NEW_MINE, {id: id, x: Math.floor(mine.currentState.pos.x), y: Math.floor(mine.currentState.pos.y)}));
+					socket.broadcast(formatMessage(MESSAGE_TYPE_NEW_MINE, {id: id, pid: player.id, x: Math.floor(mine.currentState.pos.x), y: Math.floor(mine.currentState.pos.y)}));
 					
 					setMineTimer(players[i].id); 
 				};
@@ -682,10 +682,12 @@ function update() {
 		};
 	};
 	
-	if (bulletsToUpdate.length > 0) {
+	// Removed in an attempt to predict/animate this on the client to save bandwidth
+	// A bullet will never change trajectory, so why bother updating state?
+	/*if (bulletsToUpdate.length > 0) {
 		msg = formatMessage(MESSAGE_TYPE_UPDATE_BULLET_STATE, {b: bulletsToUpdate});
 		msgOutQueue.push({client: client, msg: msg});
-	};
+	};*/
 	
 	var dpb, bulletPlayerId, bulletPlayer, bulletClient, deadBulletPlayerCount = deadBulletPlayers.length;
 	for (dpb = 0; dpb < deadBulletPlayerCount; dpb++) {
@@ -907,7 +909,7 @@ function unqueueIncomingMessages(msgQueue) {
 						code = 1; // Valid and available username
 					};
 					
-					rawMsg = (code == 1) ? {c: code} : {c: code, r: response};
+					rawMsg = (code == 1) ? {id: client.sessionId, c: code} : {id: client.sessionId, c: code, r: response};
 					client.send(formatMessage(MESSAGE_TYPE_CHECK_USERNAME, rawMsg));
 					break;
 				case MESSAGE_TYPE_NEW_PLAYER:
@@ -927,6 +929,14 @@ function unqueueIncomingMessages(msgQueue) {
 							player = players[i];
 							playerColour = getPlayerColour(player.id);
 							client.send(formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: player.id, s: player.currentState, c: playerColour, u: player.username}));
+						};
+					};
+					
+					var m, mineCount = mines.length, mine;
+					if (mineCount > 0) {
+						for (m = 0; m < mineCount; m++) {
+							mine = mines[m];
+							client.send(formatMessage(MESSAGE_TYPE_NEW_MINE, {id: mine.id, pid: mine.playerId, x: Math.floor(mine.currentState.pos.x), y: Math.floor(mine.currentState.pos.y)}));
 						};
 					};
 					
@@ -1071,7 +1081,7 @@ function unqueueOutgoingMessages(msgQueue) {
 						};
 					};
 					break;
-				case MESSAGE_TYPE_UPDATE_BULLET_STATE:
+				/*case MESSAGE_TYPE_UPDATE_BULLET_STATE: // Depricated
 					// Only broadcast this in full to players that will see this in their screen
 					excudedSessionIds = [];
 					playerCount = players.length;
@@ -1088,7 +1098,7 @@ function unqueueOutgoingMessages(msgQueue) {
 						};
 					};
 					socket.broadcast(data.msg);
-					break;
+					break;*/
 			};
 		};
 	};

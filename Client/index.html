@@ -440,11 +440,14 @@
 				// Public variables
 				var pos = new Vector({x: opts.x, y: opts.y}),
 					angle = opts.angle,
+					vel = 8000,
+					acc = new Vector({x: Math.cos(opts.angle)*vel, y:Math.sin(opts.angle)*vel}),
 					age = 0;
 
 				return {
 					pos: pos,
 					age: age,
+					acc: acc,
 					angle: angle
 				};
 			};
@@ -453,16 +456,27 @@
 			var Bullet = function(opts) {
 				// Public variables
 				var id = opts.id,
-					currentState = new BulletState({x: opts.x, y: opts.y, angle: opts.angle});
+					currentState = new BulletState({x: opts.x, y: opts.y, angle: opts.angle}),
+					previousState = clone(currentState);
 					
 				var update = function() {
+					// Update previous state
+					previousState.pos = clone(currentState.pos);
+					previousState.age = currentState.age;
+
 					currentState.age++;
+					
+					// This is always going to be a little off because latency isn't being compensated
+					// Also, dropped packets will mean a bullet could seemingly never appear on the client
+					currentState.pos.x = 2 * currentState.pos.x - previousState.pos.x + currentState.acc.x * dtdt;
+					currentState.pos.y = 2 * currentState.pos.y - previousState.pos.y + currentState.acc.y * dtdt;
 				};
 
 				// Public methods
 				var draw = function(ctx) {
+					var localPos = viewport.worldToScreen(currentState.pos.x, currentState.pos.y);
 					ctx.save();
-					ctx.translate(currentState.pos.x, currentState.pos.y);
+					ctx.translate(localPos.x, localPos.y);
 					ctx.rotate(currentState.angle);
 					ctx.fillStyle = "rgb(255, 255, 0)";
 					ctx.fillRect(-6, -1, 6, 2);
@@ -493,6 +507,7 @@
 			var Mine = function(opts) {
 				// Public variables
 				var id = opts.id,
+					playerId = opts.playerId,
 					currentState = new MineState({x: opts.x, y: opts.y});
 					
 				var update = function() {
@@ -505,15 +520,17 @@
 					ctx.save();
 					ctx.translate(localPos.x, localPos.y);
 					
+					var colour = (playerId == localPlayer.id) ? "0, 255, 0" : "255, 0, 0";
+					
 					// Damage radius
-					ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
+					ctx.fillStyle = "rgba("+colour+", 0.2)";
 					ctx.beginPath();
 					ctx.arc(0, 0, 30, 0, Math.PI*2, false);
 					ctx.closePath();
 					ctx.fill();
 					
 					// Mine
-					ctx.fillStyle = "rgb(255, 0, 0)";
+					ctx.fillStyle = "rgb("+colour+")";
 					ctx.beginPath();
 					ctx.arc(0, 0, 5, 0, Math.PI*2, false);
 					ctx.closePath();
@@ -1101,6 +1118,11 @@
 			
 			// Run game
 				runUpdate = true,
+				
+			// Fixed physics update
+				t = 0,
+				dt = 1/30,
+				dtdt = dt*dt,
 			
 			// Socket settings
 				WEB_SOCKET_SWF_LOCATION = "lib/WebSocketMain.swf",
@@ -1205,7 +1227,7 @@
 							$("#overlay").stop().animate({backgroundColor: "rgba(0, 0, 0, 0)"});
 							$("#intro").stop().fadeOut();
 
-							localPlayer = new Player({id: false, local: true, x: 1000, y: 1000, angle: 0, colour: false, username: localPlayerUsername});
+							localPlayer = new Player({id: msg.id, local: true, x: 1000, y: 1000, angle: 0, colour: false, username: localPlayerUsername});
 							// Move to message queuing system
 							var msg = formatMessage(MESSAGE_TYPE_NEW_PLAYER, {u: localPlayerUsername, w: viewport.dimensions.width+50, h: viewport.dimensions.height+50, s: localPlayer.currentState});
 							socket.send(msg);
@@ -1318,13 +1340,13 @@
 							};
 							break;
 						case MESSAGE_TYPE_NEW_BULLET:
-							var bullet, localpos;
-							localPos = viewport.worldToScreen(msg.x, msg.y);
-							bullet = new Bullet({id: msg.id, x: localPos.x, y: localPos.y, angle: msg.a});
+							var bullet;
+							//localPos = viewport.worldToScreen(msg.x, msg.y);
+							bullet = new Bullet({id: msg.id, x: msg.x, y: msg.y, angle: msg.a});
 							bullets.push(bullet);
 							sound.play("laser");
 							break;
-						case MESSAGE_TYPE_UPDATE_BULLET_STATE:
+						/*case MESSAGE_TYPE_UPDATE_BULLET_STATE: // Depricated
 							var incBullets = msg.b, bullet, localPos, b, bulletCount = bullets.length;
 
 							for (b = 0; b < bulletCount; b++) {
@@ -1339,7 +1361,7 @@
 									bullet.currentState.pos.y = localPos.y;
 								};
 							};
-							break;
+							break;*/
 						case MESSAGE_TYPE_REMOVE_BULLET:
 							//console.log("Remove bullet", msg.id);
 							var bullet = bulletById(msg.id);
@@ -1350,7 +1372,7 @@
 						case MESSAGE_TYPE_NEW_MINE:
 							var mine;
 							//localPos = viewport.worldToScreen(msg.x, msg.y);
-							mine = new Mine({id: msg.id, x: msg.x, y: msg.y});
+							mine = new Mine({id: msg.id, playerId: msg.pid, x: msg.x, y: msg.y});
 							mines.push(mine);
 							//sound.play("mine");
 							break;
@@ -1405,6 +1427,7 @@
 			
 			// Main update loop
 			function update() {
+				// Update local input
 				if (localPlayer != null) {
 					localPlayer.currentState.updateKeys();
 				};
@@ -1443,6 +1466,7 @@
 					for (b = 0; b < bulletCount; b++) {
 						bullet = bullets[b];
 						if (bullet) {
+							// Local physics update (non-authoritative)
 							bullet.update();
 							
 							if (bullet.currentState.age < 75) {
@@ -1655,10 +1679,14 @@
 				net.draw(ctx);
 				
 				// Schedule next game update
+				// Move to requestAnimationFrame to better handle differing hardware
 				if (runUpdate) {
 					setTimeout(update, 1000/60); // Remember, this is however long it take to update PLUS 60ms
 				};
 			};
+			
+			// Move game time forward
+			t += dt;
 			
 			// Connect to server
 			connect();
