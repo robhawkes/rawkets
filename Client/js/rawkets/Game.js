@@ -12,7 +12,9 @@ rawkets.Game = function() {
 	// Shortcuts
 	var e = r.Event;
 	
-	// Properties
+	/**************************************************
+	** PROPERTIES
+	**************************************************/
 	
 	// Networking
 	var socket,
@@ -38,7 +40,10 @@ rawkets.Game = function() {
 	// Remote entities
 		players;
 	
-	// Methods
+	/**************************************************
+	** EVENT HANDLERS
+	**************************************************/
+	
 	var setEventHandlers = function() {
 		e.listen("SOCKET_CONNECTED", onSocketConnected);
 		e.listen("CLOCK_READY", onClockReady);
@@ -51,7 +56,6 @@ rawkets.Game = function() {
 		window.addEventListener("keyup", onKeyup, false);
 	};
 	
-	// Event handlers
 	var onSocketConnected = function() {
 		message = new r.Message(socket);
 		message.setEventHandlers();
@@ -78,7 +82,7 @@ rawkets.Game = function() {
 		if (!msg.id || !msg.s) {
 			console.log("Failed to add new player", msg.id, msg.s);
 		};
-		var player = new Player(msg.id, msg.s.p.x, msg.s.p.y, msg.s.v, msg.s.f, msg.s.a);
+		var player = new r.Player(msg.id, msg.s.p.x, msg.s.p.y, msg.s.v, msg.s.f, msg.s.a);
 		players.push(player);
 		console.log("Added new player", player);
 	};
@@ -88,8 +92,8 @@ rawkets.Game = function() {
 			//console.log("Update local");
 			//document.getElementById("outputServer").innerHTML = "localPlayer server: ["+msg.s.p.x+", "+msg.s.p.y+"], ["+msg.s.v.x+", "+msg.s.v.y+"], "+msg.s.f+", "+msg.s.a;
 			// If required, perform correction on client-side prediction
-			rhistory.correction(msg.t, msg.s, msg.i, localPlayer, rk4);
-		} else {
+			history.correction(msg.t, msg.s, msg.i, localPlayer, rk4);
+		} else if (players) {
 			//document.getElementById("outputServerRemote").innerHTML = "remotePlayer server: ["+msg.s.p.x+", "+msg.s.p.y+"], ["+msg.s.v.x+", "+msg.s.v.y+"], "+msg.s.f+", "+msg.s.a;
 			var player = playerById(msg.id);
 			if (player) {
@@ -145,7 +149,35 @@ rawkets.Game = function() {
 		//console.log("Key down [code: "+e.keyCode+"]");
 	};
 	
-	// Start game
+	/**************************************************
+	** FINDING PLAYERS
+	**************************************************/
+
+	// Find player by ID
+	function playerById(id) {
+		for (var i = 0; i < players.length; i++) {
+			if (players[i].id == id)
+				return players[i];
+		};
+
+		return false;
+	};
+
+	// Find player index by ID
+	function indexOfByPlayerId(id) {
+		for (var i = 0; i < players.length; i++) {
+			if (players[i].id == id) {
+				return i;
+			};
+		};
+
+		return false;
+	};
+	
+	/**************************************************
+	** START GAME
+	**************************************************/
+	
 	var start = function() {		
 		localPlayer = new r.Player(socket.getSessionId()); // Should be getting start pos from server
 		
@@ -166,7 +198,10 @@ rawkets.Game = function() {
 		message.send(message.format("SYNC", {}), true);
 	};
 	
-	// Update game
+	/**************************************************
+	** UPDATE GAME
+	**************************************************/
+	
 	var update = function() {
 		var newTime = clock.time(),
 			frameTime = (newTime - currentTime)/1000; // Convert from ms to seconds
@@ -254,7 +289,10 @@ rawkets.Game = function() {
 		};
 	};
 	
-	// Initialisation
+	/**************************************************
+	** INITIALISE GAME
+	**************************************************/
+	
 	var init = function(canvas) {
 		runUpdate = false;
 		
