@@ -16,7 +16,11 @@ rawkets.Message = function(socket) {
 		
 	// Types
 		types = {
-			MESSAGE_TYPE_PING: 1
+			PING: 1,
+			SYNC: 2,
+			NEW_PLAYER: 3,
+			UPDATE_PLAYER: 4,
+			UPDATE_INPUT: 5
 		};
 	
 	// Methods
@@ -39,11 +43,13 @@ rawkets.Message = function(socket) {
 	};
 	
 	var send = function(msg, immediately) {
+		// Send message immediately
 		if (msg && immediately) {
 			socket.send(msg);
 			return;
 		};
 		
+		// Otherwise add message to the queue
 		outgoing.push(msg);
 	};
 	
@@ -53,21 +59,29 @@ rawkets.Message = function(socket) {
 		if (msg.z !== undefined) {
 			// Make this automated so you can refer message type from the received message
 			switch (msg.z) {
-				case types.MESSAGE_TYPE_PING:
-					e.fire("MESSAGE_TYPE_PING", msg);
+				case types.PING:
+					e.fire("PING", msg);
+					break;
+				case types.SYNC:
+					e.fire("SYNC", msg);
+					break;
+				case types.NEW_PLAYER:
+					e.fire("NEW_PLAYER", msg);
+					break;
+				case types.UPDATE_PLAYER:
+					e.fire("UPDATE_PLAYER", msg);
 					break;
 			};
 		};
 	};
 	
-	var init = function() {
+	var setEventHandlers = function() {
 		e.listen("SOCKET_MESSAGE", onSocketMessage);
 	};
 	
 	return {
-		init: init,
-		types: types,
 		format: format,
-		send: send
+		send: send,
+		setEventHandlers: setEventHandlers
 	};
 };

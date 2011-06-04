@@ -61,7 +61,7 @@ rawkets.Clock = function(message) {
 		_bursting = true;
 		
 		// Add event listener here to deal with incoming data from the server
-		e.listen("MESSAGE_TYPE_PING", onMessageEvent);
+		e.listen("PING", onPing);
 		
 		requestServerTime();
 	};
@@ -70,7 +70,7 @@ rawkets.Clock = function(message) {
 		// Remove event listener that deals with incoming data from the server
 	};
 	
-	var onMessageEvent = function(msg) {
+	var onPing = function(msg) {
 		_responsePending = false;
 
 		var serverTimeStamp = msg.t;
@@ -80,8 +80,8 @@ rawkets.Clock = function(message) {
 		if (_bursting) {
 			if (_deltas.length == _maxDeltas) {
 				_bursting = false;
-				e.fire("CLOCK_READY");
 				console.log("Clock ready", new Date().getTime(), time(), _syncTimeDelta);
+				e.fire("CLOCK_READY");
 			};
 			requestServerTime();
 		};
@@ -99,7 +99,7 @@ rawkets.Clock = function(message) {
 	// Private functions
 	var requestServerTime = function() {
 		if (!_responsePending) {
-			_message.send(_message.format("MESSAGE_TYPE_PING", {}), true);
+			_message.send(_message.format("PING", {}), true);
 			_responsePending = true;
 			_timeRequestSent = new Date().getTime();
 		};

@@ -55,9 +55,14 @@ rawkets.Socket = function(host, port) {
 		};
 		socket.send(msg);
 	};
+	
+	var getSessionId = function() {
+		return socket.transport.sessionid;
+	};
 
 	return {
 		connect: connect,
-		send: send
+		send: send,
+		getSessionId: getSessionId
 	};
 };
