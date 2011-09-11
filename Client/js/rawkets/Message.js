@@ -15,13 +15,15 @@ rawkets.Message = function(socket) {
 		outgoing = [],
 		
 	// Types
-		types = {
-			PING: 1,
-			SYNC: 2,
-			NEW_PLAYER: 3,
-			UPDATE_PLAYER: 4,
-			UPDATE_INPUT: 5
-		};
+	types = {
+		PING: 1,
+		SYNC: 2,
+		SYNC_COMPLETED: 3,
+		NEW_PLAYER: 4,
+		UPDATE_PLAYER: 5,
+		UPDATE_INPUT: 6,
+		REMOVE_PLAYER: 7
+	};
 	
 	// Methods
 	var format = function(type, args) {
@@ -39,7 +41,8 @@ rawkets.Message = function(socket) {
 		};
 
 		//return JSON.stringify(msg);
-		return BISON.encode(msg);
+		//return BISON.encode(msg);
+		return msg;
 	};
 	
 	var send = function(msg, immediately) {
@@ -53,23 +56,24 @@ rawkets.Message = function(socket) {
 		outgoing.push(msg);
 	};
 	
-	var onSocketMessage = function(data) {
-		var msg = BISON.decode(data);
-		
+	var onSocketMessage = function(msg) {
 		if (msg.z !== undefined) {
 			// Make this automated so you can refer message type from the received message
 			switch (msg.z) {
 				case types.PING:
 					e.fire("PING", msg);
 					break;
-				case types.SYNC:
-					e.fire("SYNC", msg);
+				case types.SYNC_COMPLETED:
+					e.fire("SYNC_COMPLETED", msg);
 					break;
 				case types.NEW_PLAYER:
 					e.fire("NEW_PLAYER", msg);
 					break;
 				case types.UPDATE_PLAYER:
 					e.fire("UPDATE_PLAYER", msg);
+					break;
+				case types.REMOVE_PLAYER:
+					e.fire("REMOVE_PLAYER", msg);
 					break;
 			};
 		};

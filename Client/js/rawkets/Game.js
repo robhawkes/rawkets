@@ -30,6 +30,9 @@ rawkets.Game = function() {
 	// Physics
 		rk4,
 		
+	// Viewport & graphics
+		viewport,
+		
 	// Local entities
 		localPlayer,
 		keys,
@@ -48,12 +51,12 @@ rawkets.Game = function() {
 		e.listen("SOCKET_CONNECTED", onSocketConnected);
 		e.listen("CLOCK_READY", onClockReady);
 		
-		e.listen("SYNC", onSync);
+		e.listen("SYNC_COMPLETED", onSyncCompleted);
 		e.listen("NEW_PLAYER", onNewPlayer);
 		e.listen("UPDATE_PLAYER", onUpdatePlayer);
+		e.listen("REMOVE_PLAYER", onRemovePlayer);
 		
-		window.addEventListener("keydown", onKeydown, false);
-		window.addEventListener("keyup", onKeyup, false);
+		window.addEventListener("resize", onResize, false);
 	};
 	
 	var onSocketConnected = function() {
@@ -71,9 +74,10 @@ rawkets.Game = function() {
 		start();
 	};
 	
-	var onSync = function() {
+	// Run after initial sync with server is complete
+	var onSyncCompleted = function() {
 		// Start game loop
-		console.log("Starting game update");
+		console.log("Starting game update", clock.time());
 		runUpdate = true;
 		update();
 	};
@@ -96,57 +100,78 @@ rawkets.Game = function() {
 		} else if (players) {
 			//document.getElementById("outputServerRemote").innerHTML = "remotePlayer server: ["+msg.s.p.x+", "+msg.s.p.y+"], ["+msg.s.v.x+", "+msg.s.v.y+"], "+msg.s.f+", "+msg.s.a;
 			var player = playerById(msg.id);
-			if (player) {
-				player.correctState(msg.t, msg.s);
+			if (!player) {
+				return;
 			};
+			player.correctState(msg.t, msg.s);
 		};
 	};
 	
+	var onRemovePlayer = function(msg) {
+		var player = playerById(msg.id);
+		if (!player) {
+			return;
+		};
+		console.log("Remove player: ", msg.id);
+		players.splice(indexOfByPlayerId(msg.id), 1);
+	};
+	
 	function onKeydown(e) {
-		var c = e.keyCode;
-
 		if (!runUpdate) {
 			return;
 		};
 
 		if (localPlayer) {
-			switch (c) {
-				// Controls
-				case 37: // Left
-					keys.left = true;
-					break;
-				case 38: // Up
-					keys.up = true;
-					break;
-				case 39: // Right
-					keys.right = true; // Will take priority over the left key
-					break;
-			};
+			keys.onKeyDown(e);
 		};
 	};
 
 	function onKeyup(e) {
-		var c = e.keyCode;
-
 		if (!runUpdate) {
 			return;
 		};
 
 		if (localPlayer) {
-			switch (c) {
-				case 37: // Left
-					keys.left = false;
-					break;
-				case 38: // Up
-					keys.up = false;
-					break;
-				case 39: // Right
-					keys.right = false;
-					break;
-			};
+			keys.onKeyUp(e);
 		};
+	};
+	
+	function onResize(e) {
+		if (!viewport) {
+			return;
+		};
+		
+		viewport.onResize(e);
+		
+		/*
+		if (stars != undefined) {
+			var xRatio = canvas.width/starsOriginalWidth;
+			var yRatio = canvas.height/starsOriginalHeight;
 
-		//console.log("Key down [code: "+e.keyCode+"]");
+			var starCount = stars.length,
+				star,
+				s;
+			for (s = 0; s < starCount; s++) {
+				star = stars[s];
+
+				if (star == null) {
+					continue;
+				};
+
+				star.pos.x *= xRatio;
+				star.pos.y *= yRatio;
+			};
+
+			starsOriginalWidth = canvas.width;
+			starsOriginalHeight = canvas.height;
+		};
+		
+		var msg = formatMessage(MESSAGE_TYPE_UPDATE_PLAYER_SCREEN, {
+			w: viewport.dimensions.width+50,
+			h: viewport.dimensions.height+50
+		});
+		socket.send(msg);
+		*/
 	};
 	
 	/**************************************************
@@ -178,8 +203,17 @@ rawkets.Game = function() {
 	** START GAME
 	**************************************************/
 	
-	var start = function() {		
-		localPlayer = new r.Player(socket.getSessionId()); // Should be getting start pos from server
+	var start = function() {
+		var canvas = document.getElementById("canvas");
+		if (!canvas) {
+			console.log("Game canvas is unavailable", canvas);
+		};
+		
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight-111;
+		viewport = new r.Viewport(canvas, canvas.width, canvas.height, 2000, 2000);
+			
+		localPlayer = new r.Player(socket.getSessionId(), 1000, 1000); // Should be getting start pos from server
 		
 		if (!localPlayer) {
 			console.log("Failed to create local player", localPlayer);
@@ -191,6 +225,9 @@ rawkets.Game = function() {
 		rk4 = new r.RK4();
 		
 		keys = new r.Keys();
+		window.addEventListener("keydown", onKeydown, false);
+		window.addEventListener("keyup", onKeyup, false);
+		
 		history = new r.History();
 		
 		players = [];
@@ -202,32 +239,38 @@ rawkets.Game = function() {
 	** UPDATE GAME
 	**************************************************/
 	
+	var localTest = false,
+		localCount = 0;
 	var update = function() {
-		var newTime = clock.time(),
+		//var newTime = clock.time(),
+		var newTime = new Date().getTime(),
 			frameTime = (newTime - currentTime)/1000; // Convert from ms to seconds
 
 		// Limit frame time to avoid "spiral of death"
 		if (frameTime > 0.25) {
+			console.log("Frametime pegged at 0.25");
 			frameTime = 0.25;
 		};
 
 		// Update game time
 		currentTime = newTime;
+		
+		if (!localTest && localPlayer) {
+			//console.log("Start player: "+currentTime, localPlayer.currentState.p.x, localPlayer.currentState.p.y, localPlayer.currentState.v.x, localPlayer.currentState.v.y, localPlayer.currentState.f, localPlayer.currentState.a);
+			localTest = true;
+		};
 
 		// Calculate new input based on keys
 		var input = new r.Input((keys.up) ? 1 : 0, ((keys.left) ? -1 : 0 || (keys.right) ? 1 : 0));
 
 		// Update input
 		localPlayer.updateInput(input);
-		
-		// Store input in movement buffer (each frame for super-fine detail when calculating fixes)
-		var move = new r.Move(currentTime, localPlayer.getInput(), localPlayer.getState());
-		history.add(move);
 
 		// Only send input if it has changed (saves bandwidth)	
 		var previousInput = localPlayer.getPreviousInput();
 		if (!previousInput || input.forward != previousInput.forward || input.rotation != previousInput.rotation) {
 			//console.log(updateTime, currentInput.forward, currentInput.rotation);
+			console.log("Input updated", currentTime, new Date().getTime());
 			message.send(message.format("UPDATE_INPUT", {t: currentTime.toString(), i: localPlayer.getInput()}), true);
 		};
 		
@@ -235,6 +278,7 @@ rawkets.Game = function() {
 		// For now just update entity all the time
 		// Else update the state
 		localPlayer.updateState();
+		viewport.update(localPlayer.currentState.p.x, localPlayer.currentState.p.y);
 
 		for (p = 0; p < playerCount; p++) {
 			player = players[p];
@@ -278,15 +322,35 @@ rawkets.Game = function() {
 		
 		// Find leftover time due to incomplete physics time delta
 		//var alpha = rk4.accumulator / Math.abs(rk4.dt);  // Absolute value to allow for reverse time
+		
+		if (localCount < 100) {
+			//console.log(currentTime, localPlayer.getState());
+			localCount++;
+		};
+		
+		// Store movement in buffer (each frame for super-fine detail when calculating fixes)
+		var move = new r.Move(currentTime, localPlayer.getInput(), localPlayer.getState());
+		history.add(move);
 
 		// ONLY FOR CLIENT
 		// Interpolate state considering incomplete physics time delta (accumulator)
 		//localPlayer.interpolate(alpha);
 		
+		draw();
+		
 		// Schedule next game update
 		if (runUpdate) {
 			setTimeout(update, 1000/60);
 		};
+	};
+	
+	/**************************************************
+	** UPDATE GAME
+	**************************************************/
+	
+	function draw() {
+		viewport.draw();
+		localPlayer.draw(viewport);
 	};
 	
 	/**************************************************

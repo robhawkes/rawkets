@@ -8,8 +8,7 @@ rawkets.Socket = function(host, port) {
 	var e = r.Event;
 	
 	// Properties
-	var WEB_SOCKET_SWF_LOCATION = "lib/WebSocketMain.swf",
-		socketHost = host,
+	var socketHost = host,
 		socketPort = port,
 		socket;
 
@@ -38,26 +37,25 @@ rawkets.Socket = function(host, port) {
 		});
 	
 		// WebSocket message received
-		socket.on("message", function(data) {
+		socket.on("game message", function(data) {
 			e.fire("SOCKET_MESSAGE", data);
 		});
 	};
 	
 	var connect = function() {
-		socket = new io.Socket(socketHost, {port: socketPort, transports: ["websocket", "flashsocket"]});
+		socket = io.connect(socketHost, {port: socketPort, transports: ["websocket", "flashsocket"]});
 		setEventHandlers();
-		socket.connect();
 	};
 	
 	var send = function(msg) {
 		if (!msg) {
 			return;
 		};
-		socket.send(msg);
+		socket.emit("game message", msg);
 	};
 	
 	var getSessionId = function() {
-		return socket.transport.sessionid;
+		return socket.socket.sessionid;
 	};
 
 	return {

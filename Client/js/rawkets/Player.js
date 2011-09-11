@@ -9,7 +9,7 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.v.x, currentState.v.y, currentState.f, currentState.a),
 		currentInput = new r.Input(),
 		previousInput = new r.Input(),
-		MAX_VELOCITY = 25,
+		MAX_VELOCITY = 150,
 		rotationSpeed = 0.09, // Manually set rotation speed for now
 		//MAX_ROTATION_SPEED = 0.09, // Maximum rotation speed
 		lastCorrection; // Time of last correction received from server
@@ -45,11 +45,11 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 		
 	var updateState = function(time) {
 		// Halt entity if there isn't a recent correction
-		if (time && lastCorrection && time - lastCorrection > 500) {
+		/*if (time && lastCorrection && time - lastCorrection > 500) {
 			currentState = new r.State();
 			previousState = new r.State();
 			return;
-		};
+		};*/
 		
 		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.v.x, currentState.v.y, currentState.f, currentState.a);
 		
@@ -69,23 +69,43 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 		// Is it a good idea to update the force here, rather than in the physics update?
 		//if (!previousInput || currentInput.forward != previousInput.forward) {
 		//currentState.f = (currentInput.forward > 0) ? 10 : (Math.abs(currentState.v.x) > 0.1 || Math.abs(currentState.v.y) > 0.1) ? -5 : 0;
-		currentState.f = (currentInput.forward > 0) ? 25 : 0;
+		//currentState.f = (currentInput.forward > 0) ? 50 : (Math.abs(currentState.v.x) > 0.5 || Math.abs(currentState.v.y) > 0.5) ? (currentState.v.x > 0 || currentState.v.y > 0) ? -50 : 50 : 0;
+		currentState.f = (currentInput.forward > 0) ? 5 : 0;
 		//};
 		
-		currentState.v.x *= 0.96;
-		currentState.v.y *= 0.96;
+		// Multiplying velocity by fraction causes sync issues between client and server
+		// Need to come up with a more reliable method.
+		//currentState.v.x *= 0.96;
+		//currentState.v.y *= 0.96;
 		
-		// This velocity check should be within the integration somewhere
-		if (currentState.v.x > MAX_VELOCITY) {
-			currentState.v.x = MAX_VELOCITY;
-		} else if (Math.abs(currentState.v.x) < 0.01) {
-			currentState.v.x = 0;
+		// Reducing velocity by a fixed amount to help with syncing
+		if (Math.abs(currentState.v.x) > 0.5) {
+			//currentState.v.x -= (currentState.v.x > 0) ? 0.5 : -0.5;
 		};
 		
-		if (currentState.v.y > MAX_VELOCITY) {
-			currentState.v.y = MAX_VELOCITY;
-		} else if (Math.abs(currentState.v.y) < 0.01) {
-			currentState.v.y = 0;
+		if (Math.abs(currentState.v.y) > 0.5) {
+			//currentState.v.y -= (currentState.v.y > 0) ? 0.5 : -0.5;
+		};
+		
+		// This velocity check should be within the integration somewhere
+		if (Math.abs(currentState.v.x) > MAX_VELOCITY) {
+			if (currentState.v.x > 0) {
+				currentState.v.x = MAX_VELOCITY;
+			} else {
+				currentState.v.x = -MAX_VELOCITY;
+			};
+		} else if (previousState.v.x != 0 && Math.abs(currentState.v.x) < 0.6) {
+			//currentState.v.x = 0;
+		};
+		
+		if (Math.abs(currentState.v.y) > MAX_VELOCITY) {
+			if (currentState.v.y > 0) {
+				currentState.v.y = MAX_VELOCITY;
+			} else {
+				currentState.v.y = -MAX_VELOCITY;
+			};
+		} else if (previousState.v.y != 0 && Math.abs(currentState.v.y) < 0.6) {
+			//currentState.v.y = 0;
 		};
 	};
 	
@@ -111,6 +131,42 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 		lastCorrection = time;
 	};
 	
+	var draw = function(viewport) {
+		if (currentState) {
+			var ctx = viewport.ctx;
+			//var pos = (local) ? new Vector({x: canvas.width/2, y: canvas.height/2}) : viewport.worldToScreen(currentState.pos.x, currentState.pos.y);
+			ctx.save();
+			
+			ctx.translate(viewport.dimensions.width/2, viewport.dimensions.height/2);
+			
+			ctx.fillStyle = "rgb(255, 255, 255)";
+			ctx.fillText("("+currentState.p.x+", "+currentState.p.y+")", 0, 20);
+			
+			ctx.rotate(currentState.a);
+
+			if (Math.abs(currentState.f) > 0) {
+				flameHeight = Math.floor(8+(Math.random()*4));
+				ctx.fillStyle = "orange";
+				ctx.beginPath();
+				ctx.moveTo(-(6+flameHeight), 0);
+				ctx.lineTo(-6, -2);
+				ctx.lineTo(-6, 2);
+				ctx.closePath();
+				ctx.fill();
+			};
+
+			ctx.fillStyle = "rgb(255, 255, 255)";
+			ctx.beginPath();
+			ctx.moveTo(-7, -6);
+			ctx.lineTo(7, 0);
+			ctx.lineTo(-7, 6);
+			ctx.closePath();
+			ctx.fill();
+			
+			ctx.restore();
+		};
+	};
+	
 	return {
 		id: id,
 		currentState: currentState,
@@ -120,6 +176,7 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 		setState: setState,
 		updateState: updateState,
 		updateInput: updateInput,
-		correctState: correctState
+		correctState: correctState,
+		draw: draw
 	};
 };

@@ -39,9 +39,17 @@ rawkets.History = function() { // Rename to avoid conflict with History API
 			firstMove = moves[moveCount-1];
 		
 		// Check that a relavent move exists within 200ms (otherwise there is a syncing issue) [removed]
-		//if ((lastMove.time - time) < 200) {
-		// Corrected state is significantly different to move state (at least 2 pixels diff)
+		//if ((lastMove.time - time) < 200) {	
+		//if (Math.abs(state.p.x - lastMove.state.p.x) > 0.5 || Math.abs(state.p.y - lastMove.state.p.y) > 0.5 || Math.abs(state.a - lastMove.state.a) > 0.1) {
 		if (Math.abs(state.p.x - lastMove.state.p.x) > 2 || Math.abs(state.p.y - lastMove.state.p.y) > 2 || Math.abs(state.a - lastMove.state.a) > 0.5) {
+			/*var sigDiff = false;
+			// Corrected state is significantly different to move state (at least 2 pixels diff)
+			if (Math.abs(state.p.x - lastMove.state.p.x) > 2 || Math.abs(state.p.y - lastMove.state.p.y) > 2 || Math.abs(state.a - lastMove.state.a) > 0.5) {
+				sigDiff = true;
+			// Corrected state is only slightly different
+			} else if (Math.abs(state.p.x - lastMove.state.p.x) > 0.5 || Math.abs(state.p.y - lastMove.state.p.y) > 0.5 || Math.abs(state.a - lastMove.state.a) > 0.1) {
+				sigDiff = false;
+			};*/
 			//console.log("State delta", deadMoveCount, Math.abs(state.x - lastMove.state.x), lastMove.time, time, lastMove.time - time);
 			
 			// Remove move as it needs to be corrected
@@ -52,13 +60,19 @@ rawkets.History = function() { // Rename to avoid conflict with History API
 			var currentTime = time, // Should this replace the actual currentTime variable for the game?
 				currentInput = input; // Likewise
 			
-			console.log("State corrected");
-			console.log("Before correction", {p: {x: entity.currentState.p.x, y: entity.currentState.p.y}, a: entity.currentState.a}, {p: {x: state.p.x, y: state.p.y}, a: state.a});
+			//console.log("State corrected");
+			console.log("Before correction", {t: lastMove.time, p: {x: lastMove.state.p.x, y: lastMove.state.p.y}, a: lastMove.state.a}, {t: time, p: {x: state.p.x, y: state.p.y}, a: state.a});
+			
+			// Corrected state is only slightly different, so move a fraction towards it
+			/*if (!sigDiff) {
+				state.p.x = lastMove.state.p.x + ((state.p.x - lastMove.state.p.x) * 0.3);
+				state.p.y = lastMove.state.p.y + ((state.p.y - lastMove.state.p.y) * 0.3);
+			};*/
 			
 			// Rewind entity state
 			entity.setState(state);
 			
-			console.log("Corrected state", {p: {x: entity.currentState.p.x, y: entity.currentState.p.y}, a: entity.currentState.a}, {p: {x: state.p.x, y: state.p.y}, a: state.a});
+			//console.log("Corrected state", {p: {x: entity.currentState.p.x, y: entity.currentState.p.y}, a: entity.currentState.a}, {p: {x: state.p.x, y: state.p.y}, a: state.a});
 			
 			rk4.accumulator = 0; // Reset accumulator on each pass to prevent corruption from previous simulations
 			
@@ -90,7 +104,7 @@ rawkets.History = function() { // Rename to avoid conflict with History API
 				move.state = entity.getState();
 			};
 			
-			console.log("After correction", {p: {x: entity.currentState.p.x, y: entity.currentState.p.y}, a: entity.currentState.a}, {p: {x: state.p.x, y: state.p.y}, a: state.a});
+			//console.log("After correction", {p: {x: entity.currentState.p.x, y: entity.currentState.p.y}, a: entity.currentState.a}, {p: {x: state.p.x, y: state.p.y}, a: state.a});
 
 			// Restore saved input
 			//currentInput = currentInputFromGame;
