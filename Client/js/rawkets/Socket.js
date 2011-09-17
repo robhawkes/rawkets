@@ -38,12 +38,14 @@ rawkets.Socket = function(host, port) {
 	
 		// WebSocket message received
 		socket.on("game message", function(data) {
+			//var date = Date.now();
+			//console.log("Message id "+data.z+" received at "+date);
 			e.fire("SOCKET_MESSAGE", data);
 		});
 	};
 	
 	var connect = function() {
-		socket = io.connect(socketHost, {port: socketPort, transports: ["websocket", "flashsocket"]});
+		socket = io.connect(socketHost, {port: socketPort, transports: ["websocket"]});
 		setEventHandlers();
 	};
 	

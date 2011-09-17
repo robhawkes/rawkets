@@ -4,6 +4,7 @@
 
 r.namespace("Keys");
 rawkets.Keys = function(up, left, right) {
+	// Properties
 	var up = up || false,
 		left = left || false,
 		right = right || false;
@@ -37,6 +38,9 @@ rawkets.Keys = function(up, left, right) {
 				break;
 			case 39: // Right
 				that.right = false;
+				break;
+			case 80: // p
+				r.Event.fire("PROFILER_OUTPUT");
 				break;
 		};
 	};

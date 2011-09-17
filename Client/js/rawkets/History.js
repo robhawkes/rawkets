@@ -15,6 +15,9 @@ rawkets.History = function() { // Rename to avoid conflict with History API
 	};
 	
 	var correction = function(time, state, input, entity, rk4) {
+		var profilerSession = ps.createSession();
+		e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 4, colour: "#0d3440"});
+
 		// Discard old moves (there's probably a better way to do this, but it works)
 		var m, moveCount = moves.length, deadMoves = [];
 		
@@ -32,6 +35,7 @@ rawkets.History = function() { // Rename to avoid conflict with History API
 		// Make sure moves actually exist
 		moveCount = moves.length;
 		if (moveCount == 0) {
+			e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 4});
 			return;
 		};
 		
@@ -108,6 +112,8 @@ rawkets.History = function() { // Rename to avoid conflict with History API
 
 			// Restore saved input
 			//currentInput = currentInputFromGame;
+
+			e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 4});
 		};
 		//};
 	};

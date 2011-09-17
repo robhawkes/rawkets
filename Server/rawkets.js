@@ -10,6 +10,7 @@
 **************************************************/
 
 var http = require("http"), 
+	sys = require("sys"),
 	io = require("socket.io").listen(8000),
 	BISON = require("./bison"),
 	Player = require("./Player"),
@@ -17,7 +18,7 @@ var http = require("http"),
 	socket,
 	rk4 = require("./RK4").init(),
 	players = [],
-	currentTime = new Date().getTime(), // Current time in ms, used to calculate frame time
+	currentTime = Date.now(), // Current time in ms, used to calculate frame time
 	runUpdate = true,
 	
 	// Message queues
@@ -44,7 +45,7 @@ var http = require("http"),
 **************************************************/
 
 io.configure(function() {
-	io.set("transports", ["websocket", "flashsocket"]);
+	io.set("transports", ["websocket"]);
 	io.set("log level", 2);
 });
 
@@ -77,16 +78,19 @@ socket = io.sockets.on("connection", function(client){
 	});
 	
 	// Client sent a message
-	client.on("game message", function(msg){
+	client.on("game message", function(msg) {
 		//console.log("Data: ", data);
 		//var msg = BISON.decode(data);
 		//console.log("Msg: ", msg);
 
+		sys.puts("Message id "+msg.z+" received at "+Date.now());
+
 		if (msg.z !== undefined) {
 			switch (msg.z) {
 				case MESSAGE_TYPE_PING:
-					var time = new Date().getTime();
-					client.emit("game message", formatMessage(MESSAGE_TYPE_PING, {t: time.toString()}));
+					var time = Date.now();
+					client.emit("game message", formatMessage(MESSAGE_TYPE_PING, {t: time.toString(), ps: msg.ps}));
+					sys.puts("Message id "+MESSAGE_TYPE_PING+" sent at "+time.toString());
 					break;
 				case MESSAGE_TYPE_SYNC:
 					// Add new player to the game
@@ -122,8 +126,8 @@ socket = io.sockets.on("connection", function(client){
 					var player = playerById(client.id);
 					if (player && msg.i) {
 						player.updateInput(msg.i);
-						console.log("Input updated", currentTime);
 					};
+					//console.log("Input updated", currentTime.toString(), msg.t.toString(), new Date().getTime().toString());
 					break;
 			};
 		};
@@ -134,10 +138,10 @@ socket = io.sockets.on("connection", function(client){
 ** GAME LOOP
 **************************************************/
 
-var localTest = false,
-	localCount = 0;
+// var localTest = false,
+// 	localCount = 0;
 function update() {
-	var newTime = new Date().getTime(),
+	var newTime = Date.now(),
 		frameTime = (newTime - currentTime)/1000, // Convert from ms to seconds
 		player,
 		playerCount = players.length,
@@ -152,11 +156,11 @@ function update() {
 	// Update game time
 	currentTime = newTime;
 	
-	if (!localTest && playerCount > 0) {
-		var localPlayer = players[0];
-		//console.log("Start player: "+currentTime, localPlayer.currentState.p.x, localPlayer.currentState.p.y, localPlayer.currentState.v.x, localPlayer.currentState.v.y, localPlayer.currentState.f, localPlayer.currentState.a);
-		localTest = true;
-	};
+	// if (!localTest && playerCount > 0) {
+	// 	var localPlayer = players[0];
+	// 	console.log("Start player: "+currentTime, localPlayer.currentState.p.x, localPlayer.currentState.p.y, localPlayer.currentState.v.x, localPlayer.currentState.v.y, localPlayer.currentState.f, localPlayer.currentState.a);
+	// 	localTest = true;
+	// };
 	
 	// Update player inputs
 	for (p = 0; p < playerCount; p++) {
@@ -208,10 +212,10 @@ function update() {
 			continue;
 		};
 		
-		if (localCount < 100) {
-			//console.log(currentTime, player.getState());
-			localCount++;
-		};
+		// if (localCount < 100) {
+		// 	console.log(currentTime, player.getState());
+		// 	localCount++;
+		// };
 		
 		if (player.getState() && player.getInput()) {
 			msgOutQueue.push({msg: formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: player.id, t: currentTime.toString(), s: player.getState(), i: player.getInput()})});
@@ -284,8 +288,10 @@ function unqueueOutgoingMessages(msgQueue) {
 			switch (msg.z) {
 				case MESSAGE_TYPE_UPDATE_PLAYER:
 					io.sockets.emit("game message", msg);
+					//sys.puts("Sent position update: "+sys.inspect(msg.s));
 					break;
 			};
+			//sys.puts("Message id "+msg.z+" sent at "+new Date().getTime().toString());
 		};
 	};
 };

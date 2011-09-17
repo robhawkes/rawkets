@@ -1,0 +1,104 @@
+<html>
+	<head>
+		<title>Rawkets Profile</title>
+		<script type="text/javascript" src="protovis.js"></script>
+		<script type="text/javascript" src="data.js"></script>
+		<style type="text/css">
+			
+		</style>
+	</head>
+	<body>
+		<div id="center">
+			<div id="fig">
+			<script type="text/javascript+protovis">
+				var scale = 10,
+					w = window.innerWidth*scale,
+				    h = data.length*25,
+				    x = pv.Scale.linear(data[0].startTime*scale, data[data.length-1].stopTime*scale).range(0, w),
+					y = pv.Scale.linear(0, h).range(0, h),
+					offsetMin = data[0].startTime,
+					offsetMax = data[data.length-1].stopTime;
+
+					//console.log(data[0].data[0].startTime*scale, data[0].data[data[0].data.length-1].stopTime*scale);
+
+				var vis = new pv.Panel()
+				    .width(w)
+				    .height(h)
+				    .bottom(0)
+				    .left(0)
+				    .right(0)
+				    .top(0);
+				vis.add(pv.Rule)
+						.data(x.ticks(50))
+						.left(x)
+						.lineWidth(2)
+						.strokeStyle("#eee")
+					.add(pv.Rule)
+						.bottom(-10)
+						.height(10)
+						.lineWidth(2)
+						.strokeStyle("#eee")
+					.add(pv.Label)
+						.textBaseline("top")
+						.bottom(20)
+						.left(x)
+						.text(function(d) (d-(data[0].startTime*scale))/scale)
+						.font("12pt TitilliumText14L")
+						.textAlign("center")
+						.textMargin(0);
+
+				vis.add(pv.Bar)
+					.data(data)
+					.fillStyle(function(d) d.colour)
+					.height(20)
+					.top(function() y(this.index * 25))
+					.width(function(d) x(d.stopTime*scale)-x(d.startTime*scale) || 1)
+					.left(function(d) x(d.startTime*scale));
+				
+				// Time between updates
+				vis.add(pv.Label)
+					.data(dataByType[0].data)
+					.fillStyle(function(d) d.colour)
+					.top(function(d) y(d.allIndex * 25 - 10))
+					.left(function(d) x(d.startTime*scale))
+					.text(function(d) (dataByType[0].data[this.index-1]) ? d.startTime-dataByType[0].data[this.index-1].stopTime : 0)
+					.font("12pt TitilliumText14L")
+					.textAlign("center")
+					.textMargin(0);
+				// vis.add(pv.Line)
+				// 	.data(data[0].data)
+				// 	.strokeStyle(function(d) d.colour)
+				// 	.lineWidth(2)
+				// 	.top(function() y(this.index * 25 - 25))
+				// 	.left(function(d) x(d.startTime*scale));
+
+				// vis.add(pv.Panel)
+				// 	.events("all")
+				// 	.event("mousedown", pv.Behavior.pan())
+				// 	.event("mousewheel", pv.Behavior.zoom())
+				// 	.event("pan", pan)
+				// 	.event("zoom", zoom);
+
+				function pan() {
+					var t = this.transform();
+					console.log(t);
+					var offset = t.x*t.k-t.x;
+					x.domain(offsetMin-offset, offsetMax-offset);
+					vis.render();
+				};
+
+				function zoom() {
+					var t = this.transform();
+					console.log(t);
+					offsetMin = data[0].startTime-(t.x*t.k);
+					offsetMax = data[data.length-1].stopTime+(t.x*t.k);
+					//x.domain((offset < data[0].startTime) ? data[0].startTime : (offset < data[data.length-1].stopTime-5) ? offset : data[data.length-1].stopTime-5, data[data.length-1].stopTime+t.x);
+					x.domain(offsetMin, offsetMax);
+					vis.render();
+				};
+
+				vis.render();
+		   </script>
+		</div></div>
+	</body>
+</html>

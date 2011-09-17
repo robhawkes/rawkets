@@ -28,6 +28,7 @@ r.namespace("Clock");
 rawkets.Clock = function(message) {
 	// Shortcuts
 	var e = r.Event,
+		ps = r.ProfilerSession,
 		TimeDelta = r.TimeDelta;
 	
 	// Properties
@@ -55,6 +56,9 @@ rawkets.Clock = function(message) {
 	// Methods
 	
 	var start = function() {
+		var profilerSession = ps.createSession();
+		e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 2, colour: "#ff0000"});
+
 		_deltas = [];
 		_lockedInServerTime = false;
 		_responsePending = false;
@@ -63,7 +67,7 @@ rawkets.Clock = function(message) {
 		// Add event listener here to deal with incoming data from the server
 		e.listen("PING", onPing);
 		
-		requestServerTime();
+		requestServerTime(profilerSession);
 	};
 	
 	var stop = function() {
@@ -71,19 +75,23 @@ rawkets.Clock = function(message) {
 	};
 	
 	var onPing = function(msg) {
+		//console.log("Message id "+msg.z+" received at "+new Date().getTime().toString());
 		_responsePending = false;
 
 		var serverTimeStamp = msg.t;
 		//var serverTimeStamp = msg;
-		addTimeDelta(_timeRequestSent, new Date().getTime(), serverTimeStamp);
+		addTimeDelta(_timeRequestSent, Date.now(), serverTimeStamp);
 
 		if (_bursting) {
 			if (_deltas.length == _maxDeltas) {
 				_bursting = false;
-				console.log("Clock ready", new Date().getTime(), time(), _syncTimeDelta);
+
+				e.fire("PROFILER_STOP_BENCHMARK", {id: msg.ps, time: Date.now(), type: 2});
 				e.fire("CLOCK_READY");
+				console.log("Clock ready", Date.now(), time(), _syncTimeDelta);
+				return;
 			};
-			requestServerTime();
+			requestServerTime(msg.ps);
 		};
 	};
 	
@@ -92,16 +100,16 @@ rawkets.Clock = function(message) {
 	 * @return The server time.
 	 */
 	var time = function() {
-		var now = new Date().getTime();
+		var now = Date.now();
 		return now + _syncTimeDelta;
 	};
 
 	// Private functions
-	var requestServerTime = function() {
+	var requestServerTime = function(profilerSession) {
 		if (!_responsePending) {
-			_message.send(_message.format("PING", {}), true);
+			_timeRequestSent = Date.now();
+			_message.send(_message.format("PING", {ps: profilerSession}), true);
 			_responsePending = true;
-			_timeRequestSent = new Date().getTime();
 		};
 	};
 	
@@ -114,6 +122,7 @@ rawkets.Clock = function(message) {
 	var addTimeDelta = function(clientSendTime, clientReceiveTime, serverTime) {
 		// Guess the latency
 		var latency = (clientReceiveTime - clientSendTime) / 2;
+		//console.log(clientSendTime, clientReceiveTime, serverTime);
 
 		var clientServerDelta = serverTime - clientReceiveTime;
 		var timeSyncDelta = clientServerDelta + latency;

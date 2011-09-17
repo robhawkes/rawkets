@@ -5,7 +5,8 @@
 r.namespace("Message");
 rawkets.Message = function(socket) {
 	// Shortcuts
-	var e = r.Event;
+	var e = r.Event,
+		p = r.Profiler;
 	
 	// Properties
 	var socket = socket;
@@ -49,6 +50,7 @@ rawkets.Message = function(socket) {
 		// Send message immediately
 		if (msg && immediately) {
 			socket.send(msg);
+			//console.log(msg.z+" sent at "+Date.now());
 			return;
 		};
 		
@@ -61,6 +63,7 @@ rawkets.Message = function(socket) {
 			// Make this automated so you can refer message type from the received message
 			switch (msg.z) {
 				case types.PING:
+					//console.log("Message id "+msg.z+" received at "+Date.now());
 					e.fire("PING", msg);
 					break;
 				case types.SYNC_COMPLETED:
