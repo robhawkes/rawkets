@@ -92,17 +92,19 @@ rawkets.Profiler = function() {
 				break;
 		};
 
-		var i, dataCount, elem;
-		if (dataArray) {
-			dataCount = dataArray.length-1;
-			for (i = dataCount; i >= 0; i--) {
-				elem = dataArray[i];
-				if (elem.id == event.id) {
-					elem.stopTime = event.time;
-					return;
+		(function() {
+			var i, dataCount, elem;
+			if (dataArray) {
+				dataCount = dataArray.length-1;
+				for (i = dataCount; i >= 0; i--) {
+					elem = dataArray[i];
+					if (elem.id == event.id) {
+						elem.stopTime = event.time;
+						return;
+					};
 				};
 			};
-		};
+		})();
 
 		// Add to array of all data types
 		dataCount = data.length-1;

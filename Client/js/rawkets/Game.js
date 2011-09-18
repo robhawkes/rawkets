@@ -314,8 +314,14 @@ rawkets.Game = function() {
 			// For now just update entity all the time
 			// Else update the state
 			localPlayer.updateState();
-			viewport.update(localPlayer.currentState.p.x, localPlayer.currentState.p.y);
+			e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3});
+		})();
 
+		viewport.update(localPlayer.currentState.p.x, localPlayer.currentState.p.y);
+
+		(function() {
+			var profilerSession = ps.createSession();
+			e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3, colour: "#00ff00"});
 			for (p = 0; p < playerCount; p++) {
 				player = players[p];
 

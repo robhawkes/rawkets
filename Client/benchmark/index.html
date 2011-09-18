@@ -53,7 +53,15 @@
 					.height(20)
 					.top(function() y(this.index * 25))
 					.width(function(d) x(d.stopTime*scale)-x(d.startTime*scale) || 1)
-					.left(function(d) x(d.startTime*scale));
+					.left(function(d) x(d.startTime*scale))
+					.add(pv.Label)
+						.top(function() y(this.index * 25)+15)
+						.left(function(d) x(d.stopTime*scale) + 10)
+						.text(function(d) d.type)
+						.textStyle("#ccc")
+						.font("12pt TitilliumText14L")
+						.textAlign("left")
+						.textMargin(0);
 				
 				// Time between updates
 				vis.add(pv.Label)

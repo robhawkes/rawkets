@@ -3,7 +3,7 @@
 **************************************************/
 
 r.namespace("Viewport");
-rawkets.Viewport = function(canvas, width, height, worldWidth, worldHeight) {
+rawkets.Viewport = function(canvas, width, height, worldWidth, worldHeight) {	
 	var canvas = canvas,
 		ctx = canvas.getContext("2d"),
 		worldWidth = worldWidth,

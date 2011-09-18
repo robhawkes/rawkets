@@ -4,6 +4,10 @@
 
 r.namespace("History");
 rawkets.History = function() { // Rename to avoid conflict with History API
+	// Shortcuts
+	var e = r.Event,
+		ps = r.ProfilerSession;
+		
 	var moves = [],
 		MAX_MOVES = 1024;
 		

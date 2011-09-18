@@ -4,10 +4,6 @@
 
 r.namespace("Player");
 rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use a State object, instead of 6 arguments
-	// Shortcuts
-	var e = r.Event,
-		ps = r.ProfilerSession;
-
 	var id = id,
 		currentState = new r.State(x, y, vx, vy, f, a),
 		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.v.x, currentState.v.y, currentState.f, currentState.a),
