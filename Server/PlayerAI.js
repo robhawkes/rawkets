@@ -20,7 +20,7 @@ var PlayerAI = function(id, x, y) {
 	// Player object for AI
 	var player = Player.init(id, x, y),
 	// AI state
-		state = stateTypes.EXPLORE,
+		state,
 	// AI target (both for attack and defense)
 		target = false;
 
@@ -32,7 +32,34 @@ var PlayerAI = function(id, x, y) {
 		state = stateType;
 	};
 
-	var update = function() {
+	var getTargetInfo = function(player, target) {
+		var currentPos = player.currentState.p,
+			targetPos = target.currentState.p,
+			diff = Vector.init(),
+			relativeDiff = Vector.init(),
+			dd,
+			distance,
+			angle;
+		
+		diff.x = targetPos.x - currentPos.x;
+		diff.y = targetPos.y - currentPos.y;
+
+		dd = (diff.x * diff.x) + (diff.y * diff.y);
+		distance = Math.sqrt(dd);
+
+		relativeDiff.x = diff.x * Math.cos(player.currentState.a) + diff.y * Math.sin(player.currentState.a);
+		relativeDiff.y = diff.y * Math.cos(player.currentState.a) - diff.x * Math.sin(player.currentState.a);
+
+		// Remember that atan2 is reverse direction to angles in canvas
+		// Positive anti-clockwise, negative clockwise
+		angle = Math.atan2(relativeDiff.y, relativeDiff.x);
+
+		return {
+			angle: angle
+		};
+	};
+
+	var update = function(players, aiPlayers) {
 		// Check state
 		switch (state) {
 			case stateTypes.EXPLORE:
@@ -41,30 +68,11 @@ var PlayerAI = function(id, x, y) {
 			case stateTypes.ATTACK:
 				// Find a target (do this here or somewhere else?)
 				// Move to and attack the target
-				var currentPos = player.currentState.p,
-					targetPos = target.currentState.p,
-					diff = Vector.init(),
-					relativeDiff = Vector.init(),
-					dd,
-					distance,
-					angle;
-				
-				diff.x = targetPos.x - currentPos.x;
-				diff.y = targetPos.y - currentPos.y;
+				var targetInfo = getTargetInfo(player, target);
 
-				dd = (diff.x * diff.x) + (diff.y * diff.y);
-				distance = Math.sqrt(dd);
-
-				relativeDiff.x = diff.x * Math.cos(player.currentState.a) + diff.y * Math.sin(player.currentState.a);
-				relativeDiff.y = diff.y * Math.cos(player.currentState.a) - diff.x * Math.sin(player.currentState.a);
-
-				// Remember that atan2 is reverse direction to angles in canvas
-				// Positive anti-clockwise, negative clockwise
-				angle = Math.atan2(relativeDiff.y, relativeDiff.x);
-
-				if (angle > 0.05 && angle < Math.PI) {
+				if (targetInfo.angle > 0.05 && targetInfo.angle < Math.PI) {
 					player.updateInput(Input.init(1, 1));
-				} else if (angle < -0.05 && angle > -Math.PI) {
+				} else if (targetInfo.angle < -0.05 && targetInfo.angle > -Math.PI) {
 				 	player.updateInput(Input.init(1, -1));
 				} else {
 					player.updateInput(Input.init(1, 0));
@@ -73,14 +81,18 @@ var PlayerAI = function(id, x, y) {
 				break;
 			default:
 				// Default state
+				if (players.length > 0) {
+					target = players[0];
+					state = stateTypes.ATTACK;
+				};
 		};
 	};
 
 	return {
-		stateTypes: stateTypes,
+		//stateTypes: stateTypes,
 		player: player,
-		setTarget: setTarget,
-		setState: setState,
+		//setTarget: setTarget,
+		//setState: setState,
 		update: update
 	};
 };

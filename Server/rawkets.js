@@ -148,10 +148,10 @@ function initSocket() {
 							};
 
 							// [Temp] Make first connected player the AI target
-							if (playerCount == 0) {
-								aiPlayer.setTarget(localPlayer);
-								aiPlayer.setState(aiPlayer.stateTypes.ATTACK);
-							};
+							// if (playerCount == 0) {
+							// 	aiPlayer.setTarget(localPlayer);
+							// 	aiPlayer.setState(aiPlayer.stateTypes.ATTACK);
+							// };
 
 							// Need to queue these messages if the client isn't fully synced up and ready yet
 							client.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: aiPlayer.player.id, t: currentTime.toString(), s: aiPlayer.player.getState()}));
@@ -226,7 +226,7 @@ function update() {
 			continue;
 		};
 		
-		aiPlayer.update();
+		aiPlayer.update(players, aiPlayers);
 		aiPlayer.player.updateState();
 	};
 	
