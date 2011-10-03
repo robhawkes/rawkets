@@ -20,26 +20,24 @@ rawkets.Socket = function(host, port) {
 		
 		// WebSocket connection successful
 		socket.on("connect", function() {
-			console.log("Connected");
+			console.log("Connected to server", socketHost+":"+socketPort);
 			e.fire("SOCKET_CONNECTED");
 		});
 	
 		// WebSocket connection failed
 		socket.on("connect_failed", function() {
-			console.log("Connect failed");
+			console.log("Connect failed", socketHost+":"+socketPort);
 			e.fire("SOCKET_CONNECT_FAILED");
 		});
 	
 		// WebSocket disconnection
 		socket.on("disconnect", function() {
-			console.log("Disconnected");
+			console.log("Disconnected", socketHost+":"+socketPort);
 			e.fire("SOCKET_DISCONNECTED");
 		});
 	
 		// WebSocket message received
 		socket.on("game message", function(data) {
-			//var date = Date.now();
-			//console.log("Message id "+data.z+" received at "+date);
 			e.fire("SOCKET_MESSAGE", data);
 		});
 	};

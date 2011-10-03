@@ -29,20 +29,24 @@ rawkets.Game = function() {
 		runUpdate,
 		
 	// Physics
-		rk4,
+		//rk4,
 		
 	// Viewport & graphics
 		viewport,
+		stars,
 		
 	// Local entities
 		localPlayer,
 		keys,
 		currentInput,
 		previousInput,
-		history,
+		//history,
 		
 	// Remote entities
 		players,
+
+	// Netgraph
+		net,
 
 	// Profiler
 		profiler;
@@ -71,49 +75,43 @@ rawkets.Game = function() {
 		clock.start();
 	};
 	
-	var onClockReady = function() {
+	var onClockReady = function(latency) {
+		console.log("Clock ready", latency+"ms");
 		currentTime = clock.time();
-		
-		// If all is well
-		start();
+		startGame();
 	};
 	
 	// Run after initial sync with server is complete
 	var onSyncCompleted = function() {
 		// Start game loop
-		//console.log("Starting game update", clock.time());
 		runUpdate = true;
-		update();
+		updateGame();
 	};
 	
 	var onNewPlayer = function(msg) {
 		if (!msg.id || !msg.s) {
-			console.log("Failed to add new player", msg.id, msg.s);
+			console.log("Failed to add new player", msg.id);
 		};
-		var player = new r.Player(msg.id, msg.s.p.x, msg.s.p.y, msg.s.v, msg.s.f, msg.s.a);
+		var player = new r.Player(msg.id, msg.s.p.x, msg.s.p.y, msg.s.a, msg.s.f);
 		players.push(player);
-		console.log("Added new player", player);
+		console.log("Added new player", player.id);
 	};
-	
-	//var updateDebug = 0;
+
 	var onUpdatePlayer = function(msg) {
 		if (localPlayer && msg.id == localPlayer.id) {
-			// if (updateDebug < 10) {
-			// 	// There is at least a 20-100ms difference here. Why?
-			// 	console.log(Date.now()-Number(msg.t));
-			// 	updateDebug++;
-			// };
-			//console.log("Update local");
-			//document.getElementById("outputServer").innerHTML = "localPlayer server: ["+msg.s.p.x+", "+msg.s.p.y+"], ["+msg.s.v.x+", "+msg.s.v.y+"], "+msg.s.f+", "+msg.s.a;
 			// If required, perform correction on client-side prediction
-			history.correction(msg.t, msg.s, msg.i, localPlayer, rk4);
+			//history.correction(msg.t, msg.s, msg.i, localPlayer, rk4);
+
+			// No client-side prediction for now
+			localPlayer.setState(msg.s);
 		} else if (players) {
-			//document.getElementById("outputServerRemote").innerHTML = "remotePlayer server: ["+msg.s.p.x+", "+msg.s.p.y+"], ["+msg.s.v.x+", "+msg.s.v.y+"], "+msg.s.f+", "+msg.s.a;
-			// var player = playerById(msg.id);
-			// if (!player) {
-			// 	return;
-			// };
-			// player.correctState(msg.t, msg.s);
+			var player = playerById(msg.id);
+			if (!player) {
+				return;
+			};
+			//player.correctState(msg.t, msg.s);
+			// No client-side prediction for now
+			player.setState(msg.s);
 		};
 	};
 	
@@ -133,7 +131,6 @@ rawkets.Game = function() {
 
 		if (localPlayer) {
 			keys.onKeyDown(e);
-			debugInput();
 		};
 	};
 
@@ -144,25 +141,6 @@ rawkets.Game = function() {
 
 		if (localPlayer) {
 			keys.onKeyUp(e);
-			debugInput();
-		};
-	};
-
-	// Debug function - remove
-	function debugInput() {
-		// Calculate new input based on keys
-		var input = new r.Input((keys.up) ? 1 : 0, ((keys.left) ? -1 : 0 || (keys.right) ? 1 : 0));
-
-		// Update input
-		localPlayer.updateInput(input);
-
-		// Only send input if it has changed (saves bandwidth)
-		var previousInput = localPlayer.getPreviousInput();
-		var inputTime = Date.now();
-		if (!previousInput || input.forward != previousInput.forward || input.rotation != previousInput.rotation) {
-			message.send(message.format("UPDATE_INPUT", {t: inputTime.toString(), i: localPlayer.getInput()}), true);
-			console.log("Input updated", inputTime.toString(), localPlayer.getInput());
-			//console.log(updateTime, currentInput.forward, currentInput.rotation);
 		};
 	};
 	
@@ -173,35 +151,11 @@ rawkets.Game = function() {
 		
 		viewport.onResize(e);
 		
-		/*
-		if (stars != undefined) {
-			var xRatio = canvas.width/starsOriginalWidth;
-			var yRatio = canvas.height/starsOriginalHeight;
-
-			var starCount = stars.length,
-				star,
-				s;
-			for (s = 0; s < starCount; s++) {
-				star = stars[s];
-
-				if (star == null) {
-					continue;
-				};
-
-				star.pos.x *= xRatio;
-				star.pos.y *= yRatio;
-			};
-
-			starsOriginalWidth = canvas.width;
-			starsOriginalHeight = canvas.height;
-		};
-		
-		var msg = formatMessage(MESSAGE_TYPE_UPDATE_PLAYER_SCREEN, {
-			w: viewport.dimensions.width+50,
-			h: viewport.dimensions.height+50
-		});
-		socket.send(msg);
-		*/
+		// var msg = formatMessage(MESSAGE_TYPE_UPDATE_PLAYER_SCREEN, {
+		// 	w: viewport.dimensions.width+50,
+		// 	h: viewport.dimensions.height+50
+		// });
+		// socket.send(msg);
 	};
 	
 	/**************************************************
@@ -233,7 +187,7 @@ rawkets.Game = function() {
 	** START GAME
 	**************************************************/
 	
-	var start = function() {
+	var startGame = function() {
 		var canvas = document.getElementById("canvas");
 		if (!canvas) {
 			console.log("Game canvas is unavailable", canvas);
@@ -241,7 +195,9 @@ rawkets.Game = function() {
 		
 		canvas.width = window.innerWidth;
 		canvas.height = window.innerHeight-111;
+
 		viewport = new r.Viewport(canvas, canvas.width, canvas.height, 2000, 2000);
+		viewport.initStars();
 			
 		localPlayer = new r.Player(socket.getSessionId(), 1000, 1000); // Should be getting start pos from server
 		
@@ -252,15 +208,18 @@ rawkets.Game = function() {
 		
 		console.log("Local player id", localPlayer.id);
 		
-		rk4 = new r.RK4();
+		//rk4 = new r.RK4();
 		
 		keys = new r.Keys();
 		window.addEventListener("keydown", onKeydown, false);
 		window.addEventListener("keyup", onKeyup, false);
 		
-		history = new r.History();
+		//history = new r.History();
 		
 		players = [];
+
+		net = new r.NetGraph(canvas.width, 50);
+		net.init();
 		
 		message.send(message.format("SYNC", {}), true);
 	};
@@ -271,132 +230,126 @@ rawkets.Game = function() {
 	
 	// var localTest = false,
 	// 	localCount = 0;
-	var update = function(timestamp) {
+	var updateGame = function(timestamp) {
 		var profilerSession = ps.createSession();
 		e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 0, colour: "#222"});
-		//var newTime = clock.time(),
-		var newTime = Date.now(),
-			frameTime = (newTime - currentTime)/1000; // Convert from ms to seconds
+		// var newTime = clock.time(),
+		// var newTime = Date.now(),
+		// 	frameTime = (newTime - currentTime)/1000; // Convert from ms to seconds
 
-		// Limit frame time to avoid "spiral of death"
-		if (frameTime > 0.25) {
-			console.log("Frametime pegged at 0.25");
-			frameTime = 0.25;
-		};
+		// // Limit frame time to avoid "spiral of death"
+		// if (frameTime > 0.25) {
+		// 	console.log("Frametime pegged at 0.25");
+		// 	frameTime = 0.25;
+		// };
 
-		// Update game time
-		currentTime = newTime;
+		// // Update game time
+		// currentTime = newTime;
 		
 		// if (!localTest && localPlayer) {
 		// 	console.log("Start player: "+currentTime, localPlayer.currentState.p.x, localPlayer.currentState.p.y, localPlayer.currentState.v.x, localPlayer.currentState.v.y, localPlayer.currentState.f, localPlayer.currentState.a);
 		// 	localTest = true;
 		// };
 
-		/*// Calculate new input based on keys
+		// Calculate new input based on keys
 		var input = new r.Input((keys.up) ? 1 : 0, ((keys.left) ? -1 : 0 || (keys.right) ? 1 : 0));
 
 		// Update input
 		localPlayer.updateInput(input);
 
 		// Only send input if it has changed (saves bandwidth)
-		// For now just send input all the time
 		var previousInput = localPlayer.getPreviousInput();
 		if (!previousInput || input.forward != previousInput.forward || input.rotation != previousInput.rotation) {
-			//console.log(updateTime, currentInput.forward, currentInput.rotation);
-			console.log("Input updated", currentTime, localPlayer.getInput(), Date.now());
+			//console.log("Input updated", currentTime, localPlayer.getInput(), Date.now());
 			message.send(message.format("UPDATE_INPUT", {t: currentTime.toString(), i: localPlayer.getInput()}), true);
-		};*/
+		};
 
-		(function() {
-			var profilerSession = ps.createSession();
-			e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3, colour: "#00ff00"});		
-			// Skip entity if the state hasn't changed
-			// For now just update entity all the time
-			// Else update the state
-			localPlayer.updateState();
-			e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3});
-		})();
+		// (function() {
+		// 	var profilerSession = ps.createSession();
+		// 	e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3, colour: "#00ff00"});		
+		// 	// Skip entity if the state hasn't changed
+		// 	// For now just update entity all the time
+		// 	// Else update the state
+		// 	localPlayer.updateState();
+		// 	e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3});
+		// })();
 
 		viewport.update(localPlayer.currentState.p.x, localPlayer.currentState.p.y);
 
-		(function() {
-			var profilerSession = ps.createSession();
-			e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3, colour: "#00ff00"});
-			for (p = 0; p < playerCount; p++) {
-				player = players[p];
+		// (function() {
+		// 	var profilerSession = ps.createSession();
+		// 	e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3, colour: "#00ff00"});
+		// 	for (p = 0; p < playerCount; p++) {
+		// 		player = players[p];
 
-				if (!player) {
-					continue;
-				};
+		// 		if (!player) {
+		// 			continue;
+		// 		};
 
-				// Skip entity if the state hasn't changed
-				// For now just update entity all the time
-				player.updateState(currentTime);
-			};
+		// 		// Skip entity if the state hasn't changed
+		// 		// For now just update entity all the time
+		// 		player.updateState(currentTime);
+		// 	};
 
-			e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3});
-		})();
+		// 	e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3});
+		// })();
 
-		var playerCount = players.length;
+		// var playerCount = players.length;
 		
-		(function() {
-			var profilerSession = ps.createSession();
-			e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 1, colour: "#0000ff"});
+		// (function() {
+		// 	var profilerSession = ps.createSession();
+		// 	e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 1, colour: "#0000ff"});
 
-			// Run RK4 simulation
-			rk4.accumulator += frameTime;
-			while (rk4.accumulator >= rk4.dt) {
-				if (localPlayer) {
-					// Skip update if the localPlaer entity is still
-					rk4.integrate(localPlayer.currentState);
-				};
+		// 	// Run RK4 simulation
+		// 	rk4.accumulator += frameTime;
+		// 	while (rk4.accumulator >= rk4.dt) {
+		// 		if (localPlayer) {
+		// 			// Skip update if the localPlaer entity is still
+		// 			rk4.integrate(localPlayer.currentState);
+		// 		};
 
-				for (p = 0; p < playerCount; p++) {
-					player = players[p];
+		// 		for (p = 0; p < playerCount; p++) {
+		// 			player = players[p];
 
-					if (!player) {
-						continue;
-					};
+		// 			if (!player) {
+		// 				continue;
+		// 			};
 
-					// Skip update if the player entity is still
-					rk4.integrate(player.currentState);
-				};
+		// 			// Skip update if the player entity is still
+		// 			rk4.integrate(player.currentState);
+		// 		};
 
-				// Increase simulation time
-				//rk4.t += rk4.dt;
+		// 		// Increase simulation time
+		// 		//rk4.t += rk4.dt;
 
-				// Update accumulator
-				rk4.accumulator -= Math.abs(rk4.dt); // Absolute value to allow for reverse time
-			};
+		// 		// Update accumulator
+		// 		rk4.accumulator -= Math.abs(rk4.dt); // Absolute value to allow for reverse time
+		// 	};
 
-			e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 1});
-		})();
+		// 	e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 1});
+		// })();
 		
 		// Find leftover time due to incomplete physics time delta
+		// Why have I disabled this? Document or remove.
 		//var alpha = rk4.accumulator / Math.abs(rk4.dt);  // Absolute value to allow for reverse time
 		
-		// if (localCount < 100) {
-		// 	console.log(currentTime, localPlayer.getState());
-		// 	localCount++;
-		// };
-		
 		// Store movement in buffer (each frame for super-fine detail when calculating fixes)
-		var move = new r.Move(currentTime, localPlayer.getInput(), localPlayer.getState());
-		history.add(move);
+		// var move = new r.Move(currentTime, localPlayer.getInput(), localPlayer.getState());
+		// history.add(move);
 
-		// ONLY FOR CLIENT
 		// Interpolate state considering incomplete physics time delta (accumulator)
-		//localPlayer.interpolate(alpha);
+		// Why have I disabled this? Document or remove.
+		// localPlayer.interpolate(alpha);
 		
-		draw();
+		net.updateData();
+
+		drawGame();
 
 		e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 0});
 		
 		// Schedule next game update
-		// Need to change this to use requestAnimationFrame
 		if (runUpdate) {
-			setTimeout(update, 1000/60);
-			//window.mozRequestAnimationFrame(update);
+			window.mozRequestAnimationFrame(updateGame);
 		};
 	};
 	
@@ -404,12 +357,26 @@ rawkets.Game = function() {
 	** UPDATE GAME
 	**************************************************/
 	
-	function draw() {
+	function drawGame() {
 		var profilerSession = ps.createSession();
 		e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 5, colour: "#c61ad1"});
 
 		viewport.draw();
 		localPlayer.draw(viewport);
+
+		var p, playerCount = players.length, player;
+		for (p = 0; p < playerCount; p++) {
+			player = players[p];
+
+			if (!player) {
+				continue;
+			};
+
+			player.draw(viewport);
+		};
+		
+		// Draw netgraph
+		net.draw(viewport);
 
 		e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 5});
 	};

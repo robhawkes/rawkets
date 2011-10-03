@@ -5,23 +5,29 @@
 var State = require("./State"),
 	Input = require("./Input");
 
-var Player = function(id, x, y, vx, vy, f, a) {
+var Player = function(id, x, y, a, f, vx, vy) {
 	var id = id,
-		currentState = State.init(x, y, vx, vy, f, a),
-		previousState = State.init(currentState.p.x, currentState.p.y, currentState.v.x, currentState.v.y, currentState.f, currentState.a),
+		currentState = State.init(x, y, a, f, vx, vy),
+		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y),
 		currentInput = Input.init(),
 		previousInput = Input.init(),
-		MAX_VELOCITY = 150,
+		MAX_VELOCITY = 1500,
 		rotationSpeed = 0.09; // Manually set rotation speed for now
 
-	var getState = function(snapped) {
+	var getState = function(trim) {
 		var newState;
-		if (snapped) {
-			newState = State.init(Math.floor(currentState.p.x), Math.floor(currentState.p.y), Math.floor(currentState.v.x), Math.floor(currentState.v.y), Math.floor(currentState.f), currentState.a);
+		if (trim) {
+			// Full state for client prediction
+			// newState = State.init(Math.floor(currentState.p.x), Math.floor(currentState.p.y), currentState.a, Math.floor(currentState.f), Math.floor(currentState.v.x), Math.floor(currentState.v.y));
+			// Slim state
+			newState = State.init(Number(currentState.p.x.toFixed(2)), Number(currentState.p.y.toFixed(2)), Number(currentState.a.toFixed(2)), currentState.f);
 			return newState;
 		};
 
-		newState = State.init(currentState.p.x, currentState.p.y, currentState.v.x, currentState.v.y, currentState.f, currentState.a);
+		// Full state for client prediction
+		// newState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
+		// Slim state
+		newState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f);
 		return newState;
 	};
 
@@ -33,36 +39,57 @@ var Player = function(id, x, y, vx, vy, f, a) {
 	var getPreviousInput = function() {
 		return previousInput;
 	};
+
+	var hasChanged = function() {
+		if (JSON.stringify(currentState) != JSON.stringify(previousState)) {
+			return true;
+		};
+
+		return false;
+	};
 	
 	var setState = function(state) {
 		currentState.p.x = state.p.x;
 		currentState.p.y = state.p.y;
-		currentState.v.x = state.v.x;
-		currentState.v.y = state.v.y;
-		currentState.f = state.f;
+
+		if (state.v) {
+			currentState.v.x = state.v.x;
+			currentState.v.y = state.v.y;
+		};
+
+		if (state.f) {
+			currentState.f = state.f;	
+		};
+		
 		currentState.a = state.a;
 	};
 
 	var updateState = function() {
 		//console.log("p:"+previousState.v.x);
-		previousState = State.init(currentState.p.x, currentState.p.y, currentState.v.x, currentState.v.y, currentState.f, currentState.a);
+		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
 
 		if (!currentInput) {
 			return;
 		};
 		
 		currentState.a += (currentInput.rotation > 0) ? rotationSpeed : (currentInput.rotation < 0) ? -rotationSpeed : 0;
+		// Normalise the angle
+		if (currentState.a > Math.PI*2) {
+			currentState.a = currentState.a - Math.PI*2;
+		} else if (currentState.a < -Math.PI*2) {
+			currentState.a = currentState.a + Math.PI*2;
+		};
 
 		// Is it a good idea to update the force here, rather than in the physics update?
 		//if (!previousInput || currentInput.forward != previousInput.forward) {
 		//currentState.f = (currentInput.forward > 0) ? 10 : (Math.abs(currentState.v.x) > 0.1 || Math.abs(currentState.v.y) > 0.1) ? -5 : 0;
-		currentState.f = (currentInput.forward > 0) ? 5 : 0;
+		currentState.f = (currentInput.forward > 0) ? 250 : 0;
 		//};
 		
 		// Multiplying velocity by fraction causes sync issues between client and server
 		// Need to come up with a more reliable method.
-		//currentState.v.x *= 0.96;
-		//currentState.v.y *= 0.96;
+		currentState.v.x *= 0.98;
+		currentState.v.y *= 0.98;
 		
 		// Reducing velocity by a fixed amount to help with syncing
 		if (Math.abs(currentState.v.x) > 0.5) {
@@ -81,7 +108,7 @@ var Player = function(id, x, y, vx, vy, f, a) {
 				currentState.v.x = -MAX_VELOCITY;
 			};
 		} else if (previousState.v.x != 0 && Math.abs(currentState.v.x) < 0.6) {
-			//currentState.v.x = 0;
+			currentState.v.x = 0;
 		};
 		
 		if (Math.abs(currentState.v.y) > MAX_VELOCITY) {
@@ -91,7 +118,7 @@ var Player = function(id, x, y, vx, vy, f, a) {
 				currentState.v.y = -MAX_VELOCITY;
 			};
 		} else if (previousState.v.y != 0 && Math.abs(currentState.v.y) < 0.6) {
-			//currentState.v.y = 0;
+			currentState.v.y = 0;
 		};
 		
 		//console.log("c:"+currentState.v.x);
@@ -108,12 +135,13 @@ var Player = function(id, x, y, vx, vy, f, a) {
 		getState: getState,
 		getInput: getInput,
 		getPreviousInput: getPreviousInput,
+		hasChanged: hasChanged,
 		setState: setState,
 		updateState: updateState,
 		updateInput: updateInput
 	};
 };
 
-exports.init = function(id, x, y, v, f, a) {
-	return new Player(id, x, y, v, f, a);
+exports.init = function(id, x, y, a, f, vx, vy) {
+	return new Player(id, x, y, a, f, vx, vy);
 };

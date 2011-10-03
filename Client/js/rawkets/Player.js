@@ -3,10 +3,10 @@
 **************************************************/
 
 r.namespace("Player");
-rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use a State object, instead of 6 arguments
+rawkets.Player = function(id, x, y, a, f, vx, vy) { // Should probably just use a State object, instead of 6 arguments
 	var id = id,
-		currentState = new r.State(x, y, vx, vy, f, a),
-		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.v.x, currentState.v.y, currentState.f, currentState.a),
+		currentState = new r.State(x, y, a, f),
+		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f),
 		currentInput = new r.Input(),
 		previousInput = new r.Input(),
 		MAX_VELOCITY = 150,
@@ -14,14 +14,20 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 		//MAX_ROTATION_SPEED = 0.09, // Maximum rotation speed
 		lastCorrection; // Time of last correction received from server
 		
-	var getState = function(snapped) {
+	var getState = function(trim) {
 		var newState;
-		if (snapped) {
-			newState = new r.State(Math.floor(currentState.p.x), Math.floor(currentState.p.y), Math.floor(currentState.v.x), Math.floor(currentState.v.y), Math.floor(currentState.f), currentState.a);
+		if (trim) {
+			// Full state for client prediction
+			// newState = r.State(Math.floor(currentState.p.x), Math.floor(currentState.p.y), currentState.a, Math.floor(currentState.f), Math.floor(currentState.v.x), Math.floor(currentState.v.y));
+			// Slim state
+			newState = r.State(Number(currentState.p.x.toFixed(2)), Number(currentState.p.y.toFixed(2)), Number(currentState.a.toFixed(2)), currentState.f);
 			return newState;
 		};
-		
-		newState = new r.State(currentState.p.x, currentState.p.y, currentState.v.x, currentState.v.y, currentState.f, currentState.a);
+
+		// Full state for client prediction
+		// newState = r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
+		// Slim state
+		newState = r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f);
 		return newState;
 	};
 
@@ -33,13 +39,28 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 	var getPreviousInput = function() {
 		return previousInput;
 	};
+
+	var hasChanged = function() {
+		if (JSON.stringify(currentState) != JSON.stringify(previousState)) {
+			return true;
+		};
+
+		return false;
+	};
 	
 	var setState = function(state) {
 		currentState.p.x = state.p.x;
 		currentState.p.y = state.p.y;
-		currentState.v.x = state.v.x;
-		currentState.v.y = state.v.y;
-		currentState.f = state.f;
+
+		if (state.v) {
+			currentState.v.x = state.v.x;
+			currentState.v.y = state.v.y;
+		};
+
+		if (state.f >= 0) {
+			currentState.f = state.f;	
+		};
+		
 		currentState.a = state.a;
 	};
 		
@@ -50,7 +71,7 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 			previousState = new r.State();
 			return;
 		};*/		
-		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.v.x, currentState.v.y, currentState.f, currentState.a);
+		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
 		
 		if (!currentInput) {
 			return;
@@ -69,7 +90,7 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 		//if (!previousInput || currentInput.forward != previousInput.forward) {
 		//currentState.f = (currentInput.forward > 0) ? 10 : (Math.abs(currentState.v.x) > 0.1 || Math.abs(currentState.v.y) > 0.1) ? -5 : 0;
 		//currentState.f = (currentInput.forward > 0) ? 50 : (Math.abs(currentState.v.x) > 0.5 || Math.abs(currentState.v.y) > 0.5) ? (currentState.v.x > 0 || currentState.v.y > 0) ? -50 : 50 : 0;
-		currentState.f = (currentInput.forward > 0) ? 5 : 0;
+		//currentState.f = (currentInput.forward > 0) ? 5 : 0;
 		//};
 		
 		// Multiplying velocity by fraction causes sync issues between client and server
@@ -133,36 +154,153 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 	var draw = function(viewport) {
 		if (currentState) {
 			var ctx = viewport.ctx;
-			//var pos = (local) ? new Vector({x: canvas.width/2, y: canvas.height/2}) : viewport.worldToScreen(currentState.pos.x, currentState.pos.y);
-			ctx.save();
-			
-			ctx.translate(viewport.dimensions.width/2, viewport.dimensions.height/2);
-			
-			ctx.fillStyle = "rgb(255, 255, 255)";
-			ctx.fillText("("+currentState.p.x+", "+currentState.p.y+")", 0, 20);
-			
-			ctx.rotate(currentState.a);
+			var screenPos = viewport.worldToScreen(currentState.p.x, currentState.p.y);
 
-			if (Math.abs(currentState.f) > 0) {
-				flameHeight = Math.floor(8+(Math.random()*4));
-				ctx.fillStyle = "orange";
+			// Player is within the viewport
+			if (viewport.withinBounds(currentState.p.x, currentState.p.y)) {
+				ctx.save();
+				ctx.translate(screenPos.x, screenPos.y);
+			
+				ctx.fillStyle = "rgb(255, 255, 255)";
+				ctx.fillText("("+currentState.p.x+", "+currentState.p.y+")", 0, 20);
+				
+				ctx.rotate(currentState.a);
+
+				if (currentState.f > 0) {
+					flameHeight = Math.floor(8+(Math.random()*4));
+					ctx.fillStyle = "orange";
+					ctx.beginPath();
+					ctx.moveTo(-(6+flameHeight), 0);
+					ctx.lineTo(-6, -2);
+					ctx.lineTo(-6, 2);
+					ctx.closePath();
+					ctx.fill();
+				};
+
+				ctx.fillStyle = "rgb(255, 255, 255)";
 				ctx.beginPath();
-				ctx.moveTo(-(6+flameHeight), 0);
-				ctx.lineTo(-6, -2);
-				ctx.lineTo(-6, 2);
+				ctx.moveTo(-7, -6);
+				ctx.lineTo(7, 0);
+				ctx.lineTo(-7, 6);
 				ctx.closePath();
 				ctx.fill();
-			};
+				
+				ctx.restore();
+			// Player is outside the viewport
+			} else {
+				// Draw an arrow at the edge of the viewport indicating where the player is
+				var localScreenPos = viewport.worldToScreen(viewport.pos.x, viewport.pos.y);
 
-			ctx.fillStyle = "rgb(255, 255, 255)";
-			ctx.beginPath();
-			ctx.moveTo(-7, -6);
-			ctx.lineTo(7, 0);
-			ctx.lineTo(-7, 6);
-			ctx.closePath();
-			ctx.fill();
-			
-			ctx.restore();
+				var x1 = localScreenPos.x;
+				var y1 = localScreenPos.y;
+				var x2 = screenPos.x;
+				var y2 = screenPos.y;
+				
+				var angle = Math.atan2(y1-y2, x1-x2);
+
+				var x3;
+				var y3;
+				var x4;
+				var y4;
+
+				var px;
+				var py;
+
+				// Check bottom edge
+				if (screenPos.y > viewport.dimensions.height) {
+					x3 = 0;
+					y3 = viewport.dimensions.height;
+					x4 = viewport.dimensions.width;
+					y4 = viewport.dimensions.height;
+
+					// Can this formula be simplified?
+					px = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+					py = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+					
+					px = px;
+					py -= 10;
+				};
+
+				// Check top edge
+				if (screenPos.y < 0) {
+					x3 = 0;
+					y3 = 0;
+					x4 = viewport.dimensions.width;
+					y4 = 0;
+
+					px = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+					py = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+
+					px = px;
+					py += 10;
+				};
+
+				// Check left edge
+				if (screenPos.x < 0) {
+					x3 = 0;
+					y3 = 0;
+					x4 = 0;
+					y4 = viewport.dimensions.height;
+
+					var tmpPx, tmpPy;
+					tmpPx = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+					tmpPy = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+
+					// Check that we're not going to overrule the top and bottom checks
+					if (tmpPy > 0 && tmpPy < viewport.dimensions.height) {
+						px = tmpPx;
+						py = tmpPy;
+
+						px += 10;
+						py = py;
+					};
+				};
+
+				// Check right edge
+				if (screenPos.x > viewport.dimensions.width) {
+					x3 = viewport.dimensions.width;
+					y3 = 0;
+					x4 = viewport.dimensions.width;
+					y4 = viewport.dimensions.height;
+
+					var tmpPx, tmpPy;
+					tmpPx = ((((x1*y2)-(y1*x2))*(x3-x4))-((x1-x2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+					tmpPy = ((((x1*y2)-(y1*x2))*(y3-y4))-((y1-y2)*((x3*y4)-(y3*x4)))) / (((x1-x2)*(y3-y4))-((y1-y2)*(x3-x4)));
+
+					// Check that we're not going to overrule the top and bottom checks
+					if (tmpPy > 0 && tmpPy < viewport.dimensions.height) {
+						px = tmpPx;
+						py = tmpPy;
+
+						px -= 10;
+						py = py;
+					};
+				};
+
+				// Draw debug lines
+				// ctx.save();
+				// ctx.strokeStyle = "rgb(255, 255, 255)";
+				// ctx.lineWidth = 2;
+				// ctx.beginPath();
+				// ctx.moveTo(x1, y1);
+				// ctx.lineTo(x2, y2);
+				// ctx.moveTo(x3, y3);
+				// ctx.lineTo(x4, y4);
+				// ctx.stroke();
+				// ctx.restore();
+				
+				ctx.save();
+				ctx.translate(px, py);
+				ctx.rotate(angle);
+				ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+				ctx.beginPath();
+				ctx.moveTo(-5, 0);
+				ctx.lineTo(5, 5);
+				ctx.lineTo(5, -5);
+				ctx.closePath();
+				ctx.fill();
+				ctx.restore();
+			};
 		};
 	};
 	
@@ -172,6 +310,7 @@ rawkets.Player = function(id, x, y, vx, vy, f, a) { // Should probably just use 
 		getState: getState,
 		getInput: getInput,
 		getPreviousInput: getPreviousInput,
+		hasChanged: hasChanged,
 		setState: setState,
 		updateState: updateState,
 		updateInput: updateInput,

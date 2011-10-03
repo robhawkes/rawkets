@@ -4,7 +4,7 @@
 
 var Vector = require("./Vector");
 
-var State = function(x, y, vx, vy, f, a) {
+var State = function(x, y, a, f, vx, vy) {
 	var p = Vector.init(x, y) || Vector.init(0, 0), // Position
 		a = a || 0, // Angle
 		v = Vector.init(vx, vy) || Vector.init(0, 0), // Velocity (directionless, needs angle)
@@ -18,6 +18,6 @@ var State = function(x, y, vx, vy, f, a) {
 	};
 };
 
-exports.init = function(x, y, vx, vy, f, a) {
-	return new State(x, y, vx, vy, f, a);
+exports.init = function(x, y, a, f, vx, vy) {
+	return new State(x, y, a, f, vx, vy);
 };

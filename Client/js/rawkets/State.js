@@ -3,7 +3,7 @@
 **************************************************/
 
 r.namespace("State");
-rawkets.State = function(x, y, vx, vy, f, a) {
+rawkets.State = function(x, y, a, f, vx, vy) {
 	var p = new r.Vector(x, y) || new Vector(0, 0), // Position
 		a = a || 0, // Angle
 		v = new r.Vector(vx, vy) || new Vector(0, 0), // Velocity (directionless, needs angle)

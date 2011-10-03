@@ -12,14 +12,21 @@
 var http = require("http"), 
 	sys = require("sys"),
 	io = require("socket.io").listen(8000),
-	BISON = require("./bison"),
+	Input = require("./Input"),
 	Player = require("./Player"),
+	PlayerAI = require("./PlayerAI"),
 	server,
 	socket,
 	rk4 = require("./RK4").init(),
+	aiPlayers = [],
+	maxAiPlayers = 5,
 	players = [],
 	currentTime = Date.now(), // Current time in ms, used to calculate frame time
 	runUpdate = true,
+
+	// Game world
+	worldWidth = 2000,
+	worldHeight = 2000,
 	
 	// Message queues
 	msgOutQueue = [],
@@ -32,122 +39,162 @@ var http = require("http"),
 	MESSAGE_TYPE_UPDATE_PLAYER = 5,
 	MESSAGE_TYPE_UPDATE_INPUT = 6,
 	MESSAGE_TYPE_REMOVE_PLAYER = 7;
-	
+
+
+// Start the game server
+init();
+
+
 /**************************************************
-** SET UP HTTP SERVER
+** GAME INITIALISATION
 **************************************************/
 
-//server = http.createServer(function(req, res){});
-//server.listen(8000);
+function init() {
+	// Set up AI entities
+	var i, x, y, playerAi;
+	for (i = 0; i < maxAiPlayers; i++) {
+		x = Math.round(Math.random()*worldWidth);
+		y = Math.round(Math.random()*worldHeight);
+		playerAi = PlayerAI.init("ai"+Date.now().toString()+(Math.random()*100).toString(), x, y);
+		//playerAi.player.updateInput(Input.init(1, 1));
+		//playerAi.setTarget(Player.init(null, worldWidth/2, worldHeight/2));
+		aiPlayers.push(playerAi);
+	};
+
+	// Set up socket server
+	initSocket();
+};
+
 
 /**************************************************
 ** SET UP SOCKET SERVER
 **************************************************/
 
-io.configure(function() {
-	io.set("transports", ["websocket"]);
-	io.set("log level", 2);
-});
-
-// Client connected
-socket = io.sockets.on("connection", function(client){
-	// Useful client properties and methods
-	// client.connected 		Whether the client is connected.
-	// client.send(msg) 		Sends a message to the client.
-	// client.broadcast(msg)	Sends a message to all other clients.
-	
-	console.log("New player has connected: ", client.id);
-	 
-	// Client disconnected
-	client.on("disconnect", function(){
-		console.log("Player has disconnected: ", client.id);
-		
-		// Remove player safely
-		var player = playerById(client.id);
-		if (!player) {
-			return;
-		};
-		
-		// Remove player from the players array
-		var id = player.id;
-		players.splice(indexOfByPlayerId(player.id), 1);
-		console.log("Removed player from game: ", id);
-		console.log("Total players now in game: ", players.length);
-		
-		client.broadcast.emit("game message", formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: id}));
+function initSocket() {
+	io.configure(function() {
+		io.set("transports", ["websocket"]);
+		io.set("log level", 2);
 	});
-	
-	// Client sent a message
-	client.on("game message", function(msg) {
-		//console.log("Data: ", data);
-		//var msg = BISON.decode(data);
-		//console.log("Msg: ", msg);
 
-		sys.puts("Message id "+msg.z+" received at "+Date.now());
+	// Client connected
+	socket = io.sockets.on("connection", function(client){
+		// Useful client properties and methods
+		// client.connected 		Whether the client is connected.
+		// client.send(msg) 		Sends a message to the client.
+		// client.broadcast(msg)	Sends a message to all other clients.
+		
+		console.log("New player has connected: ", client.id);
+		 
+		// Client disconnected
+		client.on("disconnect", function(){
+			console.log("Player has disconnected: ", client.id);
+			
+			// Remove player safely
+			var player = playerById(client.id);
+			if (!player) {
+				return;
+			};
+			
+			// Remove player from the players array
+			var id = player.id;
+			players.splice(indexOfByPlayerId(player.id), 1);
+			console.log("Removed player from game: ", id);
+			console.log("Total players now in game: ", players.length);
+			
+			client.broadcast.emit("game message", formatMessage(MESSAGE_TYPE_REMOVE_PLAYER, {id: id}));
+		});
+		
+		// Client sent a message
+		client.on("game message", function(msg) {
+			//sys.puts("Message id "+msg.z+" received at "+Date.now());
 
-		if (msg.z !== undefined) {
-			switch (msg.z) {
-				case MESSAGE_TYPE_PING:
-					var time = Date.now();
-					client.emit("game message", formatMessage(MESSAGE_TYPE_PING, {t: time.toString(), ps: msg.ps}));
-					sys.puts("Message id "+MESSAGE_TYPE_PING+" sent at "+time.toString());
-					break;
-				case MESSAGE_TYPE_SYNC:
-					// Add new player to the game
-					var localPlayer = Player.init(client.id, 1000, 1000);
-					players.push(localPlayer);
-					// Send new player to other clients
-					client.broadcast.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: localPlayer.id, t: currentTime.toString(), s: localPlayer.getState()}));
+			if (msg.z !== undefined) {
+				switch (msg.z) {
+					case MESSAGE_TYPE_PING:
+						var time = Date.now();
+						client.emit("game message", formatMessage(MESSAGE_TYPE_PING, {t: time.toString(), ps: msg.ps}));
+						sys.puts("Message id "+MESSAGE_TYPE_PING+" sent at "+time.toString());
+						break;
+					case MESSAGE_TYPE_SYNC:
+						// Create new player
+						var localPlayer = Player.init(client.id, 1000, 1000);
+			
+						// Send new player to other clients
+						client.broadcast.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: localPlayer.id, t: currentTime.toString(), s: localPlayer.getState()}));
+						
+						if (!localPlayer) {
+							return;
+						};
+						
+						// Send existing players
+						var p, playerCount = players.length;
+						for (p = 0; p < playerCount; p++) {
+							player = players[p];
 
-					console.log("New player added to game: ", client.id, currentTime);
-					console.log("Total players now in game: ", players.length);
-					
-					if (!localPlayer) {
-						return;
-					};
-					
-					// Send existing players
-					var p, playerCount = players.length;
-					for (p = 0; p < playerCount; p++) {
-						player = players[p];
+							if (!player || player.id == localPlayer.id) {
+								continue;
+							};
 
-						if (!player || player.id == localPlayer.id) {
-							continue;
+							// Need to queue these messages if the client isn't fully synced up and ready yet
+							client.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: player.id, t: currentTime.toString(), s: player.getState()}));
 						};
 
-						client.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: player.id, t: currentTime.toString(), s: player.getState()}));
-					};
-					
-					// Sync complete
-					// Should this wait until client has confirmed sync is complete?
-					client.emit("game message", formatMessage(MESSAGE_TYPE_SYNC_COMPLETED, {}));
-					break;
-				case MESSAGE_TYPE_UPDATE_INPUT:
-					var player = playerById(client.id);
-					if (player && msg.i) {
-						player.updateInput(msg.i);
-					};
-					//console.log("Input updated", currentTime.toString(), msg.t.toString(), new Date().getTime().toString());
-					break;
+						var aiPlayerCount = aiPlayers.length;
+						for (p = 0; p < aiPlayerCount; p++) {
+							aiPlayer = aiPlayers[p];
+
+							if (!aiPlayer) {
+								continue;
+							};
+
+							// [Temp] Make first connected player the AI target
+							if (playerCount == 0) {
+								aiPlayer.setTarget(localPlayer);
+								aiPlayer.setState(aiPlayer.stateTypes.ATTACK);
+							};
+
+							// Need to queue these messages if the client isn't fully synced up and ready yet
+							client.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: aiPlayer.player.id, t: currentTime.toString(), s: aiPlayer.player.getState()}));
+						}
+
+						// Add new player
+						players.push(localPlayer);
+
+						console.log("New player added to game: ", client.id, currentTime);
+						console.log("Total players now in game: ", players.length);
+						
+						// Sync complete
+						// Should this wait until client has confirmed sync is complete?
+						client.emit("game message", formatMessage(MESSAGE_TYPE_SYNC_COMPLETED, {}));
+						break;
+					case MESSAGE_TYPE_UPDATE_INPUT:
+						var player = playerById(client.id);
+						if (player && msg.i) {
+							player.updateInput(msg.i);
+						};
+						break;
+				};
 			};
-		};
-	});
-});
+		});
+	});	
+};
+
 
 /**************************************************
 ** GAME LOOP
 **************************************************/
 
-// var localTest = false,
-// 	localCount = 0;
 function update() {
 	var newTime = Date.now(),
 		frameTime = (newTime - currentTime)/1000, // Convert from ms to seconds
 		player,
 		playerCount = players.length,
+		aiPlayer,
+		aiPlayerCount = aiPlayers.length,
 		p;
 	
 	// Limit frame time to avoid "spiral of death"
+	// Document what is meant by "spiral of death", and what 0.25 means
 	if (frameTime > 0.25) {
 		console.log("Frametime pegged at 0.25");
 		frameTime = 0.25;
@@ -156,13 +203,7 @@ function update() {
 	// Update game time
 	currentTime = newTime;
 	
-	// if (!localTest && playerCount > 0) {
-	// 	var localPlayer = players[0];
-	// 	console.log("Start player: "+currentTime, localPlayer.currentState.p.x, localPlayer.currentState.p.y, localPlayer.currentState.v.x, localPlayer.currentState.v.y, localPlayer.currentState.f, localPlayer.currentState.a);
-	// 	localTest = true;
-	// };
-	
-	// Update player inputs
+	// Update player states
 	for (p = 0; p < playerCount; p++) {
 		player = players[p];
 		
@@ -176,6 +217,18 @@ function update() {
 		// Else update the state and continue the physics simulation
 		player.updateState();
 	};
+
+	// Update AI player states
+	for (p = 0; p < aiPlayerCount; p++) {
+		aiPlayer = aiPlayers[p];
+		
+		if (!aiPlayer) {
+			continue;
+		};
+		
+		aiPlayer.update();
+		aiPlayer.player.updateState();
+	};
 	
 	// Run RK4 simulation
 	rk4.accumulator += frameTime;
@@ -188,20 +241,27 @@ function update() {
 				continue;
 			};
 			
-			// Skip update if the entity is still
 			rk4.integrate(player.currentState);
-		};	
+		};
+
+		for (p = 0; p < aiPlayerCount; p++) {
+			aiPlayer = aiPlayers[p];
+			
+			if (!aiPlayer) {
+				continue;
+			};
+			
+			// Skip update if the entity is still
+			rk4.integrate(aiPlayer.player.currentState);
+		};
 		// End loop through all game entities
-		
-		// Increase simulation time
-		//rk4.t += rk4.dt;
 		
 		// Update accumulator
 		rk4.accumulator -= Math.abs(rk4.dt); // Absolute value to allow for reverse time
 	};
 	
-	// ONLY FOR CLIENT
 	// Find leftover time due to incomplete physics time delta
+	// Why have I disabled this? Document or remove.
 	//var alpha = rk4.accumulator / Math.abs(rk4.dt);  // Absolute value to allow for reverse time
 	
 	// Start loop through all game entities
@@ -211,19 +271,34 @@ function update() {
 		if (!player) {
 			continue;
 		};
+
+		playerWithinUpdate(player);
 		
-		// if (localCount < 100) {
-		// 	console.log(currentTime, player.getState());
-		// 	localCount++;
-		// };
-		
-		if (player.getState() && player.getInput()) {
-			msgOutQueue.push({msg: formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: player.id, t: currentTime.toString(), s: player.getState(), i: player.getInput()})});
+		if (player.getState() && player.getInput() && player.hasChanged()) {
+			// Full update for client-side prediction
+			//msgOutQueue.push({msg: formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: player.id, t: currentTime.toString(), s: player.getState(), i: player.getInput()})});
+
+			// Slim update for no client-side prediction
+			msgOutQueue.push({msg: formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: player.id, s: player.getState(true)})});
 		};
 		
-		// ONLY FOR CLIENT
 		// Interpolate state considering incomplete physics time delta (accumulator)
+		// Why have I disabled this? Document or remove.
 		//player.interpolate(alpha);
+	};
+
+	for (p = 0; p < aiPlayerCount; p++) {
+		aiPlayer = aiPlayers[p];
+			
+		if (!aiPlayer) {
+			continue;
+		};
+
+		playerWithinUpdate(aiPlayer.player);
+		
+		if (aiPlayer.player.getState() && aiPlayer.player.getInput() && aiPlayer.player.hasChanged()) {
+			msgOutQueue.push({msg: formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: aiPlayer.player.id, s: aiPlayer.player.getState(true)})});
+		};
 	};
 	// End loop through all game entities
 	
@@ -238,7 +313,7 @@ function update() {
 	
 	// Schedule next loop
 	if (runUpdate) {;
-		setTimeout(update, 1000/60); // Remember, this is however long it take to update PLUS 60ms
+		setTimeout(update, 1000/60);
 	};
 };
 
@@ -257,7 +332,6 @@ function formatMessage(type, args) {
 			msg[arg] = args[arg];
 	};
 
-	//return BISON.encode(msg);
 	return msg;
 };
 
@@ -288,7 +362,6 @@ function unqueueOutgoingMessages(msgQueue) {
 			switch (msg.z) {
 				case MESSAGE_TYPE_UPDATE_PLAYER:
 					io.sockets.emit("game message", msg);
-					//sys.puts("Sent position update: "+sys.inspect(msg.s));
 					break;
 			};
 			//sys.puts("Message id "+msg.z+" sent at "+new Date().getTime().toString());
@@ -319,4 +392,46 @@ function indexOfByPlayerId(id) {
 	};
 	
 	return false;
+};
+
+/**************************************************
+** GAME WORLD HELPERS
+**************************************************/
+
+// World boundary checks
+// Move to a viewport or world class?
+function withinWorldBounds(x, y) {
+	if (x > 0 && 
+		x < worldWidth &&
+		y > 0 &&
+		y < worldHeight) {
+		return true;	
+	}
+	
+	return false;
+};
+
+function playerWithinUpdate(player) {
+	var currentState = player.currentState;
+	if (!withinWorldBounds(currentState.p.x, currentState.p.y)) {
+		if (currentState.p.x > worldWidth) {
+			currentState.p.x = worldWidth;
+			currentState.v.x = 0;
+		};
+
+		if (currentState.p.x < 0) {
+			currentState.p.x = 0;
+			currentState.v.x = 0;
+		};
+
+		if (currentState.p.y > worldHeight) {
+			currentState.p.y = worldHeight;
+			currentState.v.y = 0;
+		};
+
+		if (currentState.p.y < 0) {
+			currentState.p.y = 0;
+			currentState.v.y = 0;
+		};
+	};	
 };

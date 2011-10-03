@@ -11,7 +11,6 @@ r.namespace("TimeDelta");
 */
 rawkets.TimeDelta = function(latency, timeSyncDelta) {
 	// Properties
-	
 	var _latency = latency,
 		_timeSyncDelta = timeSyncDelta;
 
@@ -87,8 +86,7 @@ rawkets.Clock = function(message) {
 				_bursting = false;
 
 				e.fire("PROFILER_STOP_BENCHMARK", {id: msg.ps, time: Date.now(), type: 2});
-				e.fire("CLOCK_READY");
-				console.log("Clock ready", Date.now(), time(), _syncTimeDelta);
+				e.fire("CLOCK_READY", _latency);
 				return;
 			};
 			requestServerTime(msg.ps);

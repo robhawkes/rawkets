@@ -6,7 +6,6 @@ var Vector = require("./Vector"),
 	State = require("./State");
 
 var RK4 = function() {
-	//var t = 0.0, // Simulation time, used for identifying when an update was made (only used for corrections)
 	var	dt = 0.01, // Simulation timestep
 		accumulator = 0.0; // Accumulated time each update in ms
 		
@@ -69,7 +68,6 @@ var RK4 = function() {
 	};
 	
 	return {
-		//t: t,
 		dt: dt,
 		accumulator: accumulator,
 		integrate: integrate
