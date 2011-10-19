@@ -8,11 +8,12 @@ var State = require("./State"),
 var Player = function(id, x, y, a, f, vx, vy) {
 	var id = id,
 		currentState = State.init(x, y, a, f, vx, vy),
-		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y),
+		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h, currentState.v.x, currentState.v.y),
 		currentInput = Input.init(),
 		previousInput = Input.init(),
 		MAX_VELOCITY = 1500,
-		rotationSpeed = 0.09; // Manually set rotation speed for now
+		rotationSpeed = 0.09, // Manually set rotation speed for now
+		bulletTime = Date.now()-1000; // Time last bullet was fired
 
 	var getState = function(trim) {
 		var newState;
@@ -20,19 +21,19 @@ var Player = function(id, x, y, a, f, vx, vy) {
 			// Full state for client prediction
 			// newState = State.init(Math.floor(currentState.p.x), Math.floor(currentState.p.y), currentState.a, Math.floor(currentState.f), Math.floor(currentState.v.x), Math.floor(currentState.v.y));
 			// Slim state
-			newState = State.init(Number(currentState.p.x.toFixed(2)), Number(currentState.p.y.toFixed(2)), Number(currentState.a.toFixed(2)), currentState.f);
+			newState = State.init(Number(currentState.p.x.toFixed(2)), Number(currentState.p.y.toFixed(2)), Number(currentState.a.toFixed(2)), currentState.f, currentState.h);
 			return newState;
 		};
 
 		// Full state for client prediction
 		// newState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
 		// Slim state
-		newState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f);
+		newState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h);
 		return newState;
 	};
 
 	var getInput = function() {
-		var newInput = Input.init(currentInput.forward, currentInput.rotation);
+		var newInput = Input.init(currentInput.forward, currentInput.rotation, currentInput.fire);
 		return newInput;
 	};
 	
@@ -60,13 +61,14 @@ var Player = function(id, x, y, a, f, vx, vy) {
 		if (state.f) {
 			currentState.f = state.f;	
 		};
-		
+
+		currentState.h = state.h;
 		currentState.a = state.a;
 	};
 
 	var updateState = function() {
 		//console.log("p:"+previousState.v.x);
-		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
+		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h, currentState.v.x, currentState.v.y);
 
 		if (!currentInput) {
 			return;
@@ -120,6 +122,15 @@ var Player = function(id, x, y, a, f, vx, vy) {
 		} else if (previousState.v.y != 0 && Math.abs(currentState.v.y) < 0.6) {
 			currentState.v.y = 0;
 		};
+
+		// Replenish health
+		// if (currentState.h < 100) {
+		// 	currentState.h += 0.25;
+
+		// 	if (currentState.h > 100) {
+		// 		currentState.h = 100;
+		// 	};
+		// };
 		
 		//console.log("c:"+currentState.v.x);
 	};
@@ -127,6 +138,19 @@ var Player = function(id, x, y, a, f, vx, vy) {
 	var updateInput = function(newInput) {
 		previousInput = currentInput;
 		currentInput = newInput;
+	};
+
+	var bulletHit = function() {
+		currentState.h -= 20;
+
+		if (currentState.h <= 0) {
+			// Respawn in original position
+			// Move this to the main game logic, or the player manager class
+			// Also, spawn in a random position within the game world
+			currentState.p.x = x;
+			currentState.p.y = y;
+			currentState.h = 100;
+		};
 	};
 
 	return {
@@ -138,7 +162,9 @@ var Player = function(id, x, y, a, f, vx, vy) {
 		hasChanged: hasChanged,
 		setState: setState,
 		updateState: updateState,
-		updateInput: updateInput
+		updateInput: updateInput,
+		bulletTime: bulletTime,
+		bulletHit: bulletHit
 	};
 };
 

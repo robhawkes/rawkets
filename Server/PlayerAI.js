@@ -55,28 +55,112 @@ var PlayerAI = function(id, x, y) {
 		angle = Math.atan2(relativeDiff.y, relativeDiff.x);
 
 		return {
+			distance: distance,
 			angle: angle
 		};
 	};
 
-	var update = function(players, aiPlayers) {
+	var update = function(players, aiPlayers, worldWidth, worldHeight) {
 		// Check state
 		switch (state) {
 			case stateTypes.EXPLORE:
 				// Do nothing for now
 				break;
 			case stateTypes.ATTACK:
-				// Find a target (do this here or somewhere else?)
-				// Move to and attack the target
-				var targetInfo = getTargetInfo(player, target);
+				var newInput = player.getInput(),
+					currentPos = player.currentState.p,
+					currentAngle = player.currentState.a,
+					edgeDist = {
+						top: currentPos.y,
+						bottom: worldHeight-currentPos.y,
+						left: currentPos.x,
+						right: worldWidth-currentPos.x
+					};
 
-				if (targetInfo.angle > 0.05 && targetInfo.angle < Math.PI) {
-					player.updateInput(Input.init(1, 1));
-				} else if (targetInfo.angle < -0.05 && targetInfo.angle > -Math.PI) {
-				 	player.updateInput(Input.init(1, -1));
-				} else {
-					player.updateInput(Input.init(1, 0));
+				// Move forward by default
+				newInput.forward = 1;
+				newInput.rotation = 0;
+				newInput.fire = 0;
+
+				//var angleLimit = Math.PI*(Math.random()*0.5);
+				var angleLimit = Math.PI*0.1;
+				
+				// Check distance to edges
+				if (edgeDist.top < 150) {
+					//newInput.forward = 0;
+					if (currentAngle > Math.PI/2-angleLimit && currentAngle < Math.PI/2+angleLimit) {
+						newInput.rotation = 0;
+					} else {
+						//newInput.rotation = (Math.random() % 0.5 < 0.2) ? -1 : 1;
+						newInput.rotation = 1;
+					};
+				} else if (edgeDist.bottom < 150) {
+					//newInput.forward = 0;
+					if (currentAngle > (3*Math.PI)/2-angleLimit && currentAngle < (3*Math.PI)/2+angleLimit) {
+						newInput.rotation = 0;
+					} else {
+						//newInput.rotation = (Math.random() % 0.5 < 0.2) ? -1 : 1;
+						newInput.rotation = 1;
+					};
+				} else if (edgeDist.left < 150) {
+					//newInput.forward = 0;
+					if (currentAngle > Math.PI*2-angleLimit || currentAngle < angleLimit) {
+						newInput.rotation = 0;
+					} else {
+						//newInput.rotation = (Math.random() % 0.5 < 0.2) ? -1 : 1;
+						newInput.rotation = 1;
+					};
+				} else if (edgeDist.right < 150) {
+					//newInput.forward = 0;
+					if (currentAngle > Math.PI-angleLimit && currentAngle < Math.PI+angleLimit) {
+						newInput.rotation = 0;
+					} else {
+						//newInput.rotation = (Math.random() % 0.5 < 0.2) ? -1 : 1;
+						newInput.rotation = 1;
+					};
 				};
+
+				// Find a target (do this here or somewhere else?)
+				var i, aiPlayerCount = aiPlayers.length, aiPlayer, tmpTargetInfo, targetInfo, nearestTargetDistance;
+				var tmpCount = 0;
+				if (aiPlayerCount > 0) {
+					for (i = 0; i < aiPlayerCount; i++) {
+						aiPlayer = aiPlayers[i].player;
+
+						if (aiPlayer.id == player.id) {
+							continue;
+						};
+
+						tmpTargetInfo = getTargetInfo(player, aiPlayer);
+
+						// Change target if player is closer than the others
+						if (!nearestTargetDistance || tmpTargetInfo.distance < nearestTargetDistance) {
+							nearestTargetDistance = tmpTargetInfo.distance;
+							target = aiPlayer;
+							targetInfo = tmpTargetInfo;
+						};
+					};
+				};
+
+				// Move to and attack the target
+				if (target && targetInfo) {
+					//newInput.forward = (targetInfo.distance < 300) ? 0 : 1;
+
+					if (targetInfo.angle > 0.05 && targetInfo.angle < Math.PI) {
+						newInput.rotation = 1;
+					} else if (targetInfo.angle < -0.05 && targetInfo.angle > -Math.PI) {
+					 	newInput.rotation = -1;
+					} else {
+						newInput.rotation = 0;
+					};
+
+					// Fire every 500-1000ms if within a certain distance 
+					if (targetInfo.distance < 600 && Date.now() - player.bulletTime > 500+Math.round(Math.random()*500)) {
+						newInput.fire = 1;
+					};
+				};
+
+				player.updateInput(newInput);
 
 				break;
 			default:

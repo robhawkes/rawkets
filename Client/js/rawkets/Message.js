@@ -23,7 +23,10 @@ rawkets.Message = function(socket) {
 		NEW_PLAYER: 4,
 		UPDATE_PLAYER: 5,
 		UPDATE_INPUT: 6,
-		REMOVE_PLAYER: 7
+		REMOVE_PLAYER: 7,
+		MESSAGE_TYPE_NEW_BULLET: 8,
+		MESSAGE_TYPE_UPDATE_BULLET: 9,
+		MESSAGE_TYPE_REMOVE_BULLET: 10
 	};
 	
 	// Methods
@@ -77,6 +80,15 @@ rawkets.Message = function(socket) {
 					break;
 				case types.REMOVE_PLAYER:
 					e.fire("REMOVE_PLAYER", msg);
+					break;
+				case types.MESSAGE_TYPE_NEW_BULLET:
+					e.fire("NEW_BULLET", msg);
+					break;
+				case types.MESSAGE_TYPE_UPDATE_BULLET:
+					e.fire("UPDATE_BULLET", msg);
+					break;
+				case types.MESSAGE_TYPE_REMOVE_BULLET:
+					e.fire("REMOVE_BULLET", msg);
 					break;
 			};
 		};

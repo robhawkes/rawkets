@@ -13,20 +13,24 @@ var http = require("http"),
 	sys = require("sys"),
 	io = require("socket.io").listen(8000),
 	Input = require("./Input"),
+	Vector = require("./Vector"),
 	Player = require("./Player"),
 	PlayerAI = require("./PlayerAI"),
+	Bullet = require("./Bullet"),
+	BulletManager = require("./BulletManager"),
 	server,
 	socket,
 	rk4 = require("./RK4").init(),
-	aiPlayers = [],
-	maxAiPlayers = 5,
-	players = [],
+	aiPlayers = [], // Should prob move this into it's own class that manages players
+	maxAiPlayers = 30,
+	players = [], // Should prob move this into it's own class that manages players
+	bullets = BulletManager.init(),
 	currentTime = Date.now(), // Current time in ms, used to calculate frame time
 	runUpdate = true,
 
 	// Game world
-	worldWidth = 2000,
-	worldHeight = 2000,
+	worldWidth = 1500,
+	worldHeight = 600,
 	
 	// Message queues
 	msgOutQueue = [],
@@ -38,7 +42,10 @@ var http = require("http"),
 	MESSAGE_TYPE_NEW_PLAYER = 4,
 	MESSAGE_TYPE_UPDATE_PLAYER = 5,
 	MESSAGE_TYPE_UPDATE_INPUT = 6,
-	MESSAGE_TYPE_REMOVE_PLAYER = 7;
+	MESSAGE_TYPE_REMOVE_PLAYER = 7,
+	MESSAGE_TYPE_NEW_BULLET = 8,
+	MESSAGE_TYPE_UPDATE_BULLET = 9,
+	MESSAGE_TYPE_REMOVE_BULLET = 10;
 
 
 // Start the game server
@@ -55,9 +62,9 @@ function init() {
 	for (i = 0; i < maxAiPlayers; i++) {
 		x = Math.round(Math.random()*worldWidth);
 		y = Math.round(Math.random()*worldHeight);
-		playerAi = PlayerAI.init("ai"+Date.now().toString()+(Math.random()*100).toString(), x, y);
-		//playerAi.player.updateInput(Input.init(1, 1));
-		//playerAi.setTarget(Player.init(null, worldWidth/2, worldHeight/2));
+
+		// Need to cut down the ID
+		playerAi = PlayerAI.init("ai"+Date.now().toString()+Math.round(Math.random()*99).toString()+Math.round(Math.random()*99).toString(), x, y);
 		aiPlayers.push(playerAi);
 	};
 
@@ -117,7 +124,7 @@ function initSocket() {
 						break;
 					case MESSAGE_TYPE_SYNC:
 						// Create new player
-						var localPlayer = Player.init(client.id, 1000, 1000);
+						var localPlayer = Player.init(client.id, 750, 300);
 			
 						// Send new player to other clients
 						client.broadcast.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: localPlayer.id, t: currentTime.toString(), s: localPlayer.getState()}));
@@ -146,12 +153,6 @@ function initSocket() {
 							if (!aiPlayer) {
 								continue;
 							};
-
-							// [Temp] Make first connected player the AI target
-							// if (playerCount == 0) {
-							// 	aiPlayer.setTarget(localPlayer);
-							// 	aiPlayer.setState(aiPlayer.stateTypes.ATTACK);
-							// };
 
 							// Need to queue these messages if the client isn't fully synced up and ready yet
 							client.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: aiPlayer.player.id, t: currentTime.toString(), s: aiPlayer.player.getState()}));
@@ -191,7 +192,7 @@ function update() {
 		playerCount = players.length,
 		aiPlayer,
 		aiPlayerCount = aiPlayers.length,
-		p;
+		i;
 	
 	// Limit frame time to avoid "spiral of death"
 	// Document what is meant by "spiral of death", and what 0.25 means
@@ -204,8 +205,8 @@ function update() {
 	currentTime = newTime;
 	
 	// Update player states
-	for (p = 0; p < playerCount; p++) {
-		player = players[p];
+	for (i = 0; i < playerCount; i++) {
+		player = players[i];
 		
 		if (!player) {
 			continue;
@@ -219,23 +220,39 @@ function update() {
 	};
 
 	// Update AI player states
-	for (p = 0; p < aiPlayerCount; p++) {
-		aiPlayer = aiPlayers[p];
+	for (i = 0; i < aiPlayerCount; i++) {
+		aiPlayer = aiPlayers[i];
 		
 		if (!aiPlayer) {
 			continue;
 		};
 		
-		aiPlayer.update(players, aiPlayers);
+		aiPlayer.update(players, aiPlayers, worldWidth, worldHeight);
 		aiPlayer.player.updateState();
+
+		// Should this be done by events?
+		if (aiPlayer.player.getInput().fire == 1) {
+			var bulletPos = Vector.init();
+			bulletPos.x = aiPlayer.player.currentState.p.x+(Math.cos(aiPlayer.player.currentState.a)*7);
+			bulletPos.y = aiPlayer.player.currentState.p.y+(Math.sin(aiPlayer.player.currentState.a)*7);
+
+			// Need to cut down the ID
+			bullets.add("bullet"+Date.now()+aiPlayer.player.id, aiPlayer.player.id, bulletPos.x, bulletPos.y, aiPlayer.player.currentState.a, msgOutQueue);
+			aiPlayer.player.bulletTime = Date.now();
+		};
 	};
+
+	// Update bullet states
+	bullets.updateState();
 	
 	// Run RK4 simulation
 	rk4.accumulator += frameTime;
 	while (rk4.accumulator >= rk4.dt) {
 		// Start loop through all game entities
-		for (p = 0; p < playerCount; p++) {
-			player = players[p];
+
+		// Human players
+		for (i = 0; i < playerCount; i++) {
+			player = players[i];
 			
 			if (!player) {
 				continue;
@@ -244,8 +261,9 @@ function update() {
 			rk4.integrate(player.currentState);
 		};
 
-		for (p = 0; p < aiPlayerCount; p++) {
-			aiPlayer = aiPlayers[p];
+		// AI players
+		for (i = 0; i < aiPlayerCount; i++) {
+			aiPlayer = aiPlayers[i];
 			
 			if (!aiPlayer) {
 				continue;
@@ -254,6 +272,10 @@ function update() {
 			// Skip update if the entity is still
 			rk4.integrate(aiPlayer.player.currentState);
 		};
+
+		// Bullets
+		bullets.update(rk4);
+
 		// End loop through all game entities
 		
 		// Update accumulator
@@ -265,8 +287,10 @@ function update() {
 	//var alpha = rk4.accumulator / Math.abs(rk4.dt);  // Absolute value to allow for reverse time
 	
 	// Start loop through all game entities
-	for (p = 0; p < playerCount; p++) {
-		player = players[p];
+
+	// Human players
+	for (i = 0; i < playerCount; i++) {
+		player = players[i];
 		
 		if (!player) {
 			continue;
@@ -287,12 +311,15 @@ function update() {
 		//player.interpolate(alpha);
 	};
 
-	for (p = 0; p < aiPlayerCount; p++) {
-		aiPlayer = aiPlayers[p];
+	// AI players
+	for (i = 0; i < aiPlayerCount; i++) {
+		aiPlayer = aiPlayers[i];
 			
 		if (!aiPlayer) {
 			continue;
 		};
+
+
 
 		playerWithinUpdate(aiPlayer.player);
 		
@@ -300,6 +327,10 @@ function update() {
 			msgOutQueue.push({msg: formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: aiPlayer.player.id, s: aiPlayer.player.getState(true)})});
 		};
 	};
+
+	// Check for bullet collisions
+	bullets.collision(aiPlayers, msgOutQueue);
+
 	// End loop through all game entities
 	
 	// Collision detection can be performed at this point
@@ -361,6 +392,9 @@ function unqueueOutgoingMessages(msgQueue) {
 		if (msg.z !== undefined) {
 			switch (msg.z) {
 				case MESSAGE_TYPE_UPDATE_PLAYER:
+				case MESSAGE_TYPE_NEW_BULLET:
+				case MESSAGE_TYPE_UPDATE_BULLET:
+				case MESSAGE_TYPE_REMOVE_BULLET:
 					io.sockets.emit("game message", msg);
 					break;
 			};

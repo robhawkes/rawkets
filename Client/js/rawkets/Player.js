@@ -3,10 +3,10 @@
 **************************************************/
 
 r.namespace("Player");
-rawkets.Player = function(id, x, y, a, f, vx, vy) { // Should probably just use a State object, instead of 6 arguments
+rawkets.Player = function(id, x, y, a, f, h, vx, vy) { // Should probably just use a State object, instead of 6 arguments
 	var id = id,
-		currentState = new r.State(x, y, a, f),
-		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f),
+		currentState = new r.State(x, y, a, f, h),
+		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h),
 		currentInput = new r.Input(),
 		previousInput = new r.Input(),
 		MAX_VELOCITY = 150,
@@ -20,14 +20,14 @@ rawkets.Player = function(id, x, y, a, f, vx, vy) { // Should probably just use 
 			// Full state for client prediction
 			// newState = r.State(Math.floor(currentState.p.x), Math.floor(currentState.p.y), currentState.a, Math.floor(currentState.f), Math.floor(currentState.v.x), Math.floor(currentState.v.y));
 			// Slim state
-			newState = r.State(Number(currentState.p.x.toFixed(2)), Number(currentState.p.y.toFixed(2)), Number(currentState.a.toFixed(2)), currentState.f);
+			newState = r.State(Number(currentState.p.x.toFixed(2)), Number(currentState.p.y.toFixed(2)), Number(currentState.a.toFixed(2)), currentState.f, currentState.h);
 			return newState;
 		};
 
 		// Full state for client prediction
 		// newState = r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
 		// Slim state
-		newState = r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f);
+		newState = r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h);
 		return newState;
 	};
 
@@ -60,7 +60,8 @@ rawkets.Player = function(id, x, y, a, f, vx, vy) { // Should probably just use 
 		if (state.f >= 0) {
 			currentState.f = state.f;	
 		};
-		
+
+		currentState.h = state.h;
 		currentState.a = state.a;
 	};
 		
@@ -71,7 +72,7 @@ rawkets.Player = function(id, x, y, a, f, vx, vy) { // Should probably just use 
 			previousState = new r.State();
 			return;
 		};*/		
-		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
+		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h, currentState.v.x, currentState.v.y);
 		
 		if (!currentInput) {
 			return;
@@ -147,6 +148,7 @@ rawkets.Player = function(id, x, y, a, f, vx, vy) { // Should probably just use 
 		currentState.v.y = state.v.y;
 		currentState.f = state.f;
 		currentState.a = state.a;
+		currentState.h = state.h;
 		
 		lastCorrection = time;
 	};
@@ -160,12 +162,41 @@ rawkets.Player = function(id, x, y, a, f, vx, vy) { // Should probably just use 
 			if (viewport.withinBounds(currentState.p.x, currentState.p.y)) {
 				ctx.save();
 				ctx.translate(screenPos.x, screenPos.y);
-			
-				ctx.fillStyle = "rgb(255, 255, 255)";
-				ctx.fillText("("+currentState.p.x+", "+currentState.p.y+")", 0, 20);
 				
+				// Coordinates
+				//ctx.fillStyle = "rgb(255, 255, 255)";
+				//ctx.fillText("("+currentState.p.x+", "+currentState.p.y+")", 0, 20);
+
+				// Health ring
+				ctx.save();
+				ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+				ctx.lineWidth = 10;
+				ctx.beginPath();
+				ctx.arc(0, 0, 40, 0, Math.PI*2, false);
+				ctx.closePath();
+				ctx.stroke();	
+				ctx.rotate(-Math.PI/2);
+				ctx.strokeStyle = "hsla("+120*(currentState.h/100)+", 100%, 50%, 0.1)";
+				ctx.beginPath();
+				ctx.arc(0, 0, 40, 0, -(Math.PI*2)*(currentState.h/100), true);
+				ctx.stroke();
+				ctx.restore();
+				
+				// Rotate canvas for rawket and flame
 				ctx.rotate(currentState.a);
 
+				// Draw weapon reticle
+				ctx.save();
+				ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+				ctx.lineWidth = 4;
+				ctx.beginPath();
+				ctx.moveTo(35, 0);
+				ctx.lineTo(45, 0);
+				ctx.closePath();
+				ctx.stroke();
+				ctx.restore();
+
+				// Flame
 				if (currentState.f > 0) {
 					flameHeight = Math.floor(8+(Math.random()*4));
 					ctx.fillStyle = "orange";
@@ -177,6 +208,7 @@ rawkets.Player = function(id, x, y, a, f, vx, vy) { // Should probably just use 
 					ctx.fill();
 				};
 
+				// Rawket
 				ctx.fillStyle = "rgb(255, 255, 255)";
 				ctx.beginPath();
 				ctx.moveTo(-7, -6);

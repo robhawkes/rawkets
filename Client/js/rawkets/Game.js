@@ -45,6 +45,9 @@ rawkets.Game = function() {
 	// Remote entities
 		players,
 
+	// Bullets – move to a manager class at some point
+		bullets,
+
 	// Netgraph
 		net,
 
@@ -60,9 +63,14 @@ rawkets.Game = function() {
 		e.listen("CLOCK_READY", onClockReady);
 		
 		e.listen("SYNC_COMPLETED", onSyncCompleted);
+
 		e.listen("NEW_PLAYER", onNewPlayer);
 		e.listen("UPDATE_PLAYER", onUpdatePlayer);
 		e.listen("REMOVE_PLAYER", onRemovePlayer);
+
+		e.listen("NEW_BULLET", onNewBullet);
+		e.listen("UPDATE_BULLET", onUpdateBullet);
+		e.listen("REMOVE_BULLET", onRemoveBullet);
 		
 		window.addEventListener("resize", onResize, false);
 	};
@@ -92,7 +100,7 @@ rawkets.Game = function() {
 		if (!msg.id || !msg.s) {
 			console.log("Failed to add new player", msg.id);
 		};
-		var player = new r.Player(msg.id, msg.s.p.x, msg.s.p.y, msg.s.a, msg.s.f);
+		var player = new r.Player(msg.id, msg.s.p.x, msg.s.p.y, msg.s.a, msg.s.f, msg.s.h);
 		players.push(player);
 		console.log("Added new player", player.id);
 	};
@@ -122,6 +130,63 @@ rawkets.Game = function() {
 		};
 		console.log("Remove player: ", msg.id);
 		players.splice(indexOfByPlayerId(msg.id), 1);
+	};
+
+	var onNewBullet = function(msg) {
+		if (!bullets) {
+			return;
+		};
+
+		if (!msg.id || !msg.s) {
+			console.log("Failed to add new bullet", msg.id);
+		};
+		
+		var bullet = new r.Bullet(msg.id, msg.s.p.x, msg.s.p.y, msg.s.a, msg.s.f);
+		bullets.push(bullet);
+		
+		//console.log("Added new bullet", msg.id);
+	};
+
+	var onUpdateBullet = function(msg) {
+		if (!bullets) {
+			return;
+		};
+
+		// Find bullet by ID (move into a bullet manager class)
+		var bulletCount = bullets.length,
+			bullet,
+			i;
+
+		for (i = 0; i < bulletCount; i++) {
+			bullet = bullets[i];
+
+			if (bullet.id == msg.id) {
+				bullet.updateState();
+				bullet.setState(msg.s);
+				return;
+			};
+		};
+	};
+	
+	var onRemoveBullet = function(msg) {
+		if (!bullets) {
+			return;
+		};
+
+		// Find bullet by ID (move into a bullet manager class)
+		var bulletCount = bullets.length,
+			bullet,
+			i;
+
+		for (i = 0; i < bulletCount; i++) {
+			bullet = bullets[i];
+
+			if (bullet.id == msg.id) {
+				bullets.splice(bullets.indexOf(bullet), 1);
+				//console.log("Removed bullet", msg.id);
+				return;
+			};
+		};
 	};
 	
 	function onKeydown(e) {
@@ -196,10 +261,10 @@ rawkets.Game = function() {
 		canvas.width = window.innerWidth;
 		canvas.height = window.innerHeight-111;
 
-		viewport = new r.Viewport(canvas, canvas.width, canvas.height, 2000, 2000);
+		viewport = new r.Viewport(canvas, canvas.width, canvas.height, 1500, 600);
 		viewport.initStars();
 			
-		localPlayer = new r.Player(socket.getSessionId(), 1000, 1000); // Should be getting start pos from server
+		localPlayer = new r.Player(socket.getSessionId(), 750, 300); // Should be getting start pos from server
 		
 		if (!localPlayer) {
 			console.log("Failed to create local player", localPlayer);
@@ -217,6 +282,7 @@ rawkets.Game = function() {
 		//history = new r.History();
 		
 		players = [];
+		bullets = [];
 
 		net = new r.NetGraph(canvas.width, 50);
 		net.init();
@@ -364,6 +430,7 @@ rawkets.Game = function() {
 		viewport.draw();
 		localPlayer.draw(viewport);
 
+		// Draw remote players – move to a manager class
 		var p, playerCount = players.length, player;
 		for (p = 0; p < playerCount; p++) {
 			player = players[p];
@@ -374,9 +441,21 @@ rawkets.Game = function() {
 
 			player.draw(viewport);
 		};
+
+		// Draw bullets – move to a manager class
+		var b, bulletCount = bullets.length, bullet;
+		for (b = 0; b < bulletCount; b++) {
+			bullet = bullets[b];
+
+			if (!bullet) {
+				continue;
+			};
+
+			bullet.draw(viewport);
+		};
 		
 		// Draw netgraph
-		net.draw(viewport);
+		//net.draw(viewport);
 
 		e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 5});
 	};
@@ -386,8 +465,8 @@ rawkets.Game = function() {
 	**************************************************/
 	
 	var init = function(canvas) {
-		profiler = new r.Profiler();
-		profiler.init();
+		//profiler = new r.Profiler();
+		//profiler.init();
 
 		runUpdate = false;
 		
