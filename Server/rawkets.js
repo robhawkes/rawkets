@@ -64,7 +64,7 @@ function init() {
 		y = Math.round(Math.random()*worldHeight);
 
 		// Need to cut down the ID
-		playerAi = PlayerAI.init("ai"+Date.now().toString()+Math.round(Math.random()*99).toString()+Math.round(Math.random()*99).toString(), x, y);
+		playerAi = PlayerAI.init("ai"+Date.now().toString()+Math.round(Math.random()*99).toString()+Math.round(Math.random()*99).toString(), "AI-"+Math.round(Math.random()*10), x, y);
 		aiPlayers.push(playerAi);
 	};
 
@@ -124,10 +124,10 @@ function initSocket() {
 						break;
 					case MESSAGE_TYPE_SYNC:
 						// Create new player
-						var localPlayer = Player.init(client.id, 750, 300);
+						var localPlayer = Player.init(client.id, "Human", 750, 300);
 			
 						// Send new player to other clients
-						client.broadcast.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: localPlayer.id, t: currentTime.toString(), s: localPlayer.getState()}));
+						client.broadcast.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: localPlayer.id, n: localPlayer.name, c: localPlayer.colour, t: currentTime.toString(), s: localPlayer.getState()}));
 						
 						if (!localPlayer) {
 							return;
@@ -143,7 +143,7 @@ function initSocket() {
 							};
 
 							// Need to queue these messages if the client isn't fully synced up and ready yet
-							client.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: player.id, t: currentTime.toString(), s: player.getState()}));
+							client.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: player.id, n: player.name, c: player.colour, t: currentTime.toString(), s: player.getState()}));
 						};
 
 						var aiPlayerCount = aiPlayers.length;
@@ -155,7 +155,7 @@ function initSocket() {
 							};
 
 							// Need to queue these messages if the client isn't fully synced up and ready yet
-							client.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: aiPlayer.player.id, t: currentTime.toString(), s: aiPlayer.player.getState()}));
+							client.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: aiPlayer.player.id, n: aiPlayer.player.name, c: aiPlayer.player.colour, t: currentTime.toString(), s: aiPlayer.player.getState()}));
 						}
 
 						// Add new player
@@ -229,17 +229,6 @@ function update() {
 		
 		aiPlayer.update(players, aiPlayers, worldWidth, worldHeight);
 		aiPlayer.player.updateState();
-
-		// Should this be done by events?
-		if (aiPlayer.player.getInput().fire == 1) {
-			var bulletPos = Vector.init();
-			bulletPos.x = aiPlayer.player.currentState.p.x+(Math.cos(aiPlayer.player.currentState.a)*7);
-			bulletPos.y = aiPlayer.player.currentState.p.y+(Math.sin(aiPlayer.player.currentState.a)*7);
-
-			// Need to cut down the ID
-			bullets.add("bullet"+Date.now()+aiPlayer.player.id, aiPlayer.player.id, bulletPos.x, bulletPos.y, aiPlayer.player.currentState.a, msgOutQueue);
-			aiPlayer.player.bulletTime = Date.now();
-		};
 	};
 
 	// Update bullet states
@@ -319,7 +308,16 @@ function update() {
 			continue;
 		};
 
+		// Should this be done by events?
+		if (aiPlayer.player.getInput().fire == 1) {
+			var bulletPos = Vector.init();
+			bulletPos.x = aiPlayer.player.currentState.p.x+(Math.cos(aiPlayer.player.currentState.a)*7);
+			bulletPos.y = aiPlayer.player.currentState.p.y+(Math.sin(aiPlayer.player.currentState.a)*7);
 
+			// Need to cut down the ID
+			bullets.add("bullet"+Date.now()+aiPlayer.player.id, aiPlayer.player.id, bulletPos.x, bulletPos.y, aiPlayer.player.currentState.a, msgOutQueue);
+			aiPlayer.player.bulletTime = Date.now();
+		};
 
 		playerWithinUpdate(aiPlayer.player);
 		

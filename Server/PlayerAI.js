@@ -10,7 +10,7 @@ var Player = require("./Player"),
 	Vector = require("./Vector"),
 	Input = require("./Input");
 
-var PlayerAI = function(id, x, y) {
+var PlayerAI = function(id, name, x, y) {
 	// State types
 	var stateTypes = {
 		EXPLORE: 1,
@@ -18,7 +18,7 @@ var PlayerAI = function(id, x, y) {
 	};
 
 	// Player object for AI
-	var player = Player.init(id, x, y),
+	var player = Player.init(id, name, x, y),
 	// AI state
 		state,
 	// AI target (both for attack and defense)
@@ -127,7 +127,8 @@ var PlayerAI = function(id, x, y) {
 					for (i = 0; i < aiPlayerCount; i++) {
 						aiPlayer = aiPlayers[i].player;
 
-						if (aiPlayer.id == player.id) {
+						// Same player or on the same team
+						if (aiPlayer.id == player.id || aiPlayer.name == player.name) {
 							continue;
 						};
 
@@ -144,7 +145,7 @@ var PlayerAI = function(id, x, y) {
 
 				// Move to and attack the target
 				if (target && targetInfo) {
-					//newInput.forward = (targetInfo.distance < 300) ? 0 : 1;
+					newInput.forward = (targetInfo.distance < 50) ? 0 : 1;
 
 					if (targetInfo.angle > 0.05 && targetInfo.angle < Math.PI) {
 						newInput.rotation = 1;
@@ -181,6 +182,6 @@ var PlayerAI = function(id, x, y) {
 	};
 };
 
-exports.init = function(id, x, y) {
-	return new PlayerAI(id, x, y);
+exports.init = function(id, name, x, y) {
+	return new PlayerAI(id, name, x, y);
 };

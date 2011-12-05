@@ -3,8 +3,10 @@
 **************************************************/
 
 r.namespace("Player");
-rawkets.Player = function(id, x, y, a, f, h, vx, vy) { // Should probably just use a State object, instead of 6 arguments
+rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably just use a State object, instead of 6 arguments
 	var id = id,
+		name = name,
+		colour,
 		currentState = new r.State(x, y, a, f, h),
 		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h),
 		currentInput = new r.Input(),
@@ -152,6 +154,10 @@ rawkets.Player = function(id, x, y, a, f, h, vx, vy) { // Should probably just u
 		
 		lastCorrection = time;
 	};
+
+	var setColour = function(colourValue) {
+		colour = colourValue;
+	};
 	
 	var draw = function(viewport) {
 		if (currentState) {
@@ -166,6 +172,10 @@ rawkets.Player = function(id, x, y, a, f, h, vx, vy) { // Should probably just u
 				// Coordinates
 				//ctx.fillStyle = "rgb(255, 255, 255)";
 				//ctx.fillText("("+currentState.p.x+", "+currentState.p.y+")", 0, 20);
+
+				// Name
+				ctx.fillStyle = "rgb(255, 255, 255)";
+				ctx.fillText(name, 0, 20);
 
 				// Health ring
 				ctx.save();
@@ -216,6 +226,19 @@ rawkets.Player = function(id, x, y, a, f, h, vx, vy) { // Should probably just u
 				ctx.lineTo(-7, 6);
 				ctx.closePath();
 				ctx.fill();
+
+				if (colour) {
+					ctx.save();
+					ctx.fillStyle = colour;
+					ctx.beginPath();
+					// ctx.arc(-3, 0, 3, 0, Math.PI*2, false);
+					ctx.moveTo(-6, -4);
+					ctx.lineTo(5, 0);
+					ctx.lineTo(-6, 4);
+					ctx.closePath();
+					ctx.fill();
+					ctx.restore();
+				};
 				
 				ctx.restore();
 			// Player is outside the viewport
@@ -338,6 +361,8 @@ rawkets.Player = function(id, x, y, a, f, h, vx, vy) { // Should probably just u
 	
 	return {
 		id: id,
+		name: name,
+		colour: colour,
 		currentState: currentState,
 		getState: getState,
 		getInput: getInput,
@@ -347,6 +372,7 @@ rawkets.Player = function(id, x, y, a, f, h, vx, vy) { // Should probably just u
 		updateState: updateState,
 		updateInput: updateInput,
 		correctState: correctState,
+		setColour: setColour,
 		draw: draw
 	};
 };

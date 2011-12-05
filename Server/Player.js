@@ -5,8 +5,10 @@
 var State = require("./State"),
 	Input = require("./Input");
 
-var Player = function(id, x, y, a, f, vx, vy) {
+var Player = function(id, name, x, y, a, f, vx, vy) {
 	var id = id,
+		name = name,
+		colour = colour,
 		currentState = State.init(x, y, a, f, vx, vy),
 		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h, currentState.v.x, currentState.v.y),
 		currentInput = Input.init(),
@@ -155,6 +157,8 @@ var Player = function(id, x, y, a, f, vx, vy) {
 
 	return {
 		id: id,
+		name: name,
+		colour: colour,
 		currentState: currentState,
 		getState: getState,
 		getInput: getInput,
@@ -168,6 +172,6 @@ var Player = function(id, x, y, a, f, vx, vy) {
 	};
 };
 
-exports.init = function(id, x, y, a, f, vx, vy) {
-	return new Player(id, x, y, a, f, vx, vy);
+exports.init = function(id, name, x, y, a, f, vx, vy) {
+	return new Player(id, name, x, y, a, f, vx, vy);
 };

@@ -100,7 +100,12 @@ rawkets.Game = function() {
 		if (!msg.id || !msg.s) {
 			console.log("Failed to add new player", msg.id);
 		};
-		var player = new r.Player(msg.id, msg.s.p.x, msg.s.p.y, msg.s.a, msg.s.f, msg.s.h);
+
+		var player = new r.Player(msg.id, msg.n, msg.s.p.x, msg.s.p.y, msg.s.a, msg.s.f, msg.s.h);
+		if (msg.c) {
+			player.setColour(msg.c);
+		};
+
 		players.push(player);
 		console.log("Added new player", player.id);
 	};
@@ -264,7 +269,7 @@ rawkets.Game = function() {
 		viewport = new r.Viewport(canvas, canvas.width, canvas.height, 1500, 600);
 		viewport.initStars();
 			
-		localPlayer = new r.Player(socket.getSessionId(), 750, 300); // Should be getting start pos from server
+		localPlayer = new r.Player(socket.getSessionId(), "You", 750, 300); // Should be getting start pos from server
 		
 		if (!localPlayer) {
 			console.log("Failed to create local player", localPlayer);
