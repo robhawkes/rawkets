@@ -213,6 +213,40 @@ form {
 			width: 54px;
 		}
 
+#windowResize {
+	background: url("img/window_resize.png") no-repeat center center;
+	height: 20px;
+	opacity: 0.1;
+	position: absolute;
+	right: 18px;
+	top: 61px;
+	-moz-transition: all 0.2s;
+	-webkit-transition: all 0.2s;
+	-ms-transition: all 0.2s;
+	-o-transition: all 0.2s;
+	transition: all 0.2s;
+	width: 20px;
+}
+	
+	#windowResize:hover {
+		cursor: pointer;
+		opacity: 0.4;
+		-moz-transform: scale(1.1);
+		-webkit-transform: scale(1.1);
+		-o-transform: scale(1.1);
+		-ms-transform: scale(1.1);
+		transform: scale(1.1);
+		-moz-transition: all 0.2s;
+		-webkit-transition: all 0.2s;
+		-ms-transition: all 0.2s;
+		-o-transition: all 0.2s;
+		transition: all 0.2s;
+	}
+
+	body:-moz-full-screen #windowResize {
+		display: none;
+	}
+
 #statistics {
 	background: url("img/bottom_bar_background.png") repeat-x top center;
 	bottom: 0;

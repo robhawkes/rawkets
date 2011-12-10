@@ -9,9 +9,9 @@
 ** MAIN VARIABLES & SETTINGS
 **************************************************/
 
-var http = require("http"), 
+var Express = require("./Express").Express.init(),
 	sys = require("sys"),
-	io = require("socket.io").listen(8000),
+	io = require("socket.io").listen(Express.app),
 	Input = require("./Input"),
 	Vector = require("./Vector"),
 	Player = require("./Player"),
@@ -22,7 +22,7 @@ var http = require("http"),
 	socket,
 	rk4 = require("./RK4").init(),
 	aiPlayers = [], // Should prob move this into it's own class that manages players
-	maxAiPlayers = 30,
+	maxAiPlayers = 10,
 	players = [], // Should prob move this into it's own class that manages players
 	bullets = BulletManager.init(),
 	currentTime = Date.now(), // Current time in ms, used to calculate frame time

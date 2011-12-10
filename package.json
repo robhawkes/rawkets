@@ -1,0 +1,18 @@
+{
+  "name": "rawkets",
+  "description": "A multiplayer space shooter where you can shoot your friends in the face with the latest Web technologies.",
+  "author": "Rob Hawkes <rob@rawkes.com>",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "2.5.x",
+    "socket.io": "0.8.x"
+  },
+  "devDependencies": {
+    "mocha": "0.3.x"
+  },
+  "engine": "node >= 0.4.12",
+  "scripts": {
+    "start": "server/rawkets.js",
+    "test": "make test"
+  }
+}

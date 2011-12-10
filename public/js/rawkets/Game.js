@@ -38,6 +38,7 @@ rawkets.Game = function() {
 	// Local entities
 		localPlayer,
 		keys,
+		gamepad,
 		currentInput,
 		previousInput,
 		//history,
@@ -283,6 +284,13 @@ rawkets.Game = function() {
 		keys = new r.Keys();
 		window.addEventListener("keydown", onKeydown, false);
 		window.addEventListener("keyup", onKeyup, false);
+
+		// Start Gamepad API testing
+		window.addEventListener("MozGamepadConnected", function(e) {
+			gamepad = new Input.Device(e.gamepad);
+			console.log("Gamepad connected", gamepad.id);
+		});
+		// End Gamepad API
 		
 		//history = new r.History();
 		
@@ -324,6 +332,26 @@ rawkets.Game = function() {
 
 		// Calculate new input based on keys
 		var input = new r.Input((keys.up) ? 1 : 0, ((keys.left) ? -1 : 0 || (keys.right) ? 1 : 0));
+
+		//console.log(localPlayer.currentState.a);
+
+		// Start Gamepad API testing
+		if (gamepad) {
+			if (Math.abs(gamepad.axes.Left_Stick_X) > 0.2 || Math.abs(gamepad.axes.Left_Stick_Y) > 0.2) {
+				input.forward = 1;
+				var relativeDiff = {};
+				relativeDiff.x = (gamepad.axes.Left_Stick_X*100) * Math.cos(localPlayer.currentState.a) + (gamepad.axes.Left_Stick_Y*100) * Math.sin(localPlayer.currentState.a);
+				relativeDiff.y = (gamepad.axes.Left_Stick_Y*100) * Math.cos(localPlayer.currentState.a) - (gamepad.axes.Left_Stick_X*100) * Math.sin(localPlayer.currentState.a);
+
+				var relativeAngle = Math.atan2(relativeDiff.y, relativeDiff.x);
+				if (relativeAngle > 0.1 && relativeAngle < Math.PI) {
+					input.rotation = 1;
+				} else if (relativeAngle < -0.1 && relativeAngle > -Math.PI) {
+				 	input.rotation = -1;
+				};
+			};
+		};
+		// End Gamepad API
 
 		// Update input
 		localPlayer.updateInput(input);
@@ -434,6 +462,20 @@ rawkets.Game = function() {
 
 		viewport.draw();
 		localPlayer.draw(viewport);
+
+		// Start Gamepad API testing
+		if (gamepad) {
+			var screenPos = viewport.worldToScreen(localPlayer.currentState.p.x, localPlayer.currentState.p.y);
+			viewport.ctx.save();
+			viewport.ctx.strokeStyle = "green";
+			viewport.ctx.lineWidth = 3;
+			viewport.ctx.beginPath();
+			viewport.ctx.moveTo(screenPos.x, screenPos.y);
+			viewport.ctx.lineTo(screenPos.x+gamepad.axes.Left_Stick_X*100, screenPos.y+gamepad.axes.Left_Stick_Y*100);
+			viewport.ctx.stroke();
+			viewport.ctx.restore();
+		};
+		// End Gamepad API
 
 		// Draw remote players – move to a manager class
 		var p, playerCount = players.length, player;

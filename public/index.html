@@ -26,6 +26,8 @@
 					</ul>
 				</nav>
 			</header>
+
+			<div id="windowResize"></div>
 			
 			<!--
 			<section id="chat">
@@ -70,14 +72,18 @@
 				<p id="updates"><a href="http://twitter.com/rawkets">Send me development updates</a></p>
 			</footer>
 		</div>
-		
-		<div id="soundContainer"></div>
+
+		<script src="https://myapps.mozillalabs.com/jsapi/include.js"></script>
 		
 		<script type="text/javascript" src="js/jquery.min.js"></script>
-		<script type="text/javascript" src="js/jquery.xcolor.js"></script>
-		<script type="text/javascript" src="js/swfobject/swfobject.js"></script>
+		<!--<script type="text/javascript" src="js/jquery.xcolor.js"></script>-->
+		<!-- Gamepad API -->
+		<script type="text/javascript" src="js/input.js"></script>
+
+		<!-- Socket.IO -->
 		<script type="text/javascript" src="http://rawkets.dev:8000/socket.io/socket.io.js"></script>
 		
+		<!-- Rawkets -->
 		<script type="text/javascript" src="js/rawkets/rawkets.js"></script>
 		<script type="text/javascript" src="js/rawkets/ui.js"></script>
 		
@@ -106,6 +112,32 @@
 		<script type="text/javascript" src="js/rawkets/Game.js"></script>
 		
 		<script type="text/javascript">
+			// Start Full Screen API
+			document.getElementById("windowResize").addEventListener("click", function() {
+				document.body.mozRequestFullScreen();
+			}, false);
+			// End Full Screen API
+
+			// Start Open Web Apps
+			document.getElementById("tabSettings").addEventListener("click", installApp, false);
+			function installApp() {
+				function installCallback(result) {  
+					// great - display a message, or redirect to a launch page  
+					console.log("Installed");
+				}  
+
+				function errorCallback(result) {  
+					// whoops - result.code and result.message have details
+					console.log("Error");
+				}  
+
+				navigator.mozApps.install("http://rawkets.dev:8000/manifest.webapp");
+				navigator.mozApps.oninstall = function(appArray) { console.log("success") }
+				navigator.mozApps.onerror = function(appArray) { console.log("error") }
+			};
+			// End Open Web Apps
+
+			// Initialise game
 			var game = new r.Game().init();
 		</script>
 		

@@ -1,0 +1,15 @@
+{
+    "name":"Rawkets",
+    "developer": {
+        "name":"Rob Hawkes",
+        "url":"http://rawkes.com"
+    },
+    "description":"Space shooter game in which you can shoot your friends in the face with the latest Web technologies.",
+    "icons": {  
+        "16": "/style/img/icon-16.png",  
+        "48": "/style/img/icon-48.png",  
+        "128": "/style/img/icon-128.png"  
+    },
+    "launch_path": "/index.html",
+    "installs_allowed_from": ["*"]
+}
