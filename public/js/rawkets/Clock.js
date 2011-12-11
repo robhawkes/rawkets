@@ -27,7 +27,6 @@ r.namespace("Clock");
 rawkets.Clock = function(message) {
 	// Shortcuts
 	var e = r.Event,
-		ps = r.ProfilerSession,
 		TimeDelta = r.TimeDelta;
 	
 	// Properties
@@ -55,9 +54,6 @@ rawkets.Clock = function(message) {
 	// Methods
 	
 	var start = function() {
-		var profilerSession = ps.createSession();
-		e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 2, colour: "#ff0000"});
-
 		_deltas = [];
 		_lockedInServerTime = false;
 		_responsePending = false;
@@ -66,7 +62,7 @@ rawkets.Clock = function(message) {
 		// Add event listener here to deal with incoming data from the server
 		e.listen("PING", onPing);
 		
-		requestServerTime(profilerSession);
+		requestServerTime();
 	};
 	
 	var stop = function() {
@@ -85,11 +81,10 @@ rawkets.Clock = function(message) {
 			if (_deltas.length == _maxDeltas) {
 				_bursting = false;
 
-				e.fire("PROFILER_STOP_BENCHMARK", {id: msg.ps, time: Date.now(), type: 2});
 				e.fire("CLOCK_READY", _latency);
 				return;
 			};
-			requestServerTime(msg.ps);
+			requestServerTime();
 		};
 	};
 	
@@ -103,10 +98,10 @@ rawkets.Clock = function(message) {
 	};
 
 	// Private functions
-	var requestServerTime = function(profilerSession) {
+	var requestServerTime = function() {
 		if (!_responsePending) {
 			_timeRequestSent = Date.now();
-			_message.send(_message.format("PING", {ps: profilerSession}), true);
+			_message.send(_message.format("PING", {}), true);
 			_responsePending = true;
 		};
 	};

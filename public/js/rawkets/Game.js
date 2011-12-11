@@ -10,8 +10,7 @@
 r.namespace("Game");
 rawkets.Game = function() {
 	// Shortcuts
-	var e = r.Event,
-		ps = r.ProfilerSession;
+	var e = r.Event;
 	
 	/**************************************************
 	** PROPERTIES
@@ -38,21 +37,16 @@ rawkets.Game = function() {
 	// Local entities
 		localPlayer,
 		controls,
-		currentInput,
 		previousInput,
-		//history,
 		
 	// Remote entities
 		players,
 
-	// Bullets – move to a manager class at some point
+	// Bullets: move to a manager class at some point
 		bullets,
 
 	// Netgraph
-		net,
-
-	// Profiler
-		profiler;
+		net;
 	
 	/**************************************************
 	** EVENT HANDLERS
@@ -112,18 +106,12 @@ rawkets.Game = function() {
 
 	var onUpdatePlayer = function(msg) {
 		if (localPlayer && msg.id == localPlayer.id) {
-			// If required, perform correction on client-side prediction
-			//history.correction(msg.t, msg.s, msg.i, localPlayer, rk4);
-
-			// No client-side prediction for now
 			localPlayer.setState(msg.s);
 		} else if (players) {
 			var player = playerById(msg.id);
 			if (!player) {
 				return;
 			};
-			//player.correctState(msg.t, msg.s);
-			// No client-side prediction for now
 			player.setState(msg.s);
 		};
 	};
@@ -293,8 +281,6 @@ rawkets.Game = function() {
 			console.log("Gamepad connected", gamepad.id);
 		});
 		
-		//history = new r.History();
-		
 		players = [];
 		bullets = [];
 
@@ -308,29 +294,7 @@ rawkets.Game = function() {
 	** UPDATE GAME
 	**************************************************/
 	
-	// var localTest = false,
-	// 	localCount = 0;
 	var updateGame = function(timestamp) {
-		var profilerSession = ps.createSession();
-		e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 0, colour: "#222"});
-		// var newTime = clock.time(),
-		// var newTime = Date.now(),
-		// 	frameTime = (newTime - currentTime)/1000; // Convert from ms to seconds
-
-		// // Limit frame time to avoid "spiral of death"
-		// if (frameTime > 0.25) {
-		// 	console.log("Frametime pegged at 0.25");
-		// 	frameTime = 0.25;
-		// };
-
-		// // Update game time
-		// currentTime = newTime;
-		
-		// if (!localTest && localPlayer) {
-		// 	console.log("Start player: "+currentTime, localPlayer.currentState.p.x, localPlayer.currentState.p.y, localPlayer.currentState.v.x, localPlayer.currentState.v.y, localPlayer.currentState.f, localPlayer.currentState.a);
-		// 	localTest = true;
-		// };
-
 		// Calculate input based on controls
 		var input = controls.updateInput(localPlayer.currentState.a);
 
@@ -344,89 +308,12 @@ rawkets.Game = function() {
 			message.send(message.format("UPDATE_INPUT", {t: currentTime.toString(), i: localPlayer.getInput()}), true);
 		};
 
-		// (function() {
-		// 	var profilerSession = ps.createSession();
-		// 	e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3, colour: "#00ff00"});		
-		// 	// Skip entity if the state hasn't changed
-		// 	// For now just update entity all the time
-		// 	// Else update the state
-		// 	localPlayer.updateState();
-		// 	e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3});
-		// })();
-
 		viewport.update(localPlayer.currentState.p.x, localPlayer.currentState.p.y);
-
-		// (function() {
-		// 	var profilerSession = ps.createSession();
-		// 	e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3, colour: "#00ff00"});
-		// 	for (p = 0; p < playerCount; p++) {
-		// 		player = players[p];
-
-		// 		if (!player) {
-		// 			continue;
-		// 		};
-
-		// 		// Skip entity if the state hasn't changed
-		// 		// For now just update entity all the time
-		// 		player.updateState(currentTime);
-		// 	};
-
-		// 	e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 3});
-		// })();
-
-		// var playerCount = players.length;
-		
-		// (function() {
-		// 	var profilerSession = ps.createSession();
-		// 	e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 1, colour: "#0000ff"});
-
-		// 	// Run RK4 simulation
-		// 	rk4.accumulator += frameTime;
-		// 	while (rk4.accumulator >= rk4.dt) {
-		// 		if (localPlayer) {
-		// 			// Skip update if the localPlaer entity is still
-		// 			rk4.integrate(localPlayer.currentState);
-		// 		};
-
-		// 		for (p = 0; p < playerCount; p++) {
-		// 			player = players[p];
-
-		// 			if (!player) {
-		// 				continue;
-		// 			};
-
-		// 			// Skip update if the player entity is still
-		// 			rk4.integrate(player.currentState);
-		// 		};
-
-		// 		// Increase simulation time
-		// 		//rk4.t += rk4.dt;
-
-		// 		// Update accumulator
-		// 		rk4.accumulator -= Math.abs(rk4.dt); // Absolute value to allow for reverse time
-		// 	};
-
-		// 	e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 1});
-		// })();
-		
-		// Find leftover time due to incomplete physics time delta
-		// Why have I disabled this? Document or remove.
-		//var alpha = rk4.accumulator / Math.abs(rk4.dt);  // Absolute value to allow for reverse time
-		
-		// Store movement in buffer (each frame for super-fine detail when calculating fixes)
-		// var move = new r.Move(currentTime, localPlayer.getInput(), localPlayer.getState());
-		// history.add(move);
-
-		// Interpolate state considering incomplete physics time delta (accumulator)
-		// Why have I disabled this? Document or remove.
-		// localPlayer.interpolate(alpha);
 		
 		net.updateData();
 
 		drawGame();
 
-		e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 0});
-		
 		// Schedule next game update
 		if (runUpdate) {
 			window.requestAnimFrame(updateGame);
@@ -438,9 +325,6 @@ rawkets.Game = function() {
 	**************************************************/
 	
 	function drawGame() {
-		var profilerSession = ps.createSession();
-		e.fire("PROFILER_START_BENCHMARK", {id: profilerSession, time: Date.now(), type: 5, colour: "#c61ad1"});
-
 		viewport.draw();
 		localPlayer.draw(viewport);
 
@@ -484,9 +368,7 @@ rawkets.Game = function() {
 		};
 		
 		// Draw netgraph
-		//net.draw(viewport);
-
-		e.fire("PROFILER_STOP_BENCHMARK", {id: profilerSession, time: Date.now(), type: 5});
+		net.draw(viewport);
 	};
 	
 	/**************************************************
@@ -494,9 +376,6 @@ rawkets.Game = function() {
 	**************************************************/
 	
 	var init = function(canvas) {
-		//profiler = new r.Profiler();
-		//profiler.init();
-
 		runUpdate = false;
 		
 		setEventHandlers();
