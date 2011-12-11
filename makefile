@@ -1,4 +1,4 @@
 run:
-	node ./server/rawkets.js
+	node ./index.js
 test:
 	@./node_modules/.bin/mocha

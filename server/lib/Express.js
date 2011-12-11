@@ -2,7 +2,7 @@
 ** EXPRESS CONTROLLER
 **************************************************/
 
-var exp = require("express")
+var exp = require("express");
 
 var Express = {
 	app: null,
@@ -18,7 +18,7 @@ var Express = {
 			self.app.use(exp.bodyParser());
 			self.app.use(exp.methodOverride());
 			self.app.use(self.app.router);
-			self.app.use(exp.static(__dirname + "/../public"));
+			self.app.use(exp.static(__dirname + "/../../public"));
 		});
 
 		this.app.configure("development", function(){
@@ -41,7 +41,7 @@ var Express = {
 			res.header("Content-Type", "this.application/x-web-this.app-manifest+json");
 
 			var fs = require('fs');
-			fs.readFile("../public/manifest.webthis.app", function (err, data) {
+			fs.readFile("../../public/manifest.webthis.app", function (err, data) {
 				if (err) throw err;
 				res.send(data);
 			});

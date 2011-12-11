@@ -1,8 +1,10 @@
+exports.init = init;
+
 /**************************************************
 ** TODO
 ** - Move communication logic into another file
 ** - Move messager formatter into a communication
-**	 class
+**   class
 **************************************************/
 
 /**************************************************
@@ -46,10 +48,6 @@ var Express = require("./Express").Express.init(),
 	MESSAGE_TYPE_NEW_BULLET = 8,
 	MESSAGE_TYPE_UPDATE_BULLET = 9,
 	MESSAGE_TYPE_REMOVE_BULLET = 10;
-
-
-// Start the game server
-init();
 
 
 /**************************************************
