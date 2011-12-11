@@ -16,6 +16,9 @@ describe("Controls", function() {
 				axes: {
 					Left_Stick_X: 0,
 					Left_Stick_Y: 0
+				},
+				buttons: {
+					A_Button: 0
 				}
 			};
 
@@ -127,6 +130,24 @@ describe("Controls", function() {
 
 			assert(input.rotation === 0);
 		});
+
+		it("Should trigger weapon activation when 'A' button is depressed", function() {
+			var input;
+
+			gamepad.buttons.A_Button = 1;
+			input = controls.updateInput(playerAngle);
+
+			assert(input.fire === 1);
+		});
+
+		it("Shouldn't trigger weapon activation when 'A' button is not depressed", function() {
+			var input;
+
+			gamepad.buttons.A_Button = 0;
+			input = controls.updateInput(playerAngle);
+
+			assert(input.fire === 0);
+		});
 	});
 
 	// Keyboard
@@ -230,6 +251,39 @@ describe("Controls", function() {
 
 			// Press and release right input
 			fakeKeyboardEvent.keyCode = 39;
+			keyboard.onKeyDown(fakeKeyboardEvent);
+			keyboard.onKeyUp(fakeKeyboardEvent);
+
+			input = controls.updateInput();
+
+			assert(input.rotation === 0);
+		});
+
+		it("Should trigger weapon activation when spacebar is depressed", function() {
+			var input;
+
+			// Spacebar
+			fakeKeyboardEvent.keyCode = 32;
+			keyboard.onKeyDown(fakeKeyboardEvent);
+
+			input = controls.updateInput();
+
+			assert(input.fire === 1);
+		});
+
+		it("Shouldn't trigger weapon activation when spacebar is not depressed", function() {
+			var input;
+
+			// Not spacebar
+			fakeKeyboardEvent.keyCode = 24;
+			keyboard.onKeyDown(fakeKeyboardEvent);
+
+			input = controls.updateInput();
+
+			assert(input.fire === 0);
+
+			// Press and release spacebar
+			fakeKeyboardEvent.keyCode = 32;
 			keyboard.onKeyDown(fakeKeyboardEvent);
 			keyboard.onKeyUp(fakeKeyboardEvent);
 

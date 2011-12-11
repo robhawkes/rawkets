@@ -303,7 +303,7 @@ rawkets.Game = function() {
 
 		// Only send input if it has changed (saves bandwidth)
 		var previousInput = localPlayer.getPreviousInput();
-		if (!previousInput || input.forward != previousInput.forward || input.rotation != previousInput.rotation) {
+		if (!previousInput || input.forward != previousInput.forward || input.rotation != previousInput.rotation || input.fire != previousInput.fire) {
 			//console.log("Input updated", currentTime, localPlayer.getInput(), Date.now());
 			message.send(message.format("UPDATE_INPUT", {t: currentTime.toString(), i: localPlayer.getInput()}), true);
 		};

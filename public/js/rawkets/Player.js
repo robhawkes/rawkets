@@ -34,7 +34,7 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 	};
 
 	var getInput = function() {
-		var newInput = new r.Input(currentInput.forward, currentInput.rotation);
+		var newInput = new r.Input(currentInput.forward, currentInput.rotation, currentInput.fire);
 		return newInput;
 	};
 	

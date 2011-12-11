@@ -60,9 +60,13 @@ rawkets.Controls = function() {
 				} else if (relativeAngle < -0.1 && relativeAngle > -Math.PI) {
 					input.rotation = -1;
 				}
-
-				return input;
 			}
+
+			if (gamepad.buttons.A_Button === 1) {
+				input.fire = 1;
+			}
+
+			return input;
 		}
 
 		// Keyboard
@@ -80,6 +84,10 @@ rawkets.Controls = function() {
 			// Right takes priority if both keys are depressed
 			if (keys.right === true) {
 				input.rotation = 1;
+			}
+
+			if (keys.fire === true) {
+				input.fire = 1;
 			}
 
 			return input;

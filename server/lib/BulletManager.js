@@ -49,8 +49,77 @@ var BulletManager = function() {
 		};
 	};
 
-	// Right now this only works for AI players
-	var collision = function(aiPlayers, msgOutQueue) {
+	var collision = function(players, msgOutQueue) {
+		var bullet,
+			bulletCount = bullets.length,
+			playerCount = players.length,
+			playerPos,
+			bulletPos,
+			diff,
+			dd,
+			distance,
+			i, j;
+
+		for (i = 0; i < bulletCount; i++) {
+			bullet = bullets[i];
+			
+			if (!bullet) {
+				continue;
+			};
+
+			for (j = 0; j < playerCount; j++) {
+				player = players[j];
+					
+				if (!player || player.id == bullet.playerId) {
+					continue;
+				};
+
+				playerPos = player.currentState.p;
+				bulletPos = bullet.currentState.p;
+
+				diff = Vector.init();
+				diff.x = playerPos.x - bulletPos.x;
+				diff.y = playerPos.y - bulletPos.y;
+
+				dd = (diff.x * diff.x) + (diff.y * diff.y);
+				distance = Math.sqrt(dd);
+
+				// Player is dead
+				if (distance < 10) {
+					// Kill bullet
+					bullet.currentState.h = 0;
+
+					// Kill player
+					//console.log("Kill player");
+					player.bulletHit();
+
+					continue;
+				};
+			};
+			
+			// This really needs to be moved into an event that is picked up by the main game logic
+			msgOutQueue.push({msg: formatMessage(9, {id: bullet.id, s: bullet.getState(true)})});
+		};
+
+		// Remove dead bullets
+		for (i = bulletCount-1; i >= 0; i--) {
+			bullet = bullets[i];
+
+			if (!bullet) {
+				continue;
+			};
+
+			// Remove bullet if it's older than 500ms
+			if (bullet.currentState.h == 0 || Date.now() - bullet.born > 750) {
+				// This really needs to be moved into an event that is picked up by the main game logic
+				msgOutQueue.push({msg: formatMessage(10, {id: bullet.id})});
+				bullets.splice(bullets.indexOf(bullet), 1);
+			};
+		};
+	};
+
+	// Right now this only works for AI players (combine with player AI above)
+	var collisionAI = function(aiPlayers, msgOutQueue) {
 		var bullet,
 			bulletCount = bullets.length,
 			aiPlayerCount = aiPlayers.length,
@@ -123,7 +192,8 @@ var BulletManager = function() {
 		add: add,
 		updateState: updateState,
 		update: update,
-		collision: collision
+		collision: collision,
+		collisionAI: collisionAI
 	};
 };
 

@@ -283,6 +283,17 @@ function update() {
 			continue;
 		};
 
+		// Should this be done by events?
+		if (player.getInput().fire == 1 && Date.now() - player.bulletTime > 500+Math.round(Math.random()*500)) {
+			var bulletPos = Vector.init();
+			bulletPos.x = player.currentState.p.x+(Math.cos(player.currentState.a)*7);
+			bulletPos.y = player.currentState.p.y+(Math.sin(player.currentState.a)*7);
+
+			// Need to cut down the ID
+			bullets.add("bullet"+Date.now()+player.id, player.id, bulletPos.x, bulletPos.y, player.currentState.a, msgOutQueue);
+			player.bulletTime = Date.now();
+		};
+
 		playerWithinUpdate(player);
 		
 		if (player.getState() && player.getInput() && player.hasChanged()) {
@@ -307,7 +318,7 @@ function update() {
 		};
 
 		// Should this be done by events?
-		if (aiPlayer.player.getInput().fire == 1) {
+		if (aiPlayer.player.getInput().fire == 1 && Date.now() - aiPlayer.player.bulletTime > 500+Math.round(Math.random()*500)) {
 			var bulletPos = Vector.init();
 			bulletPos.x = aiPlayer.player.currentState.p.x+(Math.cos(aiPlayer.player.currentState.a)*7);
 			bulletPos.y = aiPlayer.player.currentState.p.y+(Math.sin(aiPlayer.player.currentState.a)*7);
@@ -325,7 +336,8 @@ function update() {
 	};
 
 	// Check for bullet collisions
-	bullets.collision(aiPlayers, msgOutQueue);
+	bullets.collisionAI(aiPlayers, msgOutQueue); // AI always die first
+	bullets.collision(players, msgOutQueue);
 
 	// End loop through all game entities
 	

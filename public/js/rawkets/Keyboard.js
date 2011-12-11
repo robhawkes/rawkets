@@ -6,6 +6,7 @@ r.namespace("Keyboard");
 rawkets.Keyboard = function() {
 	// Properties
 	var keys = {
+		fire: false,
 		up: false,
 		left: false,
 		right: false
@@ -16,6 +17,9 @@ rawkets.Keyboard = function() {
 			c = e.keyCode;
 		switch (c) {
 			// Controls
+			case 32: // Fire
+				self.keys.fire = true;
+				break;
 			case 37: // Left
 				self.keys.left = true;
 				break;
@@ -32,6 +36,9 @@ rawkets.Keyboard = function() {
 		var self = this,
 			c = e.keyCode;
 		switch (c) {
+			case 32: // Fire
+				self.keys.fire = false;
+				break;
 			case 37: // Left
 				self.keys.left = false;
 				break;

@@ -155,8 +155,8 @@ var PlayerAI = function(id, name, x, y) {
 						newInput.rotation = 0;
 					};
 
-					// Fire every 500-1000ms if within a certain distance 
-					if (targetInfo.distance < 600 && Date.now() - player.bulletTime > 500+Math.round(Math.random()*500)) {
+					// Fire if within a certain distance 
+					if (targetInfo.distance < 600) {
 						newInput.fire = 1;
 					};
 				};
