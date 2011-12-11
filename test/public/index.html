@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+	<head>
+		<title>Rawkets Tests</title>
+		
+		<meta charset="utf-8">
+		
+		<link rel="stylesheet" href="../../node_modules/mocha/mocha.css">
+	</head>
+	
+	<body>
+		<div id="mocha"></div>
+
+		<!-- Rawkets -->
+		<script type="text/javascript" src="../../public/js/rawkets/rawkets.js"></script>
+		<script type="text/javascript" src="../../public/js/rawkets/Input.js"></script>
+		<script type="text/javascript" src="../../public/js/rawkets/Keyboard.js"></script>
+		<script type="text/javascript" src="../../public/js/rawkets/Controls.js"></script>
+
+		<!-- Mocha -->
+		<script src="../../public/js/jquery.min.js"></script>
+		<script src="../../node_modules/mocha/mocha.js"></script>
+		<script>mocha.setup("bdd")</script>
+		<script>function assert(expr, msg) { if (!expr) throw new Error(msg || 'failed'); };</script>
+		<!-- Mocha tests -->
+		<script src="input.js"></script>
+		<script src="controls.js"></script>
+		<!-- End Mocha tests -->
+		<script>
+		$(function() {
+			var runner = mocha.run();
+
+			// runner.on("test end", function(test){
+			// 	console.log(test.fullTitle());
+			// });
+		});
+		</script>
+		<!-- End Mocha -->
+	</body>
+</html>

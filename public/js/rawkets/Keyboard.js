@@ -1,54 +1,51 @@
 /**************************************************
-** KEYS OBJECT
+** KEYBOARD OBJECT
 **************************************************/
 
-r.namespace("Keys");
-rawkets.Keys = function(up, left, right) {
+r.namespace("Keyboard");
+rawkets.Keyboard = function() {
 	// Properties
-	var up = up || false,
-		left = left || false,
-		right = right || false;
+	var keys = {
+		up: false,
+		left: false,
+		right: false
+	};
 		
 	var onKeyDown = function(e) {
-		var that = this,
+		var self = this,
 			c = e.keyCode;
 		switch (c) {
 			// Controls
 			case 37: // Left
-				that.left = true;
+				self.keys.left = true;
 				break;
 			case 38: // Up
-				that.up = true;
+				self.keys.up = true;
 				break;
 			case 39: // Right
-				that.right = true; // Will take priority over the left key
+				self.keys.right = true;
 				break;
-		};
+		}
 	};
 	
 	var onKeyUp = function(e) {
-		var that = this,
+		var self = this,
 			c = e.keyCode;
 		switch (c) {
 			case 37: // Left
-				that.left = false;
+				self.keys.left = false;
 				break;
 			case 38: // Up
-				that.up = false;
+				self.keys.up = false;
 				break;
 			case 39: // Right
-				that.right = false;
+				self.keys.right = false;
 				break;
-			case 80: // p
-				r.Event.fire("PROFILER_OUTPUT");
-				break;
-		};
+		}
 	};
 
 	return {
-		up: up,
-		left: left,
-		right: right,
+		keys: keys,
 		onKeyDown: onKeyDown,
 		onKeyUp: onKeyUp
 	};
