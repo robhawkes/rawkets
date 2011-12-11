@@ -3,18 +3,14 @@
 **************************************************/
 
 r.namespace("Player");
-rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably just use a State object, instead of 6 arguments
-	var id = id,
-		name = name,
-		colour,
-		currentState = new r.State(x, y, a, f, h),
+rawkets.Player = function(opts) { // Should probably just use a State object, instead of 6 arguments
+	var id = opts.id,
+		name = opts.name,
+		colour = opts.colour || false,
+		currentState = new r.State(opts.x, opts.y, opts.a, opts.f, opts.h),
 		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h),
 		currentInput = new r.Input(),
-		previousInput = new r.Input(),
-		MAX_VELOCITY = 150,
-		rotationSpeed = 0.09, // Manually set rotation speed for now
-		//MAX_ROTATION_SPEED = 0.09, // Maximum rotation speed
-		lastCorrection; // Time of last correction received from server
+		previousInput = new r.Input();
 		
 	var getState = function(trim) {
 		var newState;
@@ -24,7 +20,7 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 			// Slim state
 			newState = r.State(Number(currentState.p.x.toFixed(2)), Number(currentState.p.y.toFixed(2)), Number(currentState.a.toFixed(2)), currentState.f, currentState.h);
 			return newState;
-		};
+		}
 
 		// Full state for client prediction
 		// newState = r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
@@ -45,7 +41,7 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 	var hasChanged = function() {
 		if (JSON.stringify(currentState) != JSON.stringify(previousState)) {
 			return true;
-		};
+		}
 
 		return false;
 	};
@@ -57,102 +53,19 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 		if (state.v) {
 			currentState.v.x = state.v.x;
 			currentState.v.y = state.v.y;
-		};
+		}
 
 		if (state.f >= 0) {
 			currentState.f = state.f;	
-		};
+		}
 
 		currentState.h = state.h;
 		currentState.a = state.a;
-	};
-		
-	var updateState = function(time) {
-		// Halt entity if there isn't a recent correction
-		/*if (time && lastCorrection && time - lastCorrection > 500) {
-			currentState = new r.State();
-			previousState = new r.State();
-			return;
-		};*/		
-		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h, currentState.v.x, currentState.v.y);
-		
-		if (!currentInput) {
-			return;
-		};
-		
-		// Removed for time being to keep things simple
-		/*if (Math.abs(currentInput.rotation) > 0) {
-			rotationSpeed += 0.01;
-			if (rotationSpeed > MAX_ROTATION_SPEED) {
-				rotationSpeed = MAX_ROTATION_SPEED;
-			};
-		};*/
-		currentState.a += (currentInput.rotation > 0) ? rotationSpeed : (currentInput.rotation < 0) ? -rotationSpeed : 0; 
-		
-		// Is it a good idea to update the force here, rather than in the physics update?
-		//if (!previousInput || currentInput.forward != previousInput.forward) {
-		//currentState.f = (currentInput.forward > 0) ? 10 : (Math.abs(currentState.v.x) > 0.1 || Math.abs(currentState.v.y) > 0.1) ? -5 : 0;
-		//currentState.f = (currentInput.forward > 0) ? 50 : (Math.abs(currentState.v.x) > 0.5 || Math.abs(currentState.v.y) > 0.5) ? (currentState.v.x > 0 || currentState.v.y > 0) ? -50 : 50 : 0;
-		//currentState.f = (currentInput.forward > 0) ? 5 : 0;
-		//};
-		
-		// Multiplying velocity by fraction causes sync issues between client and server
-		// Need to come up with a more reliable method.
-		//currentState.v.x *= 0.96;
-		//currentState.v.y *= 0.96;
-		
-		// Reducing velocity by a fixed amount to help with syncing
-		if (Math.abs(currentState.v.x) > 0.5) {
-			//currentState.v.x -= (currentState.v.x > 0) ? 0.5 : -0.5;
-		};
-		
-		if (Math.abs(currentState.v.y) > 0.5) {
-			//currentState.v.y -= (currentState.v.y > 0) ? 0.5 : -0.5;
-		};
-		
-		// This velocity check should be within the integration somewhere
-		if (Math.abs(currentState.v.x) > MAX_VELOCITY) {
-			if (currentState.v.x > 0) {
-				currentState.v.x = MAX_VELOCITY;
-			} else {
-				currentState.v.x = -MAX_VELOCITY;
-			};
-		} else if (previousState.v.x != 0 && Math.abs(currentState.v.x) < 0.6) {
-			//currentState.v.x = 0;
-		};
-		
-		if (Math.abs(currentState.v.y) > MAX_VELOCITY) {
-			if (currentState.v.y > 0) {
-				currentState.v.y = MAX_VELOCITY;
-			} else {
-				currentState.v.y = -MAX_VELOCITY;
-			};
-		} else if (previousState.v.y != 0 && Math.abs(currentState.v.y) < 0.6) {
-			//currentState.v.y = 0;
-		};
 	};
 	
 	var updateInput = function(newInput) {
 		previousInput = currentInput;
 		currentInput = newInput;
-	};
-	
-	// Client-side interpolation
-	var correctState = function(time, state) {
-		var positionDelta = state.p.x - currentState.p.x;
-		if (Math.abs(positionDelta) > 5) {
-			currentState.p.x = state.p.x;
-		} else if (Math.abs(positionDelta) > 0.5) {
-			currentState.p.x += state.p.x * 0.1;
-		};
-		
-		currentState.v.x = state.v.x;
-		currentState.v.y = state.v.y;
-		currentState.f = state.f;
-		currentState.a = state.a;
-		currentState.h = state.h;
-		
-		lastCorrection = time;
 	};
 
 	var setColour = function(colourValue) {
@@ -216,7 +129,7 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 					ctx.lineTo(-6, 2);
 					ctx.closePath();
 					ctx.fill();
-				};
+				}
 
 				// Rawket
 				ctx.fillStyle = "rgb(255, 255, 255)";
@@ -238,7 +151,7 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 					ctx.closePath();
 					ctx.fill();
 					ctx.restore();
-				};
+				}
 				
 				ctx.restore();
 			// Player is outside the viewport
@@ -274,7 +187,7 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 					
 					px = px;
 					py -= 10;
-				};
+				}
 
 				// Check top edge
 				if (screenPos.y < 0) {
@@ -288,7 +201,7 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 
 					px = px;
 					py += 10;
-				};
+				}
 
 				// Check left edge
 				if (screenPos.x < 0) {
@@ -308,8 +221,8 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 
 						px += 10;
 						py = py;
-					};
-				};
+					}
+				}
 
 				// Check right edge
 				if (screenPos.x > viewport.dimensions.width) {
@@ -329,8 +242,8 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 
 						px -= 10;
 						py = py;
-					};
-				};
+					}
+				}
 
 				// Draw debug lines
 				// ctx.save();
@@ -355,8 +268,8 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 				ctx.closePath();
 				ctx.fill();
 				ctx.restore();
-			};
-		};
+			}
+		}
 	};
 	
 	return {
@@ -369,9 +282,7 @@ rawkets.Player = function(id, name, x, y, a, f, h, vx, vy) { // Should probably 
 		getPreviousInput: getPreviousInput,
 		hasChanged: hasChanged,
 		setState: setState,
-		updateState: updateState,
 		updateInput: updateInput,
-		correctState: correctState,
 		setColour: setColour,
 		draw: draw
 	};

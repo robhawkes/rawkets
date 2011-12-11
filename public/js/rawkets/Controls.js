@@ -43,7 +43,7 @@ rawkets.Controls = function() {
 
 		// Gamepad
 		if (gamepad) {
-			if (Math.abs(gamepad.axes.Left_Stick_X) > 0.2 || Math.abs(gamepad.axes.Left_Stick_Y) > 0.2) {
+			if (Math.abs(gamepad.axes.Left_Stick_X) > 0.4 || Math.abs(gamepad.axes.Left_Stick_Y) > 0.4) {
 				if (playerAngle === undefined || isNaN(parseFloat(playerAngle))) {
 					return false;
 				}

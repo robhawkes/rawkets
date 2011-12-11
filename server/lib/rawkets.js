@@ -122,7 +122,7 @@ function initSocket() {
 						break;
 					case MESSAGE_TYPE_SYNC:
 						// Create new player
-						var localPlayer = Player.init(client.id, "Human", 750, 300);
+						var localPlayer = Player.init({id: client.id, name: "Human", x: 750, y: 300});
 			
 						// Send new player to other clients
 						client.broadcast.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: localPlayer.id, n: localPlayer.name, c: localPlayer.colour, t: currentTime.toString(), s: localPlayer.getState()}));

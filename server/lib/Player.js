@@ -5,16 +5,16 @@
 var State = require("./State"),
 	Input = require("./Input");
 
-var Player = function(id, name, x, y, a, f, vx, vy) {
-	var id = id,
-		name = name,
-		colour = colour,
-		currentState = State.init(x, y, a, f, vx, vy),
+var Player = function(opts) {
+	var id = opts.id,
+		name = opts.name,
+		colour = opts.colour,
+		currentState = State.init(opts.x, opts.y, opts.a, opts.f, opts.vx, opts.vy),
 		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h, currentState.v.x, currentState.v.y),
 		currentInput = Input.init(),
 		previousInput = Input.init(),
 		MAX_VELOCITY = 1500,
-		rotationSpeed = 0.09, // Manually set rotation speed for now
+		rotationSpeed = 0.11, // Manually set rotation speed for now
 		bulletTime = Date.now()-1000; // Time last bullet was fired
 
 	var getState = function(trim) {
@@ -95,44 +95,35 @@ var Player = function(id, name, x, y, a, f, vx, vy) {
 		currentState.v.x *= 0.98;
 		currentState.v.y *= 0.98;
 		
-		// Reducing velocity by a fixed amount to help with syncing
-		if (Math.abs(currentState.v.x) > 0.5) {
-			//currentState.v.x -= (currentState.v.x > 0) ? 0.5 : -0.5;
-		};
-		
-		if (Math.abs(currentState.v.y) > 0.5) {
-			//currentState.v.y -= (currentState.v.y > 0) ? 0.5 : -0.5;
-		};
-		
 		// This velocity check should be within the integration somewhere
 		if (Math.abs(currentState.v.x) > MAX_VELOCITY) {
 			if (currentState.v.x > 0) {
 				currentState.v.x = MAX_VELOCITY;
 			} else {
 				currentState.v.x = -MAX_VELOCITY;
-			};
-		} else if (previousState.v.x != 0 && Math.abs(currentState.v.x) < 0.6) {
+			}
+		} else if (previousState.v.x !== 0 && Math.abs(currentState.v.x) < 0.6) {
 			currentState.v.x = 0;
-		};
+		}
 		
 		if (Math.abs(currentState.v.y) > MAX_VELOCITY) {
 			if (currentState.v.y > 0) {
 				currentState.v.y = MAX_VELOCITY;
 			} else {
 				currentState.v.y = -MAX_VELOCITY;
-			};
-		} else if (previousState.v.y != 0 && Math.abs(currentState.v.y) < 0.6) {
+			}
+		} else if (previousState.v.y !== 0 && Math.abs(currentState.v.y) < 0.6) {
 			currentState.v.y = 0;
-		};
+		}
 
 		// Replenish health
-		// if (currentState.h < 100) {
-		// 	currentState.h += 0.25;
+		if (currentState.h < 100) {
+			currentState.h += 0.25;
 
-		// 	if (currentState.h > 100) {
-		// 		currentState.h = 100;
-		// 	};
-		// };
+			if (currentState.h > 100) {
+				currentState.h = 100;
+			}
+		}
 		
 		//console.log("c:"+currentState.v.x);
 	};
@@ -149,8 +140,8 @@ var Player = function(id, name, x, y, a, f, vx, vy) {
 			// Respawn in original position
 			// Move this to the main game logic, or the player manager class
 			// Also, spawn in a random position within the game world
-			currentState.p.x = x;
-			currentState.p.y = y;
+			currentState.p.x = opts.x;
+			currentState.p.y = opts.y;
 			currentState.h = 100;
 		};
 	};
@@ -172,6 +163,6 @@ var Player = function(id, name, x, y, a, f, vx, vy) {
 	};
 };
 
-exports.init = function(id, name, x, y, a, f, vx, vy) {
-	return new Player(id, name, x, y, a, f, vx, vy);
+exports.init = function(opts) {
+	return new Player(opts);
 };

@@ -18,7 +18,7 @@ var PlayerAI = function(id, name, x, y) {
 	};
 
 	// Player object for AI
-	var player = Player.init(id, name, x, y),
+	var player = Player.init({id: id, name: name, x: x, y: y}),
 	// AI state
 		state,
 	// AI target (both for attack and defense)
