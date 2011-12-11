@@ -272,6 +272,10 @@ function update() {
 	// Find leftover time due to incomplete physics time delta
 	// Why have I disabled this? Document or remove.
 	//var alpha = rk4.accumulator / Math.abs(rk4.dt);  // Absolute value to allow for reverse time
+
+	// Check for bullet collisions
+	bullets.collisionAI(aiPlayers, msgOutQueue); // AI always die first
+	bullets.collision(players, msgOutQueue);
 	
 	// Start loop through all game entities
 
@@ -334,10 +338,6 @@ function update() {
 			msgOutQueue.push({msg: formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: aiPlayer.player.id, s: aiPlayer.player.getState(true)})});
 		};
 	};
-
-	// Check for bullet collisions
-	bullets.collisionAI(aiPlayers, msgOutQueue); // AI always die first
-	bullets.collision(players, msgOutQueue);
 
 	// End loop through all game entities
 	

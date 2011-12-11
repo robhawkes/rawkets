@@ -8,8 +8,8 @@ var Bullet = function(id, playerId, x, y, a) {
 	var id = id,
 		playerId = playerId,
 		born = Date.now(),
-		currentState = State.init(x, y, a),
-		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a);
+		currentState = State.init(x, y, a, 0, 100, Math.cos(a)*700, Math.sin(a)*700), // Manual velocity = messy
+		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h, currentState.v.x, currentState.v.y);
 
 	var getState = function(trim) {
 		var newState;
@@ -57,7 +57,7 @@ var Bullet = function(id, playerId, x, y, a) {
 		// };
 
 		// Is not having a maximum velocity going to cause problems?
-		currentState.f = 2000;
+		//currentState.f = 2000;
 		
 		// This velocity check should be within the integration somewhere
 		// if (Math.abs(currentState.v.x) > MAX_VELOCITY) {

@@ -45,7 +45,7 @@ var BulletManager = function() {
 			};
 			
 			// Skip update if the entity is still
-			rk4.integrate(bullet.currentState);
+			rk4.integrate(bullet.currentState, true);
 		};
 	};
 
@@ -81,6 +81,8 @@ var BulletManager = function() {
 				diff.x = playerPos.x - bulletPos.x;
 				diff.y = playerPos.y - bulletPos.y;
 
+				// Eventually work out whether player is between bullet
+				// previous and current position, instead of distance
 				dd = (diff.x * diff.x) + (diff.y * diff.y);
 				distance = Math.sqrt(dd);
 
@@ -110,7 +112,7 @@ var BulletManager = function() {
 			};
 
 			// Remove bullet if it's older than 500ms
-			if (bullet.currentState.h == 0 || Date.now() - bullet.born > 750) {
+			if (bullet.currentState.h == 0 || Date.now() - bullet.born > 500) {
 				// This really needs to be moved into an event that is picked up by the main game logic
 				msgOutQueue.push({msg: formatMessage(10, {id: bullet.id})});
 				bullets.splice(bullets.indexOf(bullet), 1);
@@ -180,7 +182,7 @@ var BulletManager = function() {
 			};
 
 			// Remove bullet if it's older than 500ms
-			if (bullet.currentState.h == 0 || Date.now() - bullet.born > 750) {
+			if (bullet.currentState.h == 0 || Date.now() - bullet.born > 500) {
 				// This really needs to be moved into an event that is picked up by the main game logic
 				msgOutQueue.push({msg: formatMessage(10, {id: bullet.id})});
 				bullets.splice(bullets.indexOf(bullet), 1);

@@ -328,21 +328,6 @@ rawkets.Game = function() {
 		viewport.draw();
 		localPlayer.draw(viewport);
 
-		// Start Gamepad API testing
-		var gamepad;
-		if (gamepad = controls.getGamepad()) {
-			var screenPos = viewport.worldToScreen(localPlayer.currentState.p.x, localPlayer.currentState.p.y);
-			viewport.ctx.save();
-			viewport.ctx.strokeStyle = "green";
-			viewport.ctx.lineWidth = 3;
-			viewport.ctx.beginPath();
-			viewport.ctx.moveTo(screenPos.x, screenPos.y);
-			viewport.ctx.lineTo(screenPos.x+gamepad.axes.Left_Stick_X*100, screenPos.y+gamepad.axes.Left_Stick_Y*100);
-			viewport.ctx.stroke();
-			viewport.ctx.restore();
-		};
-		// End Gamepad API
-
 		// Draw remote players – move to a manager class
 		var p, playerCount = players.length, player;
 		for (p = 0; p < playerCount; p++) {

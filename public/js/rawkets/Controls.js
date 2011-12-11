@@ -48,7 +48,9 @@ rawkets.Controls = function() {
 					return false;
 				}
 
-				input.forward = 1;
+				if (Math.abs(gamepad.axes.Left_Stick_X) > 0.7 || Math.abs(gamepad.axes.Left_Stick_Y) > 0.7) {
+					input.forward = 1;
+				}
 
 				var relativeDiff = {};
 				relativeDiff.x = (gamepad.axes.Left_Stick_X*100) * Math.cos(playerAngle) + (gamepad.axes.Left_Stick_Y*100) * Math.sin(playerAngle);
