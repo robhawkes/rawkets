@@ -37,8 +37,7 @@ rawkets.Game = function() {
 		
 	// Local entities
 		localPlayer,
-		keys,
-		gamepad,
+		controls,
 		currentInput,
 		previousInput,
 		//history,
@@ -201,7 +200,7 @@ rawkets.Game = function() {
 		};
 
 		if (localPlayer) {
-			keys.onKeyDown(e);
+			controls.getKeyboard().onKeyDown(e);
 		};
 	};
 
@@ -211,7 +210,7 @@ rawkets.Game = function() {
 		};
 
 		if (localPlayer) {
-			keys.onKeyUp(e);
+			controls.getKeyboard().onKeyUp(e);
 		};
 	};
 	
@@ -281,16 +280,18 @@ rawkets.Game = function() {
 		
 		//rk4 = new r.RK4();
 		
-		keys = new r.Keys();
+		controls = new r.Controls();
+
+		// Keyboard
+		controls.addKeyboard(new r.Keyboard());
 		window.addEventListener("keydown", onKeydown, false);
 		window.addEventListener("keyup", onKeyup, false);
 
-		// Start Gamepad API testing
+		// Gamepad
 		window.addEventListener("MozGamepadConnected", function(e) {
-			gamepad = new Input.Device(e.gamepad);
+			controls.addGamepad(new Input.Device(e.gamepad));
 			console.log("Gamepad connected", gamepad.id);
 		});
-		// End Gamepad API
 		
 		//history = new r.History();
 		
@@ -330,28 +331,8 @@ rawkets.Game = function() {
 		// 	localTest = true;
 		// };
 
-		// Calculate new input based on keys
-		var input = new r.Input((keys.up) ? 1 : 0, ((keys.left) ? -1 : 0 || (keys.right) ? 1 : 0));
-
-		//console.log(localPlayer.currentState.a);
-
-		// Start Gamepad API testing
-		if (gamepad) {
-			if (Math.abs(gamepad.axes.Left_Stick_X) > 0.2 || Math.abs(gamepad.axes.Left_Stick_Y) > 0.2) {
-				input.forward = 1;
-				var relativeDiff = {};
-				relativeDiff.x = (gamepad.axes.Left_Stick_X*100) * Math.cos(localPlayer.currentState.a) + (gamepad.axes.Left_Stick_Y*100) * Math.sin(localPlayer.currentState.a);
-				relativeDiff.y = (gamepad.axes.Left_Stick_Y*100) * Math.cos(localPlayer.currentState.a) - (gamepad.axes.Left_Stick_X*100) * Math.sin(localPlayer.currentState.a);
-
-				var relativeAngle = Math.atan2(relativeDiff.y, relativeDiff.x);
-				if (relativeAngle > 0.1 && relativeAngle < Math.PI) {
-					input.rotation = 1;
-				} else if (relativeAngle < -0.1 && relativeAngle > -Math.PI) {
-				 	input.rotation = -1;
-				};
-			};
-		};
-		// End Gamepad API
+		// Calculate input based on controls
+		var input = controls.updateInput(localPlayer.currentState.a);
 
 		// Update input
 		localPlayer.updateInput(input);
@@ -448,7 +429,7 @@ rawkets.Game = function() {
 		
 		// Schedule next game update
 		if (runUpdate) {
-			window.mozRequestAnimationFrame(updateGame);
+			window.requestAnimFrame(updateGame);
 		};
 	};
 	
@@ -464,7 +445,8 @@ rawkets.Game = function() {
 		localPlayer.draw(viewport);
 
 		// Start Gamepad API testing
-		if (gamepad) {
+		var gamepad;
+		if (gamepad = controls.getGamepad()) {
 			var screenPos = viewport.worldToScreen(localPlayer.currentState.p.x, localPlayer.currentState.p.y);
 			viewport.ctx.save();
 			viewport.ctx.strokeStyle = "green";

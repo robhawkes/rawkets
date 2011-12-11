@@ -77,6 +77,10 @@
 		
 		<script type="text/javascript" src="js/jquery.min.js"></script>
 		<!--<script type="text/javascript" src="js/jquery.xcolor.js"></script>-->
+
+		<!-- requestAnimationFrame shim -->
+		<script type="text/javascript" src="js/requestAnimationFrame.js"></script>
+
 		<!-- Gamepad API -->
 		<script type="text/javascript" src="js/input.js"></script>
 
@@ -101,10 +105,9 @@
 		<script type="text/javascript" src="js/rawkets/State.js"></script>
 		<!--<script type="text/javascript" src="js/rawkets/RK4.js"></script>-->
 		
-		<script type="text/javascript" src="js/rawkets/Keys.js"></script>
 		<script type="text/javascript" src="js/rawkets/Input.js"></script>
-		<!--<script type="text/javascript" src="js/rawkets/Move.js"></script>
-		<script type="text/javascript" src="js/rawkets/History.js"></script>-->
+		<script type="text/javascript" src="js/rawkets/Keyboard.js"></script>
+		<script type="text/javascript" src="js/rawkets/Controls.js"></script>
 		
 		<script type="text/javascript" src="js/rawkets/Player.js"></script>
 		<script type="text/javascript" src="js/rawkets/Bullet.js"></script>
@@ -114,7 +117,11 @@
 		<script type="text/javascript">
 			// Start Full Screen API
 			document.getElementById("windowResize").addEventListener("click", function() {
-				document.body.mozRequestFullScreen();
+				if (document.body.mozRequestFullScreen) {
+					document.body.mozRequestFullScreen();
+				} else {
+					document.body.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+				}
 			}, false);
 			// End Full Screen API
 
