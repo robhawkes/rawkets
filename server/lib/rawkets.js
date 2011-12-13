@@ -182,7 +182,7 @@ function initSocket() {
 						var player = playerById(client.id);
 						if (player && msg.w && msg.h) {
 							player.screen.w = msg.w;
-							player.screen.h = msg.w;
+							player.screen.h = msg.h;
 						};
 						break;
 				};
@@ -432,8 +432,8 @@ function unqueueOutgoingMessages(msgQueue) {
 						playerX = player.currentState.p.x;
 						playerY = player.currentState.p.y;
 
-						halfScreenWidth = player.screen.w/2;
-						halfScreenHeight = player.screen.h/2;
+						halfScreenWidth = 200 + player.screen.w/2;
+						halfScreenHeight = 200 + player.screen.h/2;
 
 						if (msg.s.p.x > playerX - halfScreenWidth && 
 							msg.s.p.x < playerX + halfScreenWidth &&

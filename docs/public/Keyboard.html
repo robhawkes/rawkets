@@ -1,0 +1,57 @@
+<!DOCTYPE html>  <html> <head>   <title>Keyboard.js</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>            <div id="jump_to">         Jump To &hellip;         <div id="jump_wrapper">           <div id="jump_page">                                           <a class="source" href="Bullet.html">                 Bullet.js               </a>                                           <a class="source" href="Clock.html">                 Clock.js               </a>                                           <a class="source" href="Controls.html">                 Controls.js               </a>                                           <a class="source" href="Event.html">                 Event.js               </a>                                           <a class="source" href="Game.html">                 Game.js               </a>                                           <a class="source" href="Input.html">                 Input.js               </a>                                           <a class="source" href="Keyboard.html">                 Keyboard.js               </a>                                           <a class="source" href="Message.html">                 Message.js               </a>                                           <a class="source" href="NetGraph.html">                 NetGraph.js               </a>                                           <a class="source" href="Player.html">                 Player.js               </a>                                           <a class="source" href="RK4.html">                 RK4.js               </a>                                           <a class="source" href="Socket.html">                 Socket.js               </a>                                           <a class="source" href="Star.html">                 Star.js               </a>                                           <a class="source" href="State.html">                 State.js               </a>                                           <a class="source" href="Vector.html">                 Vector.js               </a>                                           <a class="source" href="Viewport.html">                 Viewport.js               </a>                                           <a class="source" href="rawkets.html">                 rawkets.js               </a>                                           <a class="source" href="ui.html">                 ui.js               </a>                        </div>         </div>       </div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               Keyboard.js             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>                            </td>             <td class="code">               <div class="highlight"><pre><span class="c">/**************************************************</span>
+<span class="c">** KEYBOARD OBJECT</span>
+<span class="c">**************************************************/</span>
+
+<span class="nx">r</span><span class="p">.</span><span class="nx">namespace</span><span class="p">(</span><span class="s2">&quot;Keyboard&quot;</span><span class="p">);</span>
+<span class="nx">rawkets</span><span class="p">.</span><span class="nx">Keyboard</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>Properties</p>             </td>             <td class="code">               <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">keys</span> <span class="o">=</span> <span class="p">{</span>
+		<span class="nx">fire</span><span class="o">:</span> <span class="kc">false</span><span class="o">,</span>
+		<span class="nx">up</span><span class="o">:</span> <span class="kc">false</span><span class="o">,</span>
+		<span class="nx">left</span><span class="o">:</span> <span class="kc">false</span><span class="o">,</span>
+		<span class="nx">right</span><span class="o">:</span> <span class="kc">false</span>
+	<span class="p">};</span>
+		
+	<span class="kd">var</span> <span class="nx">onKeyDown</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="o">,</span>
+			<span class="nx">c</span> <span class="o">=</span> <span class="nx">e</span><span class="p">.</span><span class="nx">keyCode</span><span class="o">;</span>
+		<span class="nx">switch</span> <span class="p">(</span><span class="nx">c</span><span class="p">)</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <p>Controls</p>             </td>             <td class="code">               <div class="highlight"><pre>			<span class="nx">case</span> <span class="mi">32</span><span class="o">:</span> <span class="c">// Fire</span>
+				<span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">fire</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+				<span class="k">break</span><span class="o">;</span>
+			<span class="nx">case</span> <span class="mi">37</span><span class="o">:</span> <span class="c">// Left</span>
+				<span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">left</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+				<span class="k">break</span><span class="o">;</span>
+			<span class="nx">case</span> <span class="mi">38</span><span class="o">:</span> <span class="c">// Up</span>
+				<span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">up</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+				<span class="k">break</span><span class="o">;</span>
+			<span class="nx">case</span> <span class="mi">39</span><span class="o">:</span> <span class="c">// Right</span>
+				<span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">right</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+				<span class="k">break</span><span class="o">;</span>
+		<span class="p">}</span>
+	<span class="p">};</span>
+	
+	<span class="kd">var</span> <span class="nx">onKeyUp</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="o">,</span>
+			<span class="nx">c</span> <span class="o">=</span> <span class="nx">e</span><span class="p">.</span><span class="nx">keyCode</span><span class="o">;</span>
+		<span class="nx">switch</span> <span class="p">(</span><span class="nx">c</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">case</span> <span class="mi">32</span><span class="o">:</span> <span class="c">// Fire</span>
+				<span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">fire</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+				<span class="k">break</span><span class="o">;</span>
+			<span class="nx">case</span> <span class="mi">37</span><span class="o">:</span> <span class="c">// Left</span>
+				<span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">left</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+				<span class="k">break</span><span class="o">;</span>
+			<span class="nx">case</span> <span class="mi">38</span><span class="o">:</span> <span class="c">// Up</span>
+				<span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">up</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+				<span class="k">break</span><span class="o">;</span>
+			<span class="nx">case</span> <span class="mi">39</span><span class="o">:</span> <span class="c">// Right</span>
+				<span class="nx">self</span><span class="p">.</span><span class="nx">keys</span><span class="p">.</span><span class="nx">right</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+				<span class="k">break</span><span class="o">;</span>
+		<span class="p">}</span>
+	<span class="p">};</span>
+
+	<span class="k">return</span> <span class="p">{</span>
+		<span class="nx">keys</span><span class="o">:</span> <span class="nx">keys</span><span class="o">,</span>
+		<span class="nx">onKeyDown</span><span class="o">:</span> <span class="nx">onKeyDown</span><span class="o">,</span>
+		<span class="nx">onKeyUp</span><span class="o">:</span> <span class="nx">onKeyUp</span>
+	<span class="p">};</span>
+<span class="p">};</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 

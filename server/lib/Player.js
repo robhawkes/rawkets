@@ -14,7 +14,8 @@ var Player = function(opts) {
 		currentInput = Input.init(),
 		previousInput = Input.init(),
 		MAX_VELOCITY = 1500,
-		rotationSpeed = 0.11, // Manually set rotation speed for now
+		rotationSpeed = 0.0,
+		maxRotationSpeed = 0.09, // Maximum speed (in radians that the player can rotate)
 		bulletTime = Date.now()-1000, // Time last bullet was fired
 		screen = opts.screen || {w: 0, h: 0}; // Should probably turn screen dimensions into a class/common object
 
@@ -26,7 +27,7 @@ var Player = function(opts) {
 			// Slim state
 			newState = State.init(Number(currentState.p.x.toFixed(2)), Number(currentState.p.y.toFixed(2)), Number(currentState.a.toFixed(2)), currentState.f, currentState.h);
 			return newState;
-		};
+		}
 
 		// Full state for client prediction
 		// newState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
@@ -47,7 +48,7 @@ var Player = function(opts) {
 	var hasChanged = function() {
 		if (JSON.stringify(currentState) != JSON.stringify(previousState)) {
 			return true;
-		};
+		}
 
 		return false;
 	};
@@ -59,11 +60,11 @@ var Player = function(opts) {
 		if (state.v) {
 			currentState.v.x = state.v.x;
 			currentState.v.y = state.v.y;
-		};
+		}
 
 		if (state.f) {
 			currentState.f = state.f;	
-		};
+		}
 
 		currentState.h = state.h;
 		currentState.a = state.a;
@@ -75,7 +76,20 @@ var Player = function(opts) {
 
 		if (!currentInput) {
 			return;
-		};
+		}
+
+		// Manage rotation speed and acceleration
+		if (Math.abs(currentInput.rotation) > 0) {
+			rotationSpeed = (rotationSpeed === 0.0) ? 0.01 : rotationSpeed *= 1.2;
+			if (rotationSpeed > maxRotationSpeed) {
+				rotationSpeed = maxRotationSpeed;
+			}
+		} else {
+			rotationSpeed = (rotationSpeed < 0) ? 0.0 : rotationSpeed *= -1.2;
+			if (rotationSpeed < 0) {
+				rotationSpeed = 0.0;
+			}
+		}
 		
 		currentState.a += (currentInput.rotation > 0) ? rotationSpeed : (currentInput.rotation < 0) ? -rotationSpeed : 0;
 		// Normalise the angle
@@ -83,7 +97,7 @@ var Player = function(opts) {
 			currentState.a = currentState.a - Math.PI*2;
 		} else if (currentState.a < -Math.PI*2) {
 			currentState.a = currentState.a + Math.PI*2;
-		};
+		}
 
 		// Is it a good idea to update the force here, rather than in the physics update?
 		//if (!previousInput || currentInput.forward != previousInput.forward) {
@@ -133,7 +147,7 @@ var Player = function(opts) {
 	};
 
 	var bulletHit = function() {
-		currentState.h -= 20;
+		currentState.h -= 26;
 
 		if (currentState.h <= 0) {
 			// Respawn in original position
@@ -142,7 +156,7 @@ var Player = function(opts) {
 			currentState.p.x = opts.x;
 			currentState.p.y = opts.y;
 			currentState.h = 100;
-		};
+		}
 	};
 
 	return {

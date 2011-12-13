@@ -305,7 +305,7 @@ Copyright (c) 2011 Jon Buckley
         var deviceLen = usbDevice.length;
 
         if (vendorLen < 4) {
-            usbVendor = Array(5-vendorLen).join("0") + usbVedor;
+            usbVendor = Array(5-vendorLen).join("0") + usbVendor;
         }
 
         if (deviceLen < 4) {

@@ -1,0 +1,110 @@
+<!DOCTYPE html>  <html> <head>   <title>NetGraph.js</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>            <div id="jump_to">         Jump To &hellip;         <div id="jump_wrapper">           <div id="jump_page">                                           <a class="source" href="Bullet.html">                 Bullet.js               </a>                                           <a class="source" href="Clock.html">                 Clock.js               </a>                                           <a class="source" href="Controls.html">                 Controls.js               </a>                                           <a class="source" href="Event.html">                 Event.js               </a>                                           <a class="source" href="Game.html">                 Game.js               </a>                                           <a class="source" href="Input.html">                 Input.js               </a>                                           <a class="source" href="Keyboard.html">                 Keyboard.js               </a>                                           <a class="source" href="Message.html">                 Message.js               </a>                                           <a class="source" href="NetGraph.html">                 NetGraph.js               </a>                                           <a class="source" href="Player.html">                 Player.js               </a>                                           <a class="source" href="RK4.html">                 RK4.js               </a>                                           <a class="source" href="Socket.html">                 Socket.js               </a>                                           <a class="source" href="Star.html">                 Star.js               </a>                                           <a class="source" href="State.html">                 State.js               </a>                                           <a class="source" href="Vector.html">                 Vector.js               </a>                                           <a class="source" href="Viewport.html">                 Viewport.js               </a>                                           <a class="source" href="rawkets.html">                 rawkets.js               </a>                                           <a class="source" href="ui.html">                 ui.js               </a>                        </div>         </div>       </div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               NetGraph.js             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>                            </td>             <td class="code">               <div class="highlight"><pre><span class="c">/**************************************************</span>
+<span class="c">** NET GRAPH</span>
+<span class="c">**************************************************/</span>
+
+<span class="nx">r</span><span class="p">.</span><span class="nx">namespace</span><span class="p">(</span><span class="s2">&quot;NetGraph&quot;</span><span class="p">);</span>
+<span class="nx">rawkets</span><span class="p">.</span><span class="nx">NetGraph</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">width</span><span class="o">,</span> <span class="nx">height</span><span class="p">)</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>Shortcuts</p>             </td>             <td class="code">               <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">e</span> <span class="o">=</span> <span class="nx">r</span><span class="p">.</span><span class="nx">Event</span><span class="o">;</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <p>Properties</p>             </td>             <td class="code">               <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">width</span> <span class="o">=</span> <span class="nx">width</span><span class="o">,</span>
+		<span class="nx">height</span> <span class="o">=</span> <span class="nx">height</span><span class="o">,</span>
+		<span class="nx">maxPing</span> <span class="o">=</span> <span class="mi">200</span><span class="o">,</span>
+		<span class="nx">maxData</span> <span class="o">=</span> <span class="mi">3000</span><span class="o">,</span>
+		<span class="nx">pings</span> <span class="o">=</span> <span class="p">[]</span><span class="o">,</span>
+		<span class="nx">tmpData</span> <span class="o">=</span> <span class="p">[]</span><span class="o">,</span>
+		<span class="nx">data</span> <span class="o">=</span> <span class="p">[]</span><span class="o">,</span>
+		<span class="nx">packetsPerUpdate</span> <span class="o">=</span> <span class="mi">0</span><span class="o">,</span>
+		<span class="nx">charsPerUpdate</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="c">// This is actually characters per second, not bytes</span>
+
+	<span class="kd">var</span> <span class="nx">init</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">e</span><span class="p">.</span><span class="nx">listen</span><span class="p">(</span><span class="s2">&quot;SOCKET_MESSAGE&quot;</span><span class="o">,</span> <span class="nx">onSocketMessage</span><span class="p">);</span></pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <p>e.listen("PING", onPing);</p>             </td>             <td class="code">               <div class="highlight"><pre>	<span class="p">};</span>
+
+	<span class="kd">var</span> <span class="nx">onSocketMessage</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
+		<span class="nx">addData</span><span class="p">(</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">msg</span><span class="p">).</span><span class="nx">length</span><span class="p">);</span>
+	<span class="p">};</span>
+
+	<span class="kd">var</span> <span class="nx">onPing</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-5">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-5">&#182;</a>               </div>               <p>addPing(msg.p);
+addData();</p>             </td>             <td class="code">               <div class="highlight"><pre>	<span class="p">};</span>
+	
+	<span class="kd">var</span> <span class="nx">addPing</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">ping</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="nx">pings</span><span class="p">.</span><span class="nx">length</span> <span class="o">==</span> <span class="nx">width</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">pings</span><span class="p">.</span><span class="nx">shift</span><span class="p">();</span> <span class="c">// Remove first ping</span>
+		<span class="p">};</span>
+		
+		<span class="nx">pings</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">ping</span><span class="p">);</span>
+	<span class="p">};</span>
+	
+	<span class="kd">var</span> <span class="nx">addData</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+		<span class="nx">tmpData</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+	<span class="p">};</span>
+	
+	<span class="kd">var</span> <span class="nx">updateData</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">length</span> <span class="o">==</span> <span class="nx">width</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">data</span><span class="p">.</span><span class="nx">shift</span><span class="p">();</span> <span class="c">// Remove first data</span>
+		<span class="p">};</span>
+		
+		<span class="kd">var</span> <span class="nx">d</span><span class="o">,</span> <span class="nx">tmpDataCount</span> <span class="o">=</span> <span class="nx">tmpData</span><span class="p">.</span><span class="nx">length</span><span class="o">,</span> <span class="nx">value</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+		<span class="k">for</span> <span class="p">(</span><span class="nx">d</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="nx">d</span> <span class="o">&lt;</span> <span class="nx">tmpDataCount</span><span class="o">;</span> <span class="nx">d</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">value</span> <span class="o">+=</span> <span class="nx">tmpData</span><span class="p">[</span><span class="nx">d</span><span class="p">];</span>
+		<span class="p">};</span>
+		
+		<span class="nx">packetsPerUpdate</span> <span class="o">=</span> <span class="nx">tmpData</span><span class="p">.</span><span class="nx">length</span><span class="o">;</span>
+		<span class="nx">charsPerUpdate</span> <span class="o">=</span> <span class="nx">value</span><span class="o">;</span>
+		<span class="nx">tmpData</span> <span class="o">=</span> <span class="p">[];</span>
+		
+		<span class="nx">data</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">value</span><span class="p">);</span>
+	<span class="p">};</span>
+	
+	<span class="kd">var</span> <span class="nx">draw</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">viewport</span><span class="p">)</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">ctx</span> <span class="o">=</span> <span class="nx">viewport</span><span class="p">.</span><span class="nx">ctx</span><span class="o">;</span>
+	
+		<span class="nx">ctx</span><span class="p">.</span><span class="nx">save</span><span class="p">();</span>
+		<span class="nx">ctx</span><span class="p">.</span><span class="nx">fillStyle</span> <span class="o">=</span> <span class="s2">&quot;rgba(255, 255, 255, 0.2)&quot;</span><span class="o">;</span>
+		<span class="nx">ctx</span><span class="p">.</span><span class="nx">fillRect</span><span class="p">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="nx">width</span><span class="o">,</span> <span class="nx">height</span><span class="p">);</span>
+		
+		<span class="nx">ctx</span><span class="p">.</span><span class="nx">fillStyle</span> <span class="o">=</span> <span class="s2">&quot;rgba(255, 255, 255, 0.5)&quot;</span><span class="o">;</span>
+		<span class="nx">ctx</span><span class="p">.</span><span class="nx">font</span> <span class="o">=</span> <span class="s2">&quot;Bold 8px Verdana&quot;</span><span class="o">;</span></pre></div>             </td>           </tr>                               <tr id="section-6">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-6">&#182;</a>               </div>               <p>ctx.fillText("0ms", width+4, height-2);
+ctx.fillText(maxPing+"ms", width+4, 10);</p>             </td>             <td class="code">               <div class="highlight"><pre>		</pre></div>             </td>           </tr>                               <tr id="section-7">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-7">&#182;</a>               </div>               <p>var ms = (pings.length > 0) ? pings[pings.length-1] : 0;
+ctx.fillStyle = "rgb(255, 255, 255)";
+ctx.fillText(ms+"ms", 4, 10);</p>             </td>             <td class="code">               <div class="highlight"><pre>		
+		<span class="nx">ctx</span><span class="p">.</span><span class="nx">fillText</span><span class="p">(</span><span class="nx">packetsPerUpdate</span><span class="o">+</span><span class="s2">&quot; p/u&quot;</span><span class="o">,</span> <span class="mi">4</span><span class="o">,</span> <span class="mi">25</span><span class="p">);</span>
+		<span class="nx">ctx</span><span class="p">.</span><span class="nx">fillText</span><span class="p">(</span><span class="nx">charsPerUpdate</span><span class="o">+</span><span class="s2">&quot; c/u&quot;</span><span class="o">,</span> <span class="mi">4</span><span class="o">,</span> <span class="mi">40</span><span class="p">);</span>
+		
+		<span class="kd">var</span> <span class="nx">d</span><span class="o">,</span> <span class="nx">dx</span><span class="o">,</span> <span class="nx">dy</span><span class="o">,</span> <span class="nx">dat</span><span class="o">,</span> <span class="nx">dataCount</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">length</span><span class="o">;</span>
+		<span class="k">if</span> <span class="p">(</span><span class="nx">dataCount</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">ctx</span><span class="p">.</span><span class="nx">strokeStyle</span> <span class="o">=</span> <span class="s2">&quot;rgb(0, 255, 0)&quot;</span><span class="o">;</span>
+			<span class="nx">ctx</span><span class="p">.</span><span class="nx">lineWidth</span> <span class="o">=</span> <span class="mi">1</span><span class="o">;</span>
+			<span class="nx">ctx</span><span class="p">.</span><span class="nx">beginPath</span><span class="p">();</span>
+			<span class="nx">ctx</span><span class="p">.</span><span class="nx">moveTo</span><span class="p">(</span><span class="nx">width</span><span class="o">-</span><span class="p">(</span><span class="nx">dataCount</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span><span class="o">,</span> <span class="nx">height</span><span class="o">-</span><span class="p">(</span><span class="nx">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="nx">maxData</span><span class="o">/</span><span class="nx">height</span><span class="p">)));</span>
+			<span class="k">for</span> <span class="p">(</span><span class="nx">d</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="nx">d</span> <span class="o">&lt;</span> <span class="nx">dataCount</span><span class="o">;</span> <span class="nx">d</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+				<span class="nx">dat</span> <span class="o">=</span> <span class="nx">data</span><span class="p">[</span><span class="nx">d</span><span class="p">];</span>
+				<span class="nx">dx</span> <span class="o">=</span> <span class="p">(</span><span class="nx">width</span><span class="o">-</span><span class="p">(</span><span class="nx">dataCount</span><span class="o">*</span><span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="p">(</span><span class="nx">d</span><span class="o">*</span><span class="mi">2</span><span class="p">);</span>
+				<span class="nx">dy</span> <span class="o">=</span> <span class="nx">height</span><span class="o">-</span><span class="p">(</span><span class="nx">dat</span><span class="o">/</span><span class="p">(</span><span class="nx">maxData</span><span class="o">/</span><span class="nx">height</span><span class="p">));</span>
+
+				<span class="nx">ctx</span><span class="p">.</span><span class="nx">lineTo</span><span class="p">(</span><span class="nx">dx</span><span class="o">,</span> <span class="nx">dy</span><span class="p">);</span>
+			<span class="p">};</span>
+			<span class="nx">ctx</span><span class="p">.</span><span class="nx">stroke</span><span class="p">();</span>
+		<span class="p">};</span>
+		</pre></div>             </td>           </tr>                               <tr id="section-8">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-8">&#182;</a>               </div>               <p>var p, px, py, ping, pingCount = pings.length;
+if (pingCount > 0) {
+    ctx.strokeStyle = "rgb(255, 255, 255)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(width-(pingCount<em>2), height-(pings[0]/(maxPing/height)));
+    for (p = 0; p &lt; pingCount; p++) {
+        ping = pings[p];
+        px = (width-(pingCount</em>2))+(p*2);
+        py = height-(ping/(maxPing/height));</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-9">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-9">&#182;</a>               </div>               <pre><code>    ctx.lineTo(px, py);
+};
+ctx.stroke();
+</code></pre>
+
+<p>};</p>             </td>             <td class="code">               <div class="highlight"><pre>		
+		<span class="nx">ctx</span><span class="p">.</span><span class="nx">restore</span><span class="p">();</span>
+	<span class="p">};</span>
+	
+	<span class="k">return</span> <span class="p">{</span>
+		<span class="nx">init</span><span class="o">:</span> <span class="nx">init</span><span class="o">,</span>
+		<span class="nx">updateData</span><span class="o">:</span> <span class="nx">updateData</span><span class="o">,</span>
+		<span class="nx">draw</span><span class="o">:</span> <span class="nx">draw</span>
+	<span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 

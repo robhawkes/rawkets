@@ -205,12 +205,12 @@ rawkets.Game = function() {
 	function onResize(e) {
 		if (!viewport) {
 			return;
-		};
+		}
 		
 		viewport.onResize(e);
 
-		message.send(message.format("UPDATE_PLAYER_SCREEN", {w: viewport.dimensions.width+50, h: viewport.dimensions.height+50}), false);
-	};
+		message.send(message.format("UPDATE_PLAYER_SCREEN", {w: viewport.dimensions.width, h: viewport.dimensions.height}), true);
+	}
 	
 	/**************************************************
 	** FINDING PLAYERS
@@ -278,7 +278,7 @@ rawkets.Game = function() {
 			}
 
 			controls.addGamepad(new Input.Device(e.gamepad));
-			console.log("Gamepad connected", gamepad.id);
+			console.log("Gamepad connected", e.gamepad.id);
 		});
 		
 		players = [];

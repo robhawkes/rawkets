@@ -1,0 +1,192 @@
+<!DOCTYPE html>  <html> <head>   <title>Clock.js</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>            <div id="jump_to">         Jump To &hellip;         <div id="jump_wrapper">           <div id="jump_page">                                           <a class="source" href="Bullet.html">                 Bullet.js               </a>                                           <a class="source" href="Clock.html">                 Clock.js               </a>                                           <a class="source" href="Controls.html">                 Controls.js               </a>                                           <a class="source" href="Event.html">                 Event.js               </a>                                           <a class="source" href="Game.html">                 Game.js               </a>                                           <a class="source" href="Input.html">                 Input.js               </a>                                           <a class="source" href="Keyboard.html">                 Keyboard.js               </a>                                           <a class="source" href="Message.html">                 Message.js               </a>                                           <a class="source" href="NetGraph.html">                 NetGraph.js               </a>                                           <a class="source" href="Player.html">                 Player.js               </a>                                           <a class="source" href="RK4.html">                 RK4.js               </a>                                           <a class="source" href="Socket.html">                 Socket.js               </a>                                           <a class="source" href="Star.html">                 Star.js               </a>                                           <a class="source" href="State.html">                 State.js               </a>                                           <a class="source" href="Vector.html">                 Vector.js               </a>                                           <a class="source" href="Viewport.html">                 Viewport.js               </a>                                           <a class="source" href="rawkets.html">                 rawkets.js               </a>                                           <a class="source" href="ui.html">                 ui.js               </a>                        </div>         </div>       </div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               Clock.js             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>                            </td>             <td class="code">               <div class="highlight"><pre><span class="c">/**************************************************</span>
+<span class="c">** CLOCK</span>
+<span class="c">**************************************************/</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>Based on TimeDelta class by Jobe Makar</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">r</span><span class="p">.</span><span class="nx">namespace</span><span class="p">(</span><span class="s2">&quot;TimeDelta&quot;</span><span class="p">);</span>
+<span class="c">/**</span>
+<span class="c">* Creates a new instance of the TimeDelta class.</span>
+<span class="c">* @param	Latency value (1/2 the round trip time)</span>
+<span class="c">* @param	TimeSyncDelta</span>
+<span class="c">*/</span>
+<span class="nx">rawkets</span><span class="p">.</span><span class="nx">TimeDelta</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">latency</span><span class="o">,</span> <span class="nx">timeSyncDelta</span><span class="p">)</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <p>Properties</p>             </td>             <td class="code">               <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">_latency</span> <span class="o">=</span> <span class="nx">latency</span><span class="o">,</span>
+		<span class="nx">_timeSyncDelta</span> <span class="o">=</span> <span class="nx">timeSyncDelta</span><span class="o">;</span>
+
+	<span class="kd">var</span> <span class="nx">getLatency</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">_latency</span><span class="o">;</span> <span class="p">};</span>
+	<span class="kd">var</span> <span class="nx">getTimeSyncDelta</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">_timeSyncDelta</span><span class="o">;</span> <span class="p">};</span>
+
+	<span class="k">return</span> <span class="p">{</span>
+		<span class="nx">getLatency</span><span class="o">:</span> <span class="nx">getLatency</span><span class="o">,</span>
+		<span class="nx">getTimeSyncDelta</span><span class="o">:</span> <span class="nx">getTimeSyncDelta</span>
+	<span class="p">};</span>
+<span class="p">};</span>
+
+<span class="nx">r</span><span class="p">.</span><span class="nx">namespace</span><span class="p">(</span><span class="s2">&quot;Clock&quot;</span><span class="p">);</span>
+<span class="nx">rawkets</span><span class="p">.</span><span class="nx">Clock</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">message</span><span class="p">)</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <p>Shortcuts</p>             </td>             <td class="code">               <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">e</span> <span class="o">=</span> <span class="nx">r</span><span class="p">.</span><span class="nx">Event</span><span class="o">,</span>
+		<span class="nx">TimeDelta</span> <span class="o">=</span> <span class="nx">r</span><span class="p">.</span><span class="nx">TimeDelta</span><span class="o">;</span>
+	</pre></div>             </td>           </tr>                               <tr id="section-5">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-5">&#182;</a>               </div>               <p>Properties</p>             </td>             <td class="code">               <div class="highlight"><pre></pre></div>             </td>           </tr>                               <tr id="section-6">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-6">&#182;</a>               </div>               <p>Each latency data point</p>             </td>             <td class="code">               <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">_deltas</span><span class="o">,</span></pre></div>             </td>           </tr>                               <tr id="section-7">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-7">&#182;</a>               </div>               <p>Max number of deltas to keep track of</p>             </td>             <td class="code">               <div class="highlight"><pre> 		<span class="nx">_maxDeltas</span> <span class="o">=</span> <span class="mi">10</span><span class="o">,</span></pre></div>             </td>           </tr>                               <tr id="section-8">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-8">&#182;</a>               </div>               <p>The best computed offset to getTimer based on the information we have</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">_syncTimeDelta</span><span class="o">,</span></pre></div>             </td>           </tr>                               <tr id="section-9">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-9">&#182;</a>               </div>               <p>True if there is a request out</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">_responsePending</span><span class="o">,</span></pre></div>             </td>           </tr>                               <tr id="section-10">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-10">&#182;</a>               </div>               <p>Time we sent the request</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">_timeRequestSent</span><span class="o">,</span></pre></div>             </td>           </tr>                               <tr id="section-11">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-11">&#182;</a>               </div>               <p>Determined latency value</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">_latency</span><span class="o">,</span></pre></div>             </td>           </tr>                               <tr id="section-12">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-12">&#182;</a>               </div>               <p>Of the data set used, this is the biggest variation from the latency and the furthest value</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">_latencyError</span><span class="o">,</span></pre></div>             </td>           </tr>                               <tr id="section-13">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-13">&#182;</a>               </div>               <p>True if we are in the initial flurry of pings</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">_bursting</span><span class="o">,</span>
+		<span class="nx">_lockedInServerTime</span><span class="o">,</span></pre></div>             </td>           </tr>                               <tr id="section-14">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-14">&#182;</a>               </div>               <p>Message controller</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">_message</span> <span class="o">=</span> <span class="nx">message</span><span class="o">;</span>
+	</pre></div>             </td>           </tr>                               <tr id="section-15">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-15">&#182;</a>               </div>               <p>Methods</p>             </td>             <td class="code">               <div class="highlight"><pre>	
+	<span class="kd">var</span> <span class="nx">start</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">_deltas</span> <span class="o">=</span> <span class="p">[];</span>
+		<span class="nx">_lockedInServerTime</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+		<span class="nx">_responsePending</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+		<span class="nx">_bursting</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+		</pre></div>             </td>           </tr>                               <tr id="section-16">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-16">&#182;</a>               </div>               <p>Add event listener here to deal with incoming data from the server</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">e</span><span class="p">.</span><span class="nx">listen</span><span class="p">(</span><span class="s2">&quot;PING&quot;</span><span class="o">,</span> <span class="nx">onPing</span><span class="p">);</span>
+		
+		<span class="nx">requestServerTime</span><span class="p">();</span>
+	<span class="p">};</span>
+	
+	<span class="kd">var</span> <span class="nx">stop</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-17">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-17">&#182;</a>               </div>               <p>Remove event listener that deals with incoming data from the server</p>             </td>             <td class="code">               <div class="highlight"><pre>	<span class="p">};</span>
+	
+	<span class="kd">var</span> <span class="nx">onPing</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-18">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-18">&#182;</a>               </div>               <p>console.log("Message id "+msg.z+" received at "+new Date().getTime().toString());</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">_responsePending</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+
+		<span class="kd">var</span> <span class="nx">serverTimeStamp</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">t</span><span class="o">;</span></pre></div>             </td>           </tr>                               <tr id="section-19">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-19">&#182;</a>               </div>               <p>var serverTimeStamp = msg;</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">addTimeDelta</span><span class="p">(</span><span class="nx">_timeRequestSent</span><span class="o">,</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span><span class="o">,</span> <span class="nx">serverTimeStamp</span><span class="p">);</span>
+
+		<span class="k">if</span> <span class="p">(</span><span class="nx">_bursting</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">if</span> <span class="p">(</span><span class="nx">_deltas</span><span class="p">.</span><span class="nx">length</span> <span class="o">==</span> <span class="nx">_maxDeltas</span><span class="p">)</span> <span class="p">{</span>
+				<span class="nx">_bursting</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+
+				<span class="nx">e</span><span class="p">.</span><span class="nx">fire</span><span class="p">(</span><span class="s2">&quot;CLOCK_READY&quot;</span><span class="o">,</span> <span class="nx">_latency</span><span class="p">);</span>
+				<span class="k">return</span><span class="o">;</span>
+			<span class="p">};</span>
+			<span class="nx">requestServerTime</span><span class="p">();</span>
+		<span class="p">};</span>
+	<span class="p">};</span>
+	
+	<span class="c">/**</span>
+<span class="c">	 * Gets the current server time as best approximated by the algorithm used.</span>
+<span class="c">	 * @return The server time.</span>
+<span class="c">	 */</span>
+	<span class="kd">var</span> <span class="nx">time</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">now</span> <span class="o">=</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">();</span>
+		<span class="k">return</span> <span class="nx">now</span> <span class="o">+</span> <span class="nx">_syncTimeDelta</span><span class="o">;</span>
+	<span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-20">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-20">&#182;</a>               </div>               <p>Private functions</p>             </td>             <td class="code">               <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">requestServerTime</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">_responsePending</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">_timeRequestSent</span> <span class="o">=</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">();</span>
+			<span class="nx">_message</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">_message</span><span class="p">.</span><span class="nx">format</span><span class="p">(</span><span class="s2">&quot;PING&quot;</span><span class="o">,</span> <span class="p">{})</span><span class="o">,</span> <span class="kc">true</span><span class="p">);</span>
+			<span class="nx">_responsePending</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+		<span class="p">};</span>
+	<span class="p">};</span>
+	
+	<span class="c">/**</span>
+<span class="c">	 * Adds information to this class so it can properly converge on a more precise idea of the actual server time.</span>
+<span class="c">	 * @param	Time the client sent the request (in ms)</span>
+<span class="c">	 * @param	Time the client received the response (in ms)</span>
+<span class="c">	 * @param	Time the server sent the response (in ms)</span>
+<span class="c">	 */</span>
+	<span class="kd">var</span> <span class="nx">addTimeDelta</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientSendTime</span><span class="o">,</span> <span class="nx">clientReceiveTime</span><span class="o">,</span> <span class="nx">serverTime</span><span class="p">)</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-21">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-21">&#182;</a>               </div>               <p>Guess the latency</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="kd">var</span> <span class="nx">latency</span> <span class="o">=</span> <span class="p">(</span><span class="nx">clientReceiveTime</span> <span class="o">-</span> <span class="nx">clientSendTime</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">;</span></pre></div>             </td>           </tr>                               <tr id="section-22">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-22">&#182;</a>               </div>               <p>console.log(clientSendTime, clientReceiveTime, serverTime);</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="kd">var</span> <span class="nx">clientServerDelta</span> <span class="o">=</span> <span class="nx">serverTime</span> <span class="o">-</span> <span class="nx">clientReceiveTime</span><span class="o">;</span>
+		<span class="kd">var</span> <span class="nx">timeSyncDelta</span> <span class="o">=</span> <span class="nx">clientServerDelta</span> <span class="o">+</span> <span class="nx">latency</span><span class="o">;</span>
+		
+		<span class="kd">var</span> <span class="nx">delta</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">TimeDelta</span><span class="p">(</span><span class="nx">latency</span><span class="o">,</span> <span class="nx">timeSyncDelta</span><span class="p">);</span>
+		<span class="nx">_deltas</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">delta</span><span class="p">);</span>
+
+		<span class="k">if</span> <span class="p">(</span><span class="nx">_deltas</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="nx">_maxDeltas</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">_deltas</span><span class="p">.</span><span class="nx">shift</span><span class="p">();</span>
+		<span class="p">}</span>
+		
+		<span class="nx">recalculate</span><span class="p">();</span>
+	<span class="p">};</span>
+	
+	<span class="c">/**</span>
+<span class="c">	 * Recalculates the best timeSyncDelta based on the most recent information</span>
+<span class="c">	 */</span>
+	<span class="kd">var</span> <span class="nx">recalculate</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-23">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-23">&#182;</a>               </div>               <p>Grab a copy of the deltas array</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="kd">var</span> <span class="nx">tmp_deltas</span> <span class="o">=</span> <span class="nx">_deltas</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+		</pre></div>             </td>           </tr>                               <tr id="section-24">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-24">&#182;</a>               </div>               <p>Sort them lowest to highest</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">tmp_deltas</span><span class="p">.</span><span class="nx">sort</span><span class="p">(</span><span class="nx">compare</span><span class="p">);</span>
+		</pre></div>             </td>           </tr>                               <tr id="section-25">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-25">&#182;</a>               </div>               <p>Find the median value</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="kd">var</span> <span class="nx">medianLatency</span> <span class="o">=</span> <span class="nx">determineMedian</span><span class="p">(</span><span class="nx">tmp_deltas</span><span class="p">);</span>
+		</pre></div>             </td>           </tr>                               <tr id="section-26">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-26">&#182;</a>               </div>               <p>Get rid of any latencies that fall outside a threshold</p>             </td>             <td class="code">               <div class="highlight"><pre>		<span class="nx">pruneOutliers</span><span class="p">(</span><span class="nx">tmp_deltas</span><span class="o">,</span> <span class="nx">medianLatency</span><span class="o">,</span> <span class="mf">1.5</span><span class="p">);</span>
+		
+		<span class="nx">_latency</span> <span class="o">=</span> <span class="nx">determineAverageLatency</span><span class="p">(</span><span class="nx">tmp_deltas</span><span class="p">);</span>
+		
+		<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">_lockedInServerTime</span><span class="p">)</span> <span class="p">{</span>
+			</pre></div>             </td>           </tr>                               <tr id="section-27">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-27">&#182;</a>               </div>               <p>Average the remaining time deltas</p>             </td>             <td class="code">               <div class="highlight"><pre>			<span class="kd">var</span> <span class="nx">avgValue</span> <span class="o">=</span> <span class="nx">determineAverage</span><span class="p">(</span><span class="nx">tmp_deltas</span><span class="p">);</span>
+			</pre></div>             </td>           </tr>                               <tr id="section-28">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-28">&#182;</a>               </div>               <p>Store the result</p>             </td>             <td class="code">               <div class="highlight"><pre>			<span class="nx">_syncTimeDelta</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">round</span><span class="p">(</span><span class="nx">avgValue</span><span class="p">);</span>
+			
+			<span class="nx">_lockedInServerTime</span> <span class="o">=</span> <span class="nx">_deltas</span><span class="p">.</span><span class="nx">length</span> <span class="o">==</span> <span class="nx">_maxDeltas</span><span class="o">;</span>
+		<span class="p">};</span>
+	<span class="p">};</span>
+	
+	<span class="c">/**</span>
+<span class="c">	 * Determines the average timeSyncDelta based on values within the acceptable range</span>
+<span class="c">	 * @param	Array of Time_deltas to be used</span>
+<span class="c">	 * @return Average timeSyncDelta</span>
+<span class="c">	 */</span>
+	<span class="kd">var</span> <span class="nx">determineAverage</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">arr</span><span class="p">)</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">total</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+		<span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">arr</span><span class="p">.</span><span class="nx">length</span><span class="o">;++</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+			<span class="kd">var</span> <span class="nx">td</span> <span class="o">=</span> <span class="nx">arr</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+			<span class="nx">total</span> <span class="o">+=</span> <span class="nx">td</span><span class="p">.</span><span class="nx">getTimeSyncDelta</span><span class="p">();</span>
+		<span class="p">};</span>
+		<span class="k">return</span> <span class="nx">total</span> <span class="o">/</span> <span class="nx">arr</span><span class="p">.</span><span class="nx">length</span><span class="o">;</span>
+	<span class="p">};</span>
+	
+	<span class="kd">var</span> <span class="nx">determineAverageLatency</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">arr</span><span class="p">)</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">total</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+		<span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">arr</span><span class="p">.</span><span class="nx">length</span><span class="o">;++</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+			<span class="kd">var</span> <span class="nx">td</span> <span class="o">=</span> <span class="nx">arr</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+			<span class="nx">total</span> <span class="o">+=</span> <span class="nx">td</span><span class="p">.</span><span class="nx">getLatency</span><span class="p">();</span>
+		<span class="p">};</span>
+		
+		<span class="kd">var</span> <span class="nx">lat</span> <span class="o">=</span> <span class="nx">total</span> <span class="o">/</span> <span class="nx">arr</span><span class="p">.</span><span class="nx">length</span><span class="o">;</span>
+		
+		<span class="nx">_latencyError</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="nx">arr</span><span class="p">[</span><span class="nx">arr</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">].</span><span class="nx">getLatency</span><span class="p">()</span> <span class="o">-</span> <span class="nx">lat</span><span class="p">);</span>
+		
+		<span class="k">return</span> <span class="nx">lat</span><span class="o">;</span>
+	<span class="p">};</span>
+	
+	<span class="c">/**</span>
+<span class="c">	 * Removes the values that are more than 1.5 X the median. The idea is that if it is outside 1.5 X the median then it was probably a TCP retransmit and so it should be ignored.</span>
+<span class="c">	 * @param	Array of Time_deltas to prune</span>
+<span class="c">	 * @param	Median value</span>
+<span class="c">	 * @param	Threshold multiplier of median value</span>
+<span class="c">	 */</span>
+	<span class="kd">var</span> <span class="nx">pruneOutliers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">arr</span><span class="o">,</span> <span class="nx">median</span><span class="o">,</span> <span class="nx">threshold</span><span class="p">)</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">maxValue</span> <span class="o">=</span> <span class="nx">median</span> <span class="o">*</span> <span class="nx">threshold</span><span class="o">;</span>
+		<span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="nx">arr</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="o">;</span> <span class="nx">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">;--</span><span class="nx">i</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="kd">var</span> <span class="nx">td</span> <span class="o">=</span> <span class="nx">arr</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+			<span class="k">if</span> <span class="p">(</span><span class="nx">td</span><span class="p">.</span><span class="nx">getLatency</span><span class="p">()</span> <span class="o">&gt;</span> <span class="nx">maxValue</span><span class="p">)</span> <span class="p">{</span>
+				<span class="nx">arr</span><span class="p">.</span><span class="nx">splice</span><span class="p">(</span><span class="nx">i</span><span class="o">,</span> <span class="mi">1</span><span class="p">);</span>
+			<span class="p">}</span> <span class="k">else</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-29">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-29">&#182;</a>               </div>               <p>we can break out of the loop because they are already sorted in order, if we find one that isn't too high then we are done</p>             </td>             <td class="code">               <div class="highlight"><pre>				<span class="k">break</span><span class="o">;</span>
+			<span class="p">};</span>
+		<span class="p">};</span>
+	<span class="p">};</span>
+	
+	<span class="c">/**</span>
+<span class="c">	 * Determines the median latency value.</span>
+<span class="c">	 * @param	Array of Time_deltas to use.</span>
+<span class="c">	 * @return Median value.</span>
+<span class="c">	 */</span>
+	<span class="kd">var</span> <span class="nx">determineMedian</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">arr</span><span class="p">)</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">ind</span><span class="o">;</span>
+		<span class="k">if</span> <span class="p">(</span><span class="nx">arr</span><span class="p">.</span><span class="nx">length</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="c">// Even</span>
+			<span class="nx">ind</span> <span class="o">=</span> <span class="nx">arr</span><span class="p">.</span><span class="nx">length</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="o">;</span>
+			<span class="k">return</span> <span class="p">(</span><span class="nx">arr</span><span class="p">[</span><span class="nx">ind</span><span class="p">].</span><span class="nx">getLatency</span><span class="p">()</span> <span class="o">+</span> <span class="nx">arr</span><span class="p">[</span><span class="nx">ind</span> <span class="o">+</span> <span class="mi">1</span><span class="p">].</span><span class="nx">getLatency</span><span class="p">())</span> <span class="o">/</span> <span class="mi">2</span><span class="o">;</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span> <span class="c">// Odd</span>
+			<span class="nx">ind</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nx">arr</span><span class="p">.</span><span class="nx">length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+			<span class="k">return</span> <span class="nx">arr</span><span class="p">[</span><span class="nx">ind</span><span class="p">].</span><span class="nx">getLatency</span><span class="p">();</span>
+		<span class="p">};</span>
+		
+		<span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+	<span class="p">};</span>
+	
+	<span class="c">/**</span>
+<span class="c">	 * Function used by Array.sort to sort an array from lowest to highest based on latency values.</span>
+<span class="c">	 * @param	TimeDelta</span>
+<span class="c">	 * @param	TimeDelta</span>
+<span class="c">	 * @return -1, 0, or 1</span>
+<span class="c">	 */</span>
+	<span class="kd">var</span> <span class="nx">compare</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="o">,</span> <span class="nx">b</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">getLatency</span><span class="p">()</span> <span class="o">&lt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">getLatency</span><span class="p">())</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="o">;</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">getLatency</span><span class="p">()</span> <span class="o">&gt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">getLatency</span><span class="p">())</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="mi">1</span><span class="o">;</span>
+		<span class="p">};</span>
+		
+		<span class="k">return</span> <span class="mi">0</span><span class="o">;</span>
+	<span class="p">};</span>	
+
+	<span class="k">return</span> <span class="p">{</span>
+		<span class="nx">start</span><span class="o">:</span> <span class="nx">start</span><span class="o">,</span>
+		<span class="nx">stop</span><span class="o">:</span> <span class="nx">stop</span><span class="o">,</span>
+		<span class="nx">time</span><span class="o">:</span> <span class="nx">time</span>
+	<span class="p">};</span>
+<span class="p">};</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 
