@@ -208,12 +208,8 @@ rawkets.Game = function() {
 		};
 		
 		viewport.onResize(e);
-		
-		// var msg = formatMessage(MESSAGE_TYPE_UPDATE_PLAYER_SCREEN, {
-		// 	w: viewport.dimensions.width+50,
-		// 	h: viewport.dimensions.height+50
-		// });
-		// socket.send(msg);
+
+		message.send(message.format("UPDATE_PLAYER_SCREEN", {w: viewport.dimensions.width+50, h: viewport.dimensions.height+50}), false);
 	};
 	
 	/**************************************************
@@ -275,8 +271,12 @@ rawkets.Game = function() {
 		window.addEventListener("keydown", onKeydown, false);
 		window.addEventListener("keyup", onKeyup, false);
 
-		// Gamepad
+		// Gamepad - Mozilla
 		window.addEventListener("MozGamepadConnected", function(e) {
+			if (controls.getGamepad()) {
+				return;
+			}
+
 			controls.addGamepad(new Input.Device(e.gamepad));
 			console.log("Gamepad connected", gamepad.id);
 		});
@@ -287,7 +287,7 @@ rawkets.Game = function() {
 		net = new r.NetGraph(canvas.width, 50);
 		net.init();
 		
-		message.send(message.format("SYNC", {}), true);
+		message.send(message.format("SYNC", {sc: {w: viewport.dimensions.width+50, h: viewport.dimensions.height+50}}), true);
 	};
 	
 	/**************************************************
@@ -295,6 +295,12 @@ rawkets.Game = function() {
 	**************************************************/
 	
 	var updateGame = function(timestamp) {
+		// Gamepad - Webkit
+		if (navigator.webkitGamepads && navigator.webkitGamepads[0] && !controls.getGamepad()) {
+			controls.addGamepad(new Input.Device(navigator.webkitGamepads[0]));
+			console.log("Gamepad connected", navigator.webkitGamepads[0].id);
+		}
+
 		// Calculate input based on controls
 		var input = controls.updateInput(localPlayer.currentState.a);
 

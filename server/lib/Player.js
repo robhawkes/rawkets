@@ -15,7 +15,8 @@ var Player = function(opts) {
 		previousInput = Input.init(),
 		MAX_VELOCITY = 1500,
 		rotationSpeed = 0.11, // Manually set rotation speed for now
-		bulletTime = Date.now()-1000; // Time last bullet was fired
+		bulletTime = Date.now()-1000, // Time last bullet was fired
+		screen = opts.screen || {w: 0, h: 0}; // Should probably turn screen dimensions into a class/common object
 
 	var getState = function(trim) {
 		var newState;
@@ -118,14 +119,12 @@ var Player = function(opts) {
 
 		// Replenish health
 		if (currentState.h < 100) {
-			currentState.h += 0.25;
+			currentState.h += 0.1;
 
 			if (currentState.h > 100) {
 				currentState.h = 100;
 			}
 		}
-		
-		//console.log("c:"+currentState.v.x);
 	};
 
 	var updateInput = function(newInput) {
@@ -159,7 +158,8 @@ var Player = function(opts) {
 		updateState: updateState,
 		updateInput: updateInput,
 		bulletTime: bulletTime,
-		bulletHit: bulletHit
+		bulletHit: bulletHit,
+		screen: screen
 	};
 };
 

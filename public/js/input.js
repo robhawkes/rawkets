@@ -6,8 +6,8 @@ Copyright (c) 2011 Jon Buckley
 (function() {
   // Holds all of the physical device to USB enumeration mappings
   var keymapBlob = {
-    '45e' : { /* Microsoft */
-      '28e' : { /* Xbox 360 controller */
+    '045e' : { /* Microsoft */
+      '028e' : { /* Xbox 360 controller */
         'Mac' : {
           'axes' : {
             'Left_Stick_X': 0,
@@ -63,8 +63,8 @@ Copyright (c) 2011 Jon Buckley
         }
       }
     },
-    "54c": { /* Sony */
-      "268": { /* PS3 Controller */
+    "054c": { /* Sony */
+      "0268": { /* PS3 Controller */
         "Mac": {
           "axes": {
             "Left_Stick_X": 0,
@@ -94,7 +94,7 @@ Copyright (c) 2011 Jon Buckley
         }
       }
     },
-    "46d": { /* Logitech */
+    "046d": { /* Logitech */
       "c242": { /* Chillstream */
         "Win": {
           "axes": {
@@ -152,7 +152,7 @@ Copyright (c) 2011 Jon Buckley
         }
       }
     },
-    "40b": {
+    "040b": {
       "6533": { /* USB 2A4K GamePad */
         "Mac": {
           "axes": {
@@ -291,6 +291,27 @@ Copyright (c) 2011 Jon Buckley
         keymap = keymapBlob,
         axes = this.axes = {},
         buttons = this.buttons = {};
+
+    // Chrome vendor and device ids are slightly different
+    if (navigator.webkitGamepads) {
+        var gamepadIdRegex = domGamepad.id.match(/((?:\:\s)([a-f0-9]{4}))+/g)
+
+        // Remove ": " from string - hacky, needs changing
+        usbVendor = gamepadIdRegex[0].substr(2);
+        usbDevice = gamepadIdRegex[1].substr(2);
+    } else {
+        // Zero-pad ids in Firefox
+        var vendorLen = usbVendor.length;
+        var deviceLen = usbDevice.length;
+
+        if (vendorLen < 4) {
+            usbVendor = Array(5-vendorLen).join("0") + usbVedor;
+        }
+
+        if (deviceLen < 4) {
+            usbDevice = Array(5-deviceLen).join("0") + usbDevice;
+        }
+    }
 
     if (keymap && keymap[usbVendor] && keymap[usbVendor][usbDevice] && keymap[usbVendor][usbDevice][os]) {
       keymap = keymap[usbVendor][usbDevice][os];

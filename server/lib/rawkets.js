@@ -24,7 +24,7 @@ var Express = require("./Express").Express.init(),
 	socket,
 	rk4 = require("./RK4").init(),
 	aiPlayers = [], // Should prob move this into it's own class that manages players
-	maxAiPlayers = 10,
+	maxAiPlayers = 1,
 	players = [], // Should prob move this into it's own class that manages players
 	bullets = BulletManager.init(),
 	currentTime = Date.now(), // Current time in ms, used to calculate frame time
@@ -47,7 +47,8 @@ var Express = require("./Express").Express.init(),
 	MESSAGE_TYPE_REMOVE_PLAYER = 7,
 	MESSAGE_TYPE_NEW_BULLET = 8,
 	MESSAGE_TYPE_UPDATE_BULLET = 9,
-	MESSAGE_TYPE_REMOVE_BULLET = 10;
+	MESSAGE_TYPE_REMOVE_BULLET = 10,
+	MESSAGE_TYPE_UPDATE_PLAYER_SCREEN = 11;
 
 
 /**************************************************
@@ -121,8 +122,13 @@ function initSocket() {
 						sys.puts("Message id "+MESSAGE_TYPE_PING+" sent at "+time.toString());
 						break;
 					case MESSAGE_TYPE_SYNC:
+						if (!msg.sc) {
+							console.log("No screen dimensions sent for player "+client.id);
+							return;
+						}
+
 						// Create new player
-						var localPlayer = Player.init({id: client.id, name: "Human", x: 750, y: 300});
+						var localPlayer = Player.init({id: client.id, name: "Human", x: 750, y: 300, screen: msg.sc});
 			
 						// Send new player to other clients
 						client.broadcast.emit("game message", formatMessage(MESSAGE_TYPE_NEW_PLAYER, {id: localPlayer.id, n: localPlayer.name, c: localPlayer.colour, t: currentTime.toString(), s: localPlayer.getState()}));
@@ -170,6 +176,13 @@ function initSocket() {
 						var player = playerById(client.id);
 						if (player && msg.i) {
 							player.updateInput(msg.i);
+						};
+						break;
+					case MESSAGE_TYPE_UPDATE_PLAYER_SCREEN:
+						var player = playerById(client.id);
+						if (player && msg.w && msg.h) {
+							player.screen.w = msg.w;
+							player.screen.h = msg.w;
 						};
 						break;
 				};
@@ -288,7 +301,7 @@ function update() {
 		};
 
 		// Should this be done by events?
-		if (player.getInput().fire == 1 && Date.now() - player.bulletTime > 500+Math.round(Math.random()*500)) {
+		if (player.getInput().fire == 1 && Date.now() - player.bulletTime > 400+Math.round(Math.random()*300)) {
 			var bulletPos = Vector.init();
 			bulletPos.x = player.currentState.p.x+(Math.cos(player.currentState.a)*7);
 			bulletPos.y = player.currentState.p.y+(Math.sin(player.currentState.a)*7);
@@ -296,22 +309,15 @@ function update() {
 			// Need to cut down the ID
 			bullets.add("bullet"+Date.now()+player.id, player.id, bulletPos.x, bulletPos.y, player.currentState.a, msgOutQueue);
 			player.bulletTime = Date.now();
-		};
+		}
 
 		playerWithinUpdate(player);
 		
 		if (player.getState() && player.getInput() && player.hasChanged()) {
-			// Full update for client-side prediction
-			//msgOutQueue.push({msg: formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: player.id, t: currentTime.toString(), s: player.getState(), i: player.getInput()})});
-
 			// Slim update for no client-side prediction
 			msgOutQueue.push({msg: formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: player.id, s: player.getState(true)})});
-		};
-		
-		// Interpolate state considering incomplete physics time delta (accumulator)
-		// Why have I disabled this? Document or remove.
-		//player.interpolate(alpha);
-	};
+		}
+	}
 
 	// AI players
 	for (i = 0; i < aiPlayerCount; i++) {
@@ -319,10 +325,10 @@ function update() {
 			
 		if (!aiPlayer) {
 			continue;
-		};
+		}
 
 		// Should this be done by events?
-		if (aiPlayer.player.getInput().fire == 1 && Date.now() - aiPlayer.player.bulletTime > 500+Math.round(Math.random()*500)) {
+		if (aiPlayer.player.getInput().fire == 1 && Date.now() - aiPlayer.player.bulletTime > 400+Math.round(Math.random()*300)) {
 			var bulletPos = Vector.init();
 			bulletPos.x = aiPlayer.player.currentState.p.x+(Math.cos(aiPlayer.player.currentState.a)*7);
 			bulletPos.y = aiPlayer.player.currentState.p.y+(Math.sin(aiPlayer.player.currentState.a)*7);
@@ -330,14 +336,14 @@ function update() {
 			// Need to cut down the ID
 			bullets.add("bullet"+Date.now()+aiPlayer.player.id, aiPlayer.player.id, bulletPos.x, bulletPos.y, aiPlayer.player.currentState.a, msgOutQueue);
 			aiPlayer.player.bulletTime = Date.now();
-		};
+		}
 
 		playerWithinUpdate(aiPlayer.player);
 		
 		if (aiPlayer.player.getState() && aiPlayer.player.getInput() && aiPlayer.player.hasChanged()) {
 			msgOutQueue.push({msg: formatMessage(MESSAGE_TYPE_UPDATE_PLAYER, {id: aiPlayer.player.id, s: aiPlayer.player.getState(true)})});
-		};
-	};
+		}
+	}
 
 	// End loop through all game entities
 	
@@ -351,10 +357,10 @@ function update() {
 	msgOutQueue = [];
 	
 	// Schedule next loop
-	if (runUpdate) {;
+	if (runUpdate) {
 		setTimeout(update, 1000/60);
-	};
-};
+	}
+}
 
 update();
 
@@ -369,10 +375,10 @@ function formatMessage(type, args) {
 		// Don't overwrite the message type
 		if (arg != "z")
 			msg[arg] = args[arg];
-	};
+	}
 
 	return msg;
-};
+}
 
 /**************************************************
 ** MESSAGE QUEUES
@@ -381,9 +387,9 @@ function formatMessage(type, args) {
 // Unqueue outgoing messages and do stuff with them
 function unqueueOutgoingMessages(msgQueue) {
 	// Check for messages
-	if (msgQueue.length == 0) {
+	if (msgQueue.length === 0) {
 		return;
-	};
+	}
 	
 	// Copy message queue
 	var msgs = msgQueue.slice(0); // Necessary?
@@ -400,6 +406,43 @@ function unqueueOutgoingMessages(msgQueue) {
 		if (msg.z !== undefined) {
 			switch (msg.z) {
 				case MESSAGE_TYPE_UPDATE_PLAYER:
+					// Only send update to players who can see this player
+					var clients = io.sockets.clients(),
+						player,
+						clientCount = clients.length,
+						playerX,
+						playerY,
+						halfScreenWidth,
+						halfScreenHeight,
+						i;
+
+					for (i = 0; i < clientCount; i++) {
+						client = clients[i];
+
+						if (!client) {
+							continue;
+						}
+
+						player = playerById(client.id);
+
+						if (!player) {
+							continue;
+						}
+
+						playerX = player.currentState.p.x;
+						playerY = player.currentState.p.y;
+
+						halfScreenWidth = player.screen.w/2;
+						halfScreenHeight = player.screen.h/2;
+
+						if (msg.s.p.x > playerX - halfScreenWidth && 
+							msg.s.p.x < playerX + halfScreenWidth &&
+							msg.s.p.y > playerY - halfScreenHeight &&
+							msg.s.p.y < playerY + halfScreenHeight) {
+							client.emit("game message", msg);
+						}
+					}
+					break;
 				case MESSAGE_TYPE_NEW_BULLET:
 				case MESSAGE_TYPE_UPDATE_BULLET:
 				case MESSAGE_TYPE_REMOVE_BULLET:
