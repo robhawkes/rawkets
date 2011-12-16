@@ -137,9 +137,7 @@
 					console.log("Error");
 				}  
 
-				navigator.mozApps.install("http://rawkets.dev:8000/manifest.webapp");
-				navigator.mozApps.oninstall = function(appArray) { console.log("success") }
-				navigator.mozApps.onerror = function(appArray) { console.log("error") }
+				navigator.mozApps.install("http://rawkets.dev:8000/manifest.webapp", installCallback, errorCallback);
 			};
 			// End Open Web Apps
 

@@ -37,11 +37,11 @@ var Express = {
 	},
 	initRoutes: function () {
 		// Express routes
-		this.app.get("/manifest.webthis.app", function(req, res){
-			res.header("Content-Type", "this.application/x-web-this.app-manifest+json");
+		this.app.get("/manifest.webapp", function(req, res){
+			res.header("Content-Type", "application/x-web-app-manifest+json");
 
 			var fs = require('fs');
-			fs.readFile("../../public/manifest.webthis.app", function (err, data) {
+			fs.readFile(__dirname+"/../../public/manifest.webapp", function (err, data) {
 				if (err) throw err;
 				res.send(data);
 			});

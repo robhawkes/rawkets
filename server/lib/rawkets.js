@@ -207,10 +207,10 @@ function update() {
 	
 	// Limit frame time to avoid "spiral of death"
 	// Document what is meant by "spiral of death", and what 0.25 means
-	if (frameTime > 0.25) {
-		console.log("Frametime pegged at 0.25");
-		frameTime = 0.25;
-	};
+	// if (frameTime > 0.25) {
+	// 	console.log("Frametime pegged at 0.25");
+	// 	frameTime = 0.25;
+	// };
 	
 	// Update game time
 	currentTime = newTime;
