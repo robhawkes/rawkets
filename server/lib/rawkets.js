@@ -22,7 +22,8 @@ var Express = require("./Express").Express.init(),
 	BulletManager = require("./BulletManager"),
 	server,
 	socket,
-	rk4 = require("./RK4").init(),
+	//rk4 = require("./RK4").init(),
+	euler = require("./Euler").init(),
 	aiPlayers = [], // Should prob move this into it's own class that manages players
 	maxAiPlayers = 1,
 	players = [], // Should prob move this into it's own class that manages players
@@ -244,47 +245,33 @@ function update() {
 
 	// Update bullet states
 	bullets.updateState();
-	
-	// Run RK4 simulation
-	rk4.accumulator += frameTime;
-	while (rk4.accumulator >= rk4.dt) {
-		// Start loop through all game entities
 
-		// Human players
-		for (i = 0; i < playerCount; i++) {
-			player = players[i];
-			
-			if (!player) {
-				continue;
-			};
-			
-			rk4.integrate(player.currentState);
-		};
-
-		// AI players
-		for (i = 0; i < aiPlayerCount; i++) {
-			aiPlayer = aiPlayers[i];
-			
-			if (!aiPlayer) {
-				continue;
-			};
-			
-			// Skip update if the entity is still
-			rk4.integrate(aiPlayer.player.currentState);
-		};
-
-		// Bullets
-		bullets.update(rk4);
-
-		// End loop through all game entities
+	// Run Euler simulation
+	// For human players
+	for (i = 0; i < playerCount; i++) {
+		player = players[i];
 		
-		// Update accumulator
-		rk4.accumulator -= Math.abs(rk4.dt); // Absolute value to allow for reverse time
-	};
-	
-	// Find leftover time due to incomplete physics time delta
-	// Why have I disabled this? Document or remove.
-	//var alpha = rk4.accumulator / Math.abs(rk4.dt);  // Absolute value to allow for reverse time
+		if (!player) {
+			continue;
+		}
+		
+		euler.integrate(player.currentState, frameTime);
+	}
+
+	// For AI players
+	for (i = 0; i < aiPlayerCount; i++) {
+		aiPlayer = aiPlayers[i];
+		
+		if (!aiPlayer) {
+			continue;
+		}
+		
+		// Skip update if the entity is still
+		euler.integrate(aiPlayer.player.currentState, frameTime);
+	}
+
+	// Update bullets
+	bullets.update(euler, frameTime);
 
 	// Check for bullet collisions
 	bullets.collisionAI(aiPlayers, msgOutQueue); // AI always die first

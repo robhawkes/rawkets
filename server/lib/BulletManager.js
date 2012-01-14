@@ -32,7 +32,7 @@ var BulletManager = function() {
 		};
 	};
 
-	var update = function(rk4) {
+	var update = function(physics, dt) {
 		var bullet,
 			bulletCount = bullets.length,
 			i;
@@ -45,7 +45,7 @@ var BulletManager = function() {
 			};
 			
 			// Skip update if the entity is still
-			rk4.integrate(bullet.currentState, true);
+			physics.integrate(bullet.currentState, dt);
 		};
 	};
 

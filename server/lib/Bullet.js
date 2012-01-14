@@ -8,7 +8,7 @@ var Bullet = function(id, playerId, x, y, a) {
 	var id = id,
 		playerId = playerId,
 		born = Date.now(),
-		currentState = State.init(x, y, a, 0, 100, Math.cos(a)*700, Math.sin(a)*700), // Manual velocity = messy
+		currentState = State.init(x, y, a, 0, 100, Math.cos(a)*900, Math.sin(a)*900), // Manual velocity = messy
 		previousState = State.init(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h, currentState.v.x, currentState.v.y);
 
 	var getState = function(trim) {
