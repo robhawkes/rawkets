@@ -416,6 +416,12 @@ function unqueueOutgoingMessages(msgQueue) {
 							continue;
 						}
 
+						// Skip dimensional checks as this is the local player
+						if (player.id == msg.id) {
+							client.emit("game message", msg);
+							continue;
+						}
+
 						playerX = player.currentState.p.x;
 						playerY = player.currentState.p.y;
 
@@ -426,7 +432,13 @@ function unqueueOutgoingMessages(msgQueue) {
 							msg.s.p.x < playerX + halfScreenWidth &&
 							msg.s.p.y > playerY - halfScreenHeight &&
 							msg.s.p.y < playerY + halfScreenHeight) {
-							client.emit("game message", msg);
+							var updateTime = Date.now();
+
+							// Only send remote updates every 100ms
+							if (updateTime - player.remoteUpdateTime > 100) {
+								client.emit("game message", msg);
+								player.remoteUpdateTime = updateTime;
+							}
 						}
 					}
 					break;

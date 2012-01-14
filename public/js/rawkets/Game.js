@@ -112,7 +112,7 @@ rawkets.Game = function() {
 			if (!player) {
 				return;
 			};
-			player.setState(msg.s);
+			player.setTargetState(msg.s);
 		};
 	};
 	
@@ -315,6 +315,18 @@ rawkets.Game = function() {
 		};
 
 		viewport.update(localPlayer.currentState.p.x, localPlayer.currentState.p.y);
+
+		// Update remote players (move to a manager class)
+		var p, playerCount = players.length, player;
+		for (p = 0; p < playerCount; p++) {
+			player = players[p];
+
+			if (!player) {
+				continue;
+			}
+
+			player.update();
+		}
 		
 		net.updateData();
 
@@ -334,7 +346,7 @@ rawkets.Game = function() {
 		viewport.draw();
 		localPlayer.draw(viewport);
 
-		// Draw remote players – move to a manager class
+		// Draw remote players (move to a manager class)
 		var p, playerCount = players.length, player;
 		for (p = 0; p < playerCount; p++) {
 			player = players[p];
@@ -346,7 +358,7 @@ rawkets.Game = function() {
 			player.draw(viewport);
 		};
 
-		// Draw bullets – move to a manager class
+		// Draw bullets (move to a manager class)
 		var b, bulletCount = bullets.length, bullet;
 		for (b = 0; b < bulletCount; b++) {
 			bullet = bullets[b];

@@ -17,7 +17,8 @@ var Player = function(opts) {
 		rotationSpeed = 0.0,
 		maxRotationSpeed = 0.09, // Maximum speed (in radians that the player can rotate)
 		bulletTime = Date.now()-1000, // Time last bullet was fired
-		screen = opts.screen || {w: 0, h: 0}; // Should probably turn screen dimensions into a class/common object
+		screen = opts.screen || {w: 0, h: 0}, // Should probably turn screen dimensions into a class/common object
+		remoteUpdateTime = Date.now()-1000; // Time last update was sent for remote players
 
 	var getState = function(trim) {
 		var newState;
@@ -173,7 +174,8 @@ var Player = function(opts) {
 		updateInput: updateInput,
 		bulletTime: bulletTime,
 		bulletHit: bulletHit,
-		screen: screen
+		screen: screen,
+		remoteUpdateTime: remoteUpdateTime
 	};
 };
 

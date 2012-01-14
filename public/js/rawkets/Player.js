@@ -8,7 +8,8 @@ rawkets.Player = function(opts) { // Should probably just use a State object, in
 		name = opts.name,
 		colour = opts.colour || false,
 		currentState = new r.State(opts.x, opts.y, opts.a, opts.f, opts.h),
-		previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h),
+		//previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h),
+		targetState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h),
 		currentInput = new r.Input(),
 		previousInput = new r.Input();
 		
@@ -38,13 +39,13 @@ rawkets.Player = function(opts) { // Should probably just use a State object, in
 		return previousInput;
 	};
 
-	var hasChanged = function() {
-		if (JSON.stringify(currentState) != JSON.stringify(previousState)) {
-			return true;
-		}
+	// var hasChanged = function() {
+	// 	if (JSON.stringify(currentState) != JSON.stringify(previousState)) {
+	// 		return true;
+	// 	}
 
-		return false;
-	};
+	// 	return false;
+	// };
 	
 	var setState = function(state) {
 		currentState.p.x = state.p.x;
@@ -62,6 +63,23 @@ rawkets.Player = function(opts) { // Should probably just use a State object, in
 		currentState.h = state.h;
 		currentState.a = state.a;
 	};
+
+	var setTargetState = function(state) {
+		targetState.p.x = state.p.x;
+		targetState.p.y = state.p.y;
+
+		if (state.v) {
+			targetState.v.x = state.v.x;
+			targetState.v.y = state.v.y;
+		}
+
+		if (state.f >= 0) {
+			targetState.f = state.f;	
+		}
+
+		targetState.h = state.h;
+		targetState.a = state.a;
+	};
 	
 	var updateInput = function(newInput) {
 		previousInput = currentInput;
@@ -70,6 +88,75 @@ rawkets.Player = function(opts) { // Should probably just use a State object, in
 
 	var setColour = function(colourValue) {
 		colour = colourValue;
+	};
+
+	var update = function() {
+		currentState.h = targetState.h;
+		currentState.f = targetState.f;
+
+		// ANGLE
+
+		(function() {
+			if (currentState.a == targetState.a) {
+				// Do nothing as target angle is same as current angle
+				return;
+			}
+
+			var angleDiff = targetState.a - currentState.a;
+
+			// Fix angle if the target is over the 360/0 degree threshold
+			// Proabably an easier way to do this
+			if (Math.abs(angleDiff) > Math.PI) {
+				// Correct the angle
+				if (angleDiff > 0) {
+					angleDiff -= Math.PI*2;
+				} else if (angleDiff < 0) {
+					angleDiff += Math.PI*2;
+				}
+			}
+
+			// Snap to target angle if close or far enough
+			if (Math.abs(angleDiff) < 0.01 || Math.abs(angleDiff) > Math.PI) {
+				currentState.a = targetState.a;
+				return;
+			}
+
+			// Ease towards target angle
+			currentState.a += angleDiff * 0.2;
+
+			// Normalise the angle
+			if (currentState.a > Math.PI*2) {
+				currentState.a = currentState.a - Math.PI*2;
+			} else if (currentState.a < -Math.PI*2) {
+				currentState.a = currentState.a + Math.PI*2;
+			}
+		})();
+
+		// POSITION
+
+		(function() {
+			if (currentState.p.x == targetState.p.x &&
+				currentState.p.y == targetState.p.y) {
+				// Do nothing as target position is same as current position
+				return;
+			}
+
+			var posDiff = r.Vector();
+			posDiff.x = targetState.p.x - currentState.p.x;
+			posDiff.y = targetState.p.y - currentState.p.y;
+
+			// Snap to target position if close or far enough
+			if ((Math.abs(posDiff.x) < 0.1 && Math.abs(posDiff.y) < 0.1) ||
+				(Math.abs(posDiff.x) > 50 || Math.abs(posDiff.y) > 50)) {
+				currentState.p.x = targetState.p.x;
+				currentState.p.y = targetState.p.y;
+				return;
+			}
+
+			// Ease toward target position
+			currentState.p.x += posDiff.x * 0.2;
+			currentState.p.y += posDiff.y * 0.2;
+		})();
 	};
 	
 	var draw = function(viewport) {
@@ -280,10 +367,12 @@ rawkets.Player = function(opts) { // Should probably just use a State object, in
 		getState: getState,
 		getInput: getInput,
 		getPreviousInput: getPreviousInput,
-		hasChanged: hasChanged,
+		//hasChanged: hasChanged,
 		setState: setState,
+		setTargetState: setTargetState,
 		updateInput: updateInput,
 		setColour: setColour,
+		update: update,
 		draw: draw
 	};
 };
