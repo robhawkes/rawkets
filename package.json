@@ -4,8 +4,7 @@
   "author": "Rob Hawkes <rob@rawkes.com>",
   "version": "0.0.1",
   "dependencies": {
-    "express": "2.5.x",
-    "socket.io": "0.8.x"
+    "hook.io": "0.8.x"
   },
   "devDependencies": {
     "mocha": "0.3.x"
