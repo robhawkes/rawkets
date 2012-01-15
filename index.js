@@ -12,7 +12,7 @@ hook.on("hook::ready", function() {
 	hook.spawn([{
 		type: "rawkets",
 		name: "rawkets",
-		silent: 0
+		silent: 1
 	}]);
 });
 

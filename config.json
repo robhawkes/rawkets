@@ -1,7 +1,7 @@
 {
 	"world": {
-		"width": 2000,
-		"height": 2000,
-		"maxAiPlayers": 10
+		"width": 1500,
+		"height": 600,
+		"maxAiPlayers": 1
 	}
 }
