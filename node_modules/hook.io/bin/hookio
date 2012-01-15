@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+
+var Hook = require('../lib/hookio').Hook;
+
+var hook = new Hook( {
+  name: 'the-hook'
+});
+
+hook.start();

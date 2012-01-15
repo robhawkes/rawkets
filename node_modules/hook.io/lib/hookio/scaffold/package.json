@@ -1,0 +1,23 @@
+{
+  "author": "Marak Squires <marak.squires@gmail.com>",
+  "name": "hook.io-scaffold",
+  "description": "a simple hook.io hook for creating hook.io hooks",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hookio/scaffold.git"
+  },
+  "bin": {
+     "hookio-scaffold": "./bin/scaffold"
+  },
+  "main" : "lib/introspect",
+  "engines": {
+    "node": ">= v0.4.7"
+  },
+  "dependencies": {
+    "hook.io": "0.8.x",
+    "colors": "0.5.x",
+    "async": "0.1.x"
+  },
+  "devDependencies": {}
+}

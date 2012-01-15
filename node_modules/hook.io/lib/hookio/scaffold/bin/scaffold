@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+
+var Scaffold = require('../lib/scaffold').Scaffold;
+
+var scaffold = new Scaffold({ 
+  name: 'the-scaffold'
+});
+
+scaffold.start();

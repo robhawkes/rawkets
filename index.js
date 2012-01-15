@@ -1,23 +1,20 @@
 var Hook = require("hook.io").Hook,
-	RawketsClient = require("hook.io-rawkets-client").RawketsClient;
+	Rawkets = require("hook.io-rawkets").Rawkets;
 
 // Initialise hook server
 var hook = new Hook( {
 	name: "vanilla-hook",
-	silent: true
+	silent: 1
 });
 
 hook.on("hook::ready", function() {
-	// Spawn rawkets-client hook
+	// Spawn rawkets hook
 	hook.spawn([{
-		type: "rawkets-client",
-		name: "rawkets-client",
-		silent: false
+		type: "rawkets",
+		name: "rawkets",
+		silent: 0
 	}]);
 });
 
 // Start hook server
 hook.start();
-
-// var rawkets = require("./server/index");
-// rawkets.init();

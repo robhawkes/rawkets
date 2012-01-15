@@ -4,6 +4,7 @@
   "author": "Rob Hawkes <rob@rawkes.com>",
   "version": "0.0.1",
   "dependencies": {
+    "forever": "0.8.x",
     "hook.io": "0.8.x"
   },
   "devDependencies": {
