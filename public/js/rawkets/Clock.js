@@ -73,9 +73,10 @@ rawkets.Clock = function(message) {
 		//console.log("Message id "+msg.z+" received at "+new Date().getTime().toString());
 		_responsePending = false;
 
-		var serverTimeStamp = msg.t;
-		//var serverTimeStamp = msg;
-		addTimeDelta(_timeRequestSent, Date.now(), serverTimeStamp);
+		var date = Date.now(),
+			serverTimeStamp = Number(msg.split("|")[1]);
+		//console.log(serverTimeStamp);
+		addTimeDelta(_timeRequestSent, date, serverTimeStamp);
 
 		if (_bursting) {
 			if (_deltas.length == _maxDeltas) {
@@ -101,7 +102,7 @@ rawkets.Clock = function(message) {
 	var requestServerTime = function() {
 		if (!_responsePending) {
 			_timeRequestSent = Date.now();
-			_message.send(_message.format("PING", {}), true);
+			_message.send("1", true);
 			_responsePending = true;
 		};
 	};

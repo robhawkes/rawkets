@@ -63,13 +63,33 @@ rawkets.Message = function(socket) {
 	};
 	
 	var onSocketMessage = function(msg) {
+		//console.log(msg);
+
+		var msgArray;
+
+		if (msg && !msg.z) {
+			msgArray = msg.split("|");
+
+			if (msgArray.length === 0) {
+				return;
+			}
+			
+			type = parseInt(msgArray[0], 10);
+			
+			switch (type) {
+				case types.PING:
+					e.fire("PING", msg);
+					break;
+			}
+		}
+
 		if (msg.z !== undefined) {
 			// Make this automated so you can refer message type from the received message
 			switch (msg.z) {
-				case types.PING:
-					//console.log("Message id "+msg.z+" received at "+Date.now());
-					e.fire("PING", msg);
-					break;
+				// case types.PING:
+				// 	//console.log("Message id "+msg.z+" received at "+Date.now());
+				// 	e.fire("PING", msg);
+				// 	break;
 				case types.SYNC_COMPLETED:
 					e.fire("SYNC_COMPLETED", msg);
 					break;
