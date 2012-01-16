@@ -284,8 +284,8 @@ rawkets.Game = function() {
 		players = [];
 		bullets = [];
 
-		net = new r.NetGraph(canvas.width, 50);
-		net.init();
+		//net = new r.NetGraph(canvas.width, 50);
+		//net.init();
 		
 		message.send(message.format("SYNC", {sc: {w: viewport.dimensions.width+50, h: viewport.dimensions.height+50}}), true);
 	};
@@ -328,7 +328,7 @@ rawkets.Game = function() {
 			player.update();
 		}
 		
-		net.updateData();
+		//net.updateData();
 
 		drawGame();
 
@@ -371,7 +371,7 @@ rawkets.Game = function() {
 		};
 		
 		// Draw netgraph
-		net.draw(viewport);
+		//net.draw(viewport);
 	};
 	
 	/**************************************************

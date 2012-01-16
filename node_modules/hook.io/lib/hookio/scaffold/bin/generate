@@ -1,0 +1,6 @@
+var introspect = require('../lib/introspect');
+
+//
+// Remark: This will generate a new hook called "testh" in the /generate/ folder
+//
+introspect.generate('testh');

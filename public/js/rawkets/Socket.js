@@ -50,7 +50,7 @@ rawkets.Socket = function(host, port) {
 	var send = function(msg) {
 		if (!msg) {
 			return;
-		};
+		}
 		socket.emit("game message", msg);
 	};
 	
