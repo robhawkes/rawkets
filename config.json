@@ -2,6 +2,6 @@
 	"world": {
 		"width": 1500,
 		"height": 600,
-		"maxAiPlayers": 1
+		"maxAiPlayers": 0
 	}
 }
