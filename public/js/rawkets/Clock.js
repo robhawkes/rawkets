@@ -74,7 +74,7 @@ rawkets.Clock = function(message) {
 		_responsePending = false;
 
 		var date = Date.now(),
-			serverTimeStamp = Number(msg.split("|")[1]);
+			serverTimeStamp = msg.args.timestamp;
 		//console.log(serverTimeStamp);
 		addTimeDelta(_timeRequestSent, date, serverTimeStamp);
 
@@ -102,7 +102,7 @@ rawkets.Clock = function(message) {
 	var requestServerTime = function() {
 		if (!_responsePending) {
 			_timeRequestSent = Date.now();
-			_message.send("1", true);
+			_message.send(_message.encode([_message.typeIndexes.ping]), true);
 			_responsePending = true;
 		};
 	};

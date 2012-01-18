@@ -3,17 +3,17 @@
 **************************************************/
 
 r.namespace("State");
-rawkets.State = function(x, y, a, f, h, vx, vy) {
-	var p = new r.Vector(x, y) || new Vector(0, 0), // Position
-		a = a || 0, // Angle
-		v = new r.Vector(vx, vy) || new Vector(0, 0), // Velocity (directionless, needs angle)
-		f = f || 0, // Force (for acceleration, needs angle)
-		h = h || 100; // Health
+rawkets.State = function(opts) {
+	var p = new r.Vector(Number(opts.x), Number(opts.y)) || new Vector(0, 0), // Position
+		a = Number(opts.a) || 0, // Angle
+		//v = new r.Vector(opts.vx, opts.vy) || new Vector(0, 0), // Velocity (directionless, needs angle)
+		f = opts.f || 0, // Force (for acceleration, needs angle)
+		h = Number(opts.h) || 100; // Health
 		
 	return {
 		p: p,
 		a: a,
-		v: v,
+		//v: v,
 		f: f,
 		h: h
 	};

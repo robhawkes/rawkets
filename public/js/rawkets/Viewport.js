@@ -46,7 +46,7 @@ rawkets.Viewport = function(canvas, width, height, worldWidth, worldHeight) {
 			for (i = 0; i < maxStars; i++) {
 				newStar = new r.Star(dimensions.width, dimensions.height);
 				stars.push(newStar);
-			};
+			}
 		};
 		
 		var update = function(x, y) {
@@ -70,7 +70,7 @@ rawkets.Viewport = function(canvas, width, height, worldWidth, worldHeight) {
 				star.pos.x = (star.pos.x > dimensions.width) ? 0 : star.pos.x;
 				star.pos.y = (star.pos.y < 0) ? dimensions.height : star.pos.y;
 				star.pos.y = (star.pos.y > dimensions.height) ? 0 : star.pos.y;
-			};
+			}
 		};
 
 		var withinBounds = function(x, y) {
@@ -79,7 +79,7 @@ rawkets.Viewport = function(canvas, width, height, worldWidth, worldHeight) {
 				y > (pos.y - dimensions.height/2)-20 &&
 				y < (pos.y + dimensions.height/2)+20) {
 				return true;	
-			};
+			}
 
 			return false;
 		};
@@ -130,7 +130,7 @@ rawkets.Viewport = function(canvas, width, height, worldWidth, worldHeight) {
 				star = stars[s];
 				star.pos.x *= xRatio;
 				star.pos.y *= yRatio;
-			};
+			}
 		};
 		
 		var draw = function() {
@@ -141,12 +141,12 @@ rawkets.Viewport = function(canvas, width, height, worldWidth, worldHeight) {
 			for (s = 0; s < starCount; s++) {
 				star = stars[s];
 
-				if (star == null) {
+				if (star === null) {
 					continue;
-				};
+				}
 
 				star.draw(ctx)
-			};
+			}
 
 			// Draw world boundaries			
 			ctx.strokeStyle = "rgba(200, 200, 200, 0.2)";
@@ -160,25 +160,25 @@ rawkets.Viewport = function(canvas, width, height, worldWidth, worldHeight) {
 				drawPos.x = worldXToScreenX(0);
 			} else {
 				drawPos.x = 0;
-			};
+			}
 
 			if (0 > (pos.y - dimensions.height/2)) {
 				drawPos.y = worldYToScreenY(0);
 			} else {
 				drawPos.y = 0;
-			};
+			}
 
 			if (worldWidth < (pos.x + dimensions.width/2)) {
 				drawWidth = worldXToScreenX(worldWidth)-drawPos.x;
 			} else {
 				drawWidth = dimensions.width;
-			};
+			}
 
 			if (worldHeight < (pos.y + dimensions.height/2)) {
 				drawHeight = worldYToScreenY(worldHeight)-drawPos.y;
 			} else {
 				drawHeight = dimensions.height;
-			};
+			}
 
 			ctx.strokeRect(drawPos.x-(ctx.lineWidth/2), drawPos.y-(ctx.lineWidth/2), drawWidth+ctx.lineWidth, drawHeight+ctx.lineWidth);
 
@@ -188,25 +188,25 @@ rawkets.Viewport = function(canvas, width, height, worldWidth, worldHeight) {
 				flarePos.x = 0-((pos.x/worldWidth)*294);
 				flarePos.y = dimensions.height-123-((pos.y/worldHeight)*150);
 				ctx.drawImage(flareLeftLower[0], flarePos.x, flarePos.y);
-			};
+			}
 			
 			if (flareLeftUpper[1]) {
 				flarePos.x = 0-((pos.x/worldWidth)*379);
 				flarePos.y = 30+((pos.y/worldHeight)*250);
 				ctx.drawImage(flareLeftUpper[0], flarePos.x, flarePos.y);
-			};
+			}
 			
 			if (flareRightLower[1]) {
 				flarePos.x = dimensions.width-((pos.x/worldWidth)*380);
 				flarePos.y = dimensions.height-193-((pos.y/worldHeight)*150);
 				ctx.drawImage(flareRightLower[0], flarePos.x, flarePos.y);
-			};
+			}
 			
 			if (flareRightUpper[1]) {
 				flarePos.x = dimensions.width-((pos.x/worldWidth)*317);
 				flarePos.y = 10+((pos.y/worldHeight)*150);
 				ctx.drawImage(flareRightUpper[0], flarePos.x, flarePos.y);
-			};
+			}
 		};
 		
 		return {

@@ -91,116 +91,121 @@ rawkets.Game = function() {
 	};
 	
 	var onNewPlayer = function(msg) {
-		if (!msg.id || !msg.s) {
-			console.log("Failed to add new player", msg.id);
-		};
+		var args = msg.args;
 
-		var player = new r.Player({id: msg.id, name: msg.n, x: msg.s.p.x, y: msg.s.p.y, a: msg.s.a, f: msg.s.f, h: msg.s.h});
-		if (msg.c) {
-			player.setColour(msg.c);
-		};
+		if (!args.id) {
+			console.log("Failed to add new player", args.id);
+		}
+
+		var player = new r.Player({id: args.id, name: args.name, x: args.x, y: args.y, a: args.angle, h: args.health, f: args.force, c: args.colour});
 
 		players.push(player);
 		console.log("Added new player", player.id);
 	};
 
 	var onUpdatePlayer = function(msg) {
-		if (localPlayer && msg.id == localPlayer.id) {
-			localPlayer.setState(msg.s);
+		var args = msg.args,
+			state = new r.State({x: args.x, y: args.y, a: args.angle, h: args.health, f: args.force});
+
+		if (localPlayer && args.id == localPlayer.id) {
+			localPlayer.setState(state);
 		} else if (players) {
-			var player = playerById(msg.id);
+			var player = playerById(args.id);
 			if (!player) {
 				return;
-			};
-			player.setTargetState(msg.s);
-		};
+			}
+			player.setTargetState(state);
+		}
 	};
 	
 	var onRemovePlayer = function(msg) {
-		var player = playerById(msg.id);
+		var args = msg.args,
+			player = playerById(args.id);
 		if (!player) {
 			return;
-		};
-		console.log("Remove player: ", msg.id);
-		players.splice(indexOfByPlayerId(msg.id), 1);
+		}
+		console.log("Remove player: ", args.id);
+		players.splice(indexOfByPlayerId(args.id), 1);
 	};
 
 	var onNewBullet = function(msg) {
 		if (!bullets) {
 			return;
-		};
+		}
 
-		if (!msg.id || !msg.s) {
-			console.log("Failed to add new bullet", msg.id);
-		};
+		var args = msg.args;
+
+		if (!args.id) {
+			console.log("Failed to add new bullet", args.id);
+		}
 		
-		var bullet = new r.Bullet(msg.id, msg.s.p.x, msg.s.p.y, msg.s.a, msg.s.f);
+		var bullet = new r.Bullet(args.id, args.x, args.y, args.angle);
 		bullets.push(bullet);
-		
-		//console.log("Added new bullet", msg.id);
 	};
 
 	var onUpdateBullet = function(msg) {
 		if (!bullets) {
 			return;
-		};
+		}
 
-		// Find bullet by ID (move into a bullet manager class)
-		var bulletCount = bullets.length,
+		var args = msg.args,
+			bulletCount = bullets.length,
 			bullet,
+			bulletState,
 			i;
 
+		// Find bullet by ID (move into a bullet manager class)
 		for (i = 0; i < bulletCount; i++) {
 			bullet = bullets[i];
 
-			if (bullet.id == msg.id) {
-				bullet.updateState();
-				bullet.setState(msg.s);
+			if (bullet.id == args.id) {
+				bulletState = new r.State({x: args.x, y: args.y, a: bullet.currentState.a});
+				bullet.setTargetState(bulletState);
 				return;
-			};
-		};
+			}
+		}
 	};
 	
 	var onRemoveBullet = function(msg) {
 		if (!bullets) {
 			return;
-		};
+		}
 
 		// Find bullet by ID (move into a bullet manager class)
-		var bulletCount = bullets.length,
+		var args = msg.args,
+			bulletCount = bullets.length,
 			bullet,
 			i;
 
 		for (i = 0; i < bulletCount; i++) {
 			bullet = bullets[i];
 
-			if (bullet.id == msg.id) {
+			if (bullet.id == args.id) {
 				bullets.splice(bullets.indexOf(bullet), 1);
-				//console.log("Removed bullet", msg.id);
 				return;
-			};
-		};
+			}
+		}
 	};
 	
 	function onKeydown(e) {
 		if (!runUpdate) {
 			return;
-		};
+		}
 
 		if (localPlayer) {
 			controls.getKeyboard().onKeyDown(e);
-		};
-	};
+		}
+	}
 
 	function onKeyup(e) {
 		if (!runUpdate) {
 			return;
-		};
+		}
 
 		if (localPlayer) {
 			controls.getKeyboard().onKeyUp(e);
-		};
-	};
+		}
+	}
 	
 	function onResize(e) {
 		if (!viewport) {
@@ -208,8 +213,7 @@ rawkets.Game = function() {
 		}
 		
 		viewport.onResize(e);
-
-		message.send(message.format("UPDATE_PLAYER_SCREEN", {w: viewport.dimensions.width, h: viewport.dimensions.height}), true);
+		message.send(message.encode([message.typeIndexes.updatePlayerScreen, viewport.dimensions.width, viewport.dimensions.height]), true);
 	}
 	
 	/**************************************************
@@ -221,21 +225,21 @@ rawkets.Game = function() {
 		for (var i = 0; i < players.length; i++) {
 			if (players[i].id == id)
 				return players[i];
-		};
+		}
 
 		return false;
-	};
+	}
 
 	// Find player index by ID
 	function indexOfByPlayerId(id) {
 		for (var i = 0; i < players.length; i++) {
 			if (players[i].id == id) {
 				return i;
-			};
-		};
+			}
+		}
 
 		return false;
-	};
+	}
 	
 	/**************************************************
 	** START GAME
@@ -245,7 +249,7 @@ rawkets.Game = function() {
 		var canvas = document.getElementById("canvas");
 		if (!canvas) {
 			console.log("Game canvas is unavailable", canvas);
-		};
+		}
 		
 		canvas.width = window.innerWidth;
 		canvas.height = window.innerHeight-111;
@@ -258,7 +262,7 @@ rawkets.Game = function() {
 		if (!localPlayer) {
 			console.log("Failed to create local player", localPlayer);
 			return;
-		};
+		}
 		
 		console.log("Local player id", localPlayer.id);
 		
@@ -287,7 +291,8 @@ rawkets.Game = function() {
 		//net = new r.NetGraph(canvas.width, 50);
 		//net.init();
 		
-		message.send(message.format("SYNC", {sc: {w: viewport.dimensions.width+50, h: viewport.dimensions.height+50}}), true);
+		//message.send(message.format("SYNC", {sc: {w: viewport.dimensions.width+50, h: viewport.dimensions.height+50}}), true);
+		message.send(message.encode([message.typeIndexes.sync, viewport.dimensions.width+50, viewport.dimensions.height+50]), true);
 	};
 	
 	/**************************************************
@@ -311,8 +316,8 @@ rawkets.Game = function() {
 		var previousInput = localPlayer.getPreviousInput();
 		if (!previousInput || input.forward != previousInput.forward || input.rotation != previousInput.rotation || input.fire != previousInput.fire) {
 			//console.log("Input updated", currentTime, localPlayer.getInput(), Date.now());
-			message.send(message.format("UPDATE_INPUT", {t: currentTime.toString(), i: localPlayer.getInput()}), true);
-		};
+			message.send(message.encode([message.typeIndexes.updateInput, input.forward, input.rotation, input.fire]), true);
+		}
 
 		viewport.update(localPlayer.currentState.p.x, localPlayer.currentState.p.y);
 
@@ -327,6 +332,18 @@ rawkets.Game = function() {
 
 			player.update();
 		}
+
+		// Update bullets
+		var b, bulletCount = bullets.length, bullet;
+		for (b = 0; b < bulletCount; b++) {
+			bullet = bullets[b];
+
+			if (!bullet) {
+				continue;
+			}
+
+			bullet.update();
+		}
 		
 		//net.updateData();
 
@@ -335,7 +352,7 @@ rawkets.Game = function() {
 		// Schedule next game update
 		if (runUpdate) {
 			window.requestAnimFrame(updateGame);
-		};
+		}
 	};
 	
 	/**************************************************
@@ -353,10 +370,10 @@ rawkets.Game = function() {
 
 			if (!player) {
 				continue;
-			};
+			}
 
 			player.draw(viewport);
-		};
+		}
 
 		// Draw bullets (move to a manager class)
 		var b, bulletCount = bullets.length, bullet;
@@ -365,14 +382,14 @@ rawkets.Game = function() {
 
 			if (!bullet) {
 				continue;
-			};
+			}
 
 			bullet.draw(viewport);
-		};
+		}
 		
 		// Draw netgraph
 		//net.draw(viewport);
-	};
+	}
 	
 	/**************************************************
 	** INITIALISE GAME

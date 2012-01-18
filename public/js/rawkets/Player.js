@@ -7,9 +7,9 @@ rawkets.Player = function(opts) { // Should probably just use a State object, in
 	var id = opts.id,
 		name = opts.name,
 		colour = opts.colour || false,
-		currentState = new r.State(opts.x, opts.y, opts.a, opts.f, opts.h),
+		currentState = new r.State({x: opts.x, y: opts.y, a: opts.a, h: opts.h, f: opts.f}),
 		//previousState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h),
-		targetState = new r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h),
+		targetState = new r.State({x: currentState.p.x, y: currentState.p.y, a: currentState.a, h: currentState.h, f: currentState.f}),
 		currentInput = new r.Input(),
 		previousInput = new r.Input();
 		
@@ -19,14 +19,14 @@ rawkets.Player = function(opts) { // Should probably just use a State object, in
 			// Full state for client prediction
 			// newState = r.State(Math.floor(currentState.p.x), Math.floor(currentState.p.y), currentState.a, Math.floor(currentState.f), Math.floor(currentState.v.x), Math.floor(currentState.v.y));
 			// Slim state
-			newState = r.State(Number(currentState.p.x.toFixed(2)), Number(currentState.p.y.toFixed(2)), Number(currentState.a.toFixed(2)), currentState.f, currentState.h);
+			newState = new r.State({x: Number(currentState.p.x.toFixed(2)), y: Number(currentState.p.y.toFixed(2)), a: Number(currentState.a.toFixed(2)), h: currentState.h, f: currentState.f});
 			return newState;
 		}
 
 		// Full state for client prediction
 		// newState = r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.v.x, currentState.v.y);
 		// Slim state
-		newState = r.State(currentState.p.x, currentState.p.y, currentState.a, currentState.f, currentState.h);
+		newState = new r.State({x: currentState.p.x, y: currentState.p.y, a: currentState.a, h: currentState.h, f: currentState.f});
 		return newState;
 	};
 
@@ -51,10 +51,10 @@ rawkets.Player = function(opts) { // Should probably just use a State object, in
 		currentState.p.x = state.p.x;
 		currentState.p.y = state.p.y;
 
-		if (state.v) {
-			currentState.v.x = state.v.x;
-			currentState.v.y = state.v.y;
-		}
+		// if (state.v) {
+		// 	currentState.v.x = state.v.x;
+		// 	currentState.v.y = state.v.y;
+		// }
 
 		if (state.f >= 0) {
 			currentState.f = state.f;	
@@ -68,10 +68,10 @@ rawkets.Player = function(opts) { // Should probably just use a State object, in
 		targetState.p.x = state.p.x;
 		targetState.p.y = state.p.y;
 
-		if (state.v) {
-			targetState.v.x = state.v.x;
-			targetState.v.y = state.v.y;
-		}
+		// if (state.v) {
+		// 	targetState.v.x = state.v.x;
+		// 	targetState.v.y = state.v.y;
+		// }
 
 		if (state.f >= 0) {
 			targetState.f = state.f;	
