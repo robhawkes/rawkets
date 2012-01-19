@@ -89,13 +89,14 @@ rawkets.Message = function(socket) {
 	var send = function(msg, immediately) {
 		// Send message immediately
 		if (msg && immediately) {
-			socket.send(msg);
-			//console.log(msg.z+" sent at "+Date.now());
+			//setTimeout(function() {
+				socket.send(msg);
+			//}, 50);
 			return;
 		}
 		
 		// Otherwise add message to the queue
-		outgoing.push(msg);
+		//outgoing.push(msg);
 	};
 	
 	var onSocketMessage = function(msg) {
