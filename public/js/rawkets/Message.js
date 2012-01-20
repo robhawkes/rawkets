@@ -99,11 +99,15 @@ rawkets.Message = function(socket) {
 		//outgoing.push(msg);
 	};
 	
-	var onSocketMessage = function(msg) {
+	var onSocketMessage = function(packet) {
 		//console.log(msg);
 
-		if (msg && !msg.z) {
-			var msgDecoded = decode(msg);
+		var messages = packet.split(","),
+			msgCount = messages.length,
+			i;
+
+		for (i = 0; i < msgCount; i++) {
+			var msgDecoded = decode(messages[i]);
 
 			if (!msgDecoded) {
 				return;
