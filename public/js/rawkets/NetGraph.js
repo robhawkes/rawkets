@@ -10,55 +10,58 @@ rawkets.NetGraph = function(width, height) {
 	// Properties
 	var width = width,
 		height = height,
-		maxPing = 200,
-		maxData = 3000,
-		pings = [],
-		tmpData = [],
+		//maxPing = 200,
+		maxData = 500,
+		//pings = [],
+		//tmpData = [],
 		data = [],
-		packetsPerUpdate = 0,
-		charsPerUpdate = 0; // This is actually characters per second, not bytes
+		lastUpdateTime = Date.now();
+		//packetsPerUpdate = 0,
+		//charsPerUpdate = 0; // This is actually characters per second, not bytes
 
 	var init = function() {
 		e.listen("SOCKET_MESSAGE", onSocketMessage);
 		//e.listen("PING", onPing);
 	};
 
-	var onSocketMessage = function(msg) {
-		addData(JSON.stringify(msg).length);
+	var onSocketMessage = function(packet) {
+		//addData(JSON.stringify(msg).length);
+		addData(packet, Date.now());
 	};
 
-	var onPing = function(msg) {
-		//addPing(msg.p);
-		//addData();
+	// var onPing = function(msg) {
+	// 	addPing(msg.p);
+	// 	addData();
+	// };
+	
+	// var addPing = function(ping) {
+	// 	if (pings.length == width) {
+	// 		pings.shift(); // Remove first ping
+	// 	};
+	
+	// 	pings.push(ping);
+	// };
+	
+	var addData = function(packet, time) {
+		data.push([packet.length, time]);
 	};
 	
-	var addPing = function(ping) {
-		if (pings.length == width) {
-			pings.shift(); // Remove first ping
-		};
-		
-		pings.push(ping);
-	};
-	
-	var addData = function(value) {
-		tmpData.push(value);
-	};
-	
-	var updateData = function() {
-		if (data.length == width) {
-			data.shift(); // Remove first data
-		};
-		
-		var d, tmpDataCount = tmpData.length, value = 0;
-		for (d = 0; d < tmpDataCount; d++) {
-			value += tmpData[d];
-		};
-		
-		packetsPerUpdate = tmpData.length;
-		charsPerUpdate = value;
-		tmpData = [];
-		
-		data.push(value);
+	var update = function() {
+		var time = Date.now(),
+			timeDiff = time - lastUpdateTime;
+
+		if (data.length > 0) {
+			while (timeDiff > 0) {
+				data.push([0, lastUpdateTime+=10])
+				timeDiff-=10;
+			}
+		}
+
+		while (data.length > width) {
+			data.shift();
+		}
+
+		lastUpdateTime = time;
 	};
 	
 	var draw = function(viewport) {
@@ -78,24 +81,24 @@ rawkets.NetGraph = function(width, height) {
 		// ctx.fillStyle = "rgb(255, 255, 255)";
 		// ctx.fillText(ms+"ms", 4, 10);
 		
-		ctx.fillText(packetsPerUpdate+" p/u", 4, 25);
-		ctx.fillText(charsPerUpdate+" c/u", 4, 40);
+		// ctx.fillText(packetsPerUpdate+" p/u", 4, 25);
+		// ctx.fillText(charsPerUpdate+" c/u", 4, 40);
 		
 		var d, dx, dy, dat, dataCount = data.length;
 		if (dataCount > 0) {
 			ctx.strokeStyle = "rgb(0, 255, 0)";
 			ctx.lineWidth = 1;
 			ctx.beginPath();
-			ctx.moveTo(width-(dataCount*2), height-(data[0]/(maxData/height)));
+			ctx.moveTo(width-(dataCount*2), height-(data[0][0]/(maxData/height)));
 			for (d = 0; d < dataCount; d++) {
-				dat = data[d];
+				dat = data[d][0];
 				dx = (width-(dataCount*2))+(d*2);
 				dy = height-(dat/(maxData/height));
 
 				ctx.lineTo(dx, dy);
-			};
+			}
 			ctx.stroke();
-		};
+		}
 		
 		// var p, px, py, ping, pingCount = pings.length;
 		// if (pingCount > 0) {
@@ -118,7 +121,7 @@ rawkets.NetGraph = function(width, height) {
 	
 	return {
 		init: init,
-		updateData: updateData,
+		update: update,
 		draw: draw
 	}
 };

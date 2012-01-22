@@ -100,7 +100,7 @@ rawkets.Message = function(socket) {
 	};
 	
 	var onSocketMessage = function(packet) {
-		//console.log(msg);
+		//console.log(packet);
 
 		var messages = packet.split(","),
 			msgCount = messages.length,

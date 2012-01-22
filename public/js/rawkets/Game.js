@@ -345,7 +345,7 @@ rawkets.Game = function() {
 			bullet.update();
 		}
 		
-		net.updateData();
+		net.update();
 
 		drawGame();
 

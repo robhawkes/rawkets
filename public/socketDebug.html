@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+	<head>
+		<title>Rawkets | A multiplayer game built using HTML5 canvas and WebSockets</title>
+		
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="style/reset.css">
+
+		<style type="text/css">
+			canvas {
+				background: #222;
+			}
+		</style>
+	</head>
+	
+	<body>
+		<canvas id="canvas" width="400" height="400"></canvas>
+
+		<!-- requestAnimationFrame shim -->
+		<script type="text/javascript" src="js/requestAnimationFrame.js"></script>
+
+		<!-- Socket.IO -->
+		<script type="text/javascript" src="http://rawkets.dev:8000/socket.io/socket.io.js"></script>
+		
+		<script type="text/javascript">
+			var canvas = document.getElementById("canvas"),
+				context = canvas.getContext("2d"),
+				socket = io.connect("localhost", {port: 8000, transports: ["websocket"]}),
+				//socket = new WebSocket("ws://localhost:8080"),
+				net;
+
+			var update = function() {
+				net.update();		
+				draw();
+
+				window.requestAnimFrame(update);
+			};
+
+			var draw = function() {
+				context.clearRect(0, 0, canvas.width, canvas.height);
+				net.draw(context);
+			};
+
+			var NetGraph = function(width, height) {
+				// Properties
+				var width = width,
+					height = height,
+					maxData = 600,
+					peakData = 0,
+					lastUpdateTime = Date.now(),
+					data = [];
+				
+				var addData = function(packet, time) {
+					data.push([packet.length, time]);
+
+					if (packet.length > peakData) {
+						peakData = packet.length;
+					}
+
+					if (packet.length > maxData) {
+						maxData = packet.length + 50;
+					}
+				};
+
+				var update = function() {
+					var time = Date.now(),
+						timeDiff = time - lastUpdateTime;
+
+					if (data.length > 0) {
+						while (timeDiff > 0) {
+							data.push([0, lastUpdateTime+=10])
+							timeDiff-=10;
+						}
+					}
+
+					while (data.length > width) {
+						data.shift();
+					}
+
+					lastUpdateTime = time;
+				};
+				
+				// var updateData = function() {
+				// 	if (data.length == width) {
+				// 		data.shift(); // Remove first data
+				// 	};
+					
+				// 	var d, tmpDataCount = tmpData.length, value = 0;
+				// 	for (d = 0; d < tmpDataCount; d++) {
+				// 		value += tmpData[d][0].length;
+				// 	};
+					
+				// 	packetsPerUpdate = tmpData.length;
+				// 	charsPerUpdate = value;
+				// 	tmpData = [];
+					
+				// 	data.push(value);
+				// };
+				
+				var draw = function(ctx) {
+					//ctx.save();
+					// ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+					// ctx.fillRect(0, 0, width, height);
+					
+					ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+					ctx.font = "Bold 40px Verdana";
+
+					ctx.fillText(peakData, 30, 65);
+					// ctx.fillText(maxPing+"ms", width+4, 10);
+					
+					// var ms = (pings.length > 0) ? pings[pings.length-1] : 0;
+					// ctx.fillStyle = "rgb(255, 255, 255)";
+					// ctx.fillText(ms+"ms", 4, 10);
+					
+					//ctx.fillText(packetsPerUpdate+" p/u", 4, 25);
+					//ctx.fillText(charsPerUpdate+" c/u", 4, 40);
+					
+					var d, dx, dy, dat, dataCount = data.length;
+					if (dataCount > 0) {
+						ctx.strokeStyle = "rgb(0, 255, 0)";
+						ctx.lineWidth = 1;
+						ctx.beginPath();
+						ctx.moveTo(width-(dataCount*2), height-(data[0][0]/(maxData/height)));
+						for (d = 0; d < dataCount; d++) {
+							dat = data[d][0];
+							dx = (width-(dataCount*2))+(d*2);
+							dy = height-(dat/(maxData/height));
+
+							ctx.lineTo(dx, dy);
+						};
+						ctx.stroke();
+					};
+					
+					// var p, px, py, ping, pingCount = pings.length;
+					// if (pingCount > 0) {
+					// 	ctx.strokeStyle = "rgb(255, 255, 255)";
+					// 	ctx.lineWidth = 1;
+					// 	ctx.beginPath();
+					// 	ctx.moveTo(width-(pingCount*2), height-(pings[0]/(maxPing/height)));
+					// 	for (p = 0; p < pingCount; p++) {
+					// 		ping = pings[p];
+					// 		px = (width-(pingCount*2))+(p*2);
+					// 		py = height-(ping/(maxPing/height));
+
+					// 		ctx.lineTo(px, py);
+					// 	};
+					// 	ctx.stroke();
+					// };
+					
+					//ctx.restore();
+				};
+				
+				return {
+					addData: addData,
+					update: update,
+					draw: draw
+				}
+			};
+
+			(function() {
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight-5;
+
+				net = new NetGraph(canvas.width, canvas.height);
+
+				socket.on("connect", function() {
+					socket.emit("game message", [1, 800, 400].join("|"));
+					console.log("Connected");
+				});
+
+				socket.on("game message", function(packet) {
+					//console.log(packet);
+					net.addData(packet, Date.now());
+				});
+
+				// socket.onopen = function() {
+				// 	console.log("Connected");
+				// };
+
+				// socket.onmessage = function(packet) {
+				// 	//console.log(packet.data);
+				// 	net.addData(packet.data, Date.now());
+				// };
+
+				update();
+			})();
+		</script>
+	</body>
+</html>
