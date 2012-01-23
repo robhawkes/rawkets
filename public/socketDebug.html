@@ -22,12 +22,12 @@
 		<script type="text/javascript" src="js/requestAnimationFrame.js"></script>
 
 		<!-- Socket.IO -->
-		<script type="text/javascript" src="http://rawkets.dev:8000/socket.io/socket.io.js"></script>
+		<script type="text/javascript" src="http://rawkets.dev:8080/socket.io/socket.io.js"></script>
 		
 		<script type="text/javascript">
 			var canvas = document.getElementById("canvas"),
 				context = canvas.getContext("2d"),
-				socket = io.connect("localhost", {port: 8000, transports: ["websocket"]}),
+				socket = io.connect("localhost", {port: 8080, transports: ["websocket"]}),
 				//socket = new WebSocket("ws://localhost:8080"),
 				net;
 
@@ -47,7 +47,7 @@
 				// Properties
 				var width = width,
 					height = height,
-					maxData = 600,
+					maxData = 0,
 					peakData = 0,
 					lastUpdateTime = Date.now(),
 					data = [];
@@ -60,7 +60,7 @@
 					}
 
 					if (packet.length > maxData) {
-						maxData = packet.length + 50;
+						maxData = packet.length + packet.length * 0.1;
 					}
 				};
 
@@ -170,7 +170,11 @@
 					console.log("Connected");
 				});
 
-				socket.on("game message", function(packet) {
+				socket.on("disconnect", function(msg) {
+					console.log("Disconnected: "+msg);
+				});
+
+				socket.on("message", function(packet) {
 					//console.log(packet);
 					net.addData(packet, Date.now());
 				});
