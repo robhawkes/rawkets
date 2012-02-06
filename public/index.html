@@ -85,13 +85,17 @@
 		<script type="text/javascript" src="js/input.js"></script>
 
 		<!-- Socket.IO -->
-		<script type="text/javascript" src="http://rawkets.dev:8000/socket.io/socket.io.js"></script>
+		<script type="text/javascript" src="http://rawkets.dev:8080/socket.io/socket.io.js"></script>
 		
 		<!-- Rawkets -->
 		<script type="text/javascript" src="js/rawkets/rawkets.js"></script>
 		<script type="text/javascript" src="js/rawkets/ui.js"></script>
 		
-		<script type="text/javascript" src="js/rawkets/Event.js"></script>
+		<script type="text/javascript" src="js/rawkets/Util.js"></script>
+		<script type="text/javascript" src="js/rawkets/Connection.js"></script>
+		<script type="text/javascript" src="js/rawkets/World.js"></script>
+		<script type="text/javascript" src="js/rawkets/Player.js"></script>
+		<!--<script type="text/javascript" src="js/rawkets/Event.js"></script>
 		<script type="text/javascript" src="js/rawkets/NetGraph.js"></script>
 		<script type="text/javascript" src="js/rawkets/Socket.js"></script>
 		<script type="text/javascript" src="js/rawkets/Message.js"></script>
@@ -102,14 +106,13 @@
 		
 		<script type="text/javascript" src="js/rawkets/Vector.js"></script>
 		<script type="text/javascript" src="js/rawkets/State.js"></script>
-		<!--<script type="text/javascript" src="js/rawkets/RK4.js"></script>-->
 		
 		<script type="text/javascript" src="js/rawkets/Input.js"></script>
 		<script type="text/javascript" src="js/rawkets/Keyboard.js"></script>
 		<script type="text/javascript" src="js/rawkets/Controls.js"></script>
 		
 		<script type="text/javascript" src="js/rawkets/Player.js"></script>
-		<script type="text/javascript" src="js/rawkets/Bullet.js"></script>
+		<script type="text/javascript" src="js/rawkets/Bullet.js"></script>-->
 		
 		<script type="text/javascript" src="js/rawkets/Game.js"></script>
 		
@@ -141,8 +144,8 @@
 			};
 			// End Open Web Apps
 
-			// Initialise game
-			var game = new r.Game().init();
+			// Initialise the game
+			var game = new r.Game();
 		</script>
 		
 		<!-- Google Analytics -->

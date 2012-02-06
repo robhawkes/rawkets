@@ -7,49 +7,37 @@
 				"name": "ping",
 				"args": ["timestamp"]
 			}, {
-				"name": "sync",
-				"args": ["screenWidth", "screenHeight"]
-			}, {
-				"name": "syncCompleted",
+				"name": "connect",
 				"args": []
 			}, {
-				"name": "newPlayer",
-				"args": ["id", "name", "x", "y", "angle", "health", "force", "colour"]
+				"name": "worldData",
+				"args": ["gametype"]
 			}, {
-				"name": "updatePlayer",
-				"args": ["id", "x", "y", "angle", "health", "force"]
+				"name": "join",
+				"args": []
 			}, {
-				"name": "updateInput",
-				"args": ["forward", "rotation", "fire"]
+				"name": "worldState",
+				"args": ["state"]
 			}, {
-				"name": "removePlayer",
+				"name": "playerJoined",
+				"args": []
+			}, {
+				"name": "playerLeft",
 				"args": ["id"]
 			}, {
-				"name": "newBullet",
-				"args": ["id", "x", "y", "angle"]
-			}, {
-				"name": "updateBullet",
-				"args": ["id", "x", "y"]
-			}, {
-				"name": "removeBullet",
-				"args": ["id"]
-			}, {
-				"name": "updatePlayerScreen",
-				"args": ["width", "height"]
+				"name": "playerState",
+				"args": ["id", "x", "y", "angle", "action"]
 			}
 		],
 		"typeIndexes": {
 			"ping": 0,
-			"sync": 1,
-			"syncCompleted": 2,
-			"newPlayer": 3,
-			"updatePlayer": 4,
-			"updateInput": 5,
-			"removePlayer": 6,
-			"newBullet": 7,
-			"updateBullet": 8,
-			"removeBullet": 9,
-			"updatePlayerScreen": 10
+			"connect": 1,
+			"worldData": 2,
+			"join": 3,
+			"worldState": 4,
+			"playerJoined": 5,
+			"playerLeft": 6,
+			"playerState": 7
 		}
 	}
 }

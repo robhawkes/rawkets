@@ -166,7 +166,8 @@
 				net = new NetGraph(canvas.width, canvas.height);
 
 				socket.on("connect", function() {
-					socket.emit("game message", [1, 800, 400].join("|"));
+					socket.emit("message", [1].join("|"));
+					socket.emit("message", [3].join("|"));
 					console.log("Connected");
 				});
 
