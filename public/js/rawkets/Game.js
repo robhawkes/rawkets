@@ -146,5 +146,6 @@ Game.prototype.setPlayer = function(player) {
 
 	if (self.debug) {
 		util.log("Local player set with id: "+player.id);
+		util.log(self.player);
 	}
 }

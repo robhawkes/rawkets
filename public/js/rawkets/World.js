@@ -4,7 +4,8 @@
 
 // Much of this is based on logic from WPilot
 
-var util = r.Util;
+var util = r.Util,
+	EntityRawket = r.EntityRawket;
 
 r.namespace("World");
 rawkets.World = function (options) {
@@ -61,7 +62,22 @@ World.prototype.setState = function(worldState) {
 		// 2. Add player to the world
 		self.players[player.id] = player;
 
-		// 3. Add ship entity to world if player isn't dead
+		if (player.dead) {
+			continue;
+		}
+
+		// 3. Create ship entity if player isn't dead
+		var rawket = new r.EntityRawket({
+			pos: player.pos,
+			vel: player.vel,
+			angle: player.angle
+		});
+
+		rawket.visible = true;
+
+		// 4. Add ship entity to world and player
+		self.addEntity(rawket);
+		player.entity = rawket;
 	}
 
 	// 3. Add other entities to the world (powerups, etc)
